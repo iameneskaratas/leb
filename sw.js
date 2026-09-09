@@ -1,8 +1,7 @@
-// Pocket Hub - Service Worker (iOS & Offline Optimized)
-const CACHE_VERSION = 'v1.1.0';
-const CACHE_NAME = `pockethub-${CACHE_VERSION}`;
+// Leb - Service Worker v2.0.0 (Network-First with Offline Fallback)
+const CACHE_VERSION = 'v2.0.0';
+const CACHE_NAME = `leb-${CACHE_VERSION}`;
 
-// Pre-cached App Shell Assets
 const PRECACHE_ASSETS = [
   './',
   './index.html',
@@ -17,105 +16,80 @@ const PRECACHE_ASSETS = [
   './icons/favicon.png'
 ];
 
-// 1. Install Phase - Precache critical App Shell
+// 1. Install - Precache and activate immediately
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then((cache) => {
-        return cache.addAll(PRECACHE_ASSETS);
-      })
-      .then(() => self.skipWaiting()) // Activate instantly
+      .then((cache) => cache.addAll(PRECACHE_ASSETS))
+      .then(() => self.skipWaiting())
   );
 });
 
-// 2. Activate Phase - Purge older caches & claim clients
+// 2. Activate - Clear old caches and take control
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((cacheNames) => {
+    caches.keys().then((keys) => {
       return Promise.all(
-        cacheNames
-          .filter((name) => name.startsWith('pockethub-') && name !== CACHE_NAME)
-          .map((name) => caches.delete(name))
+        keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))
       );
     }).then(() => self.clients.claim())
   );
 });
 
-// 3. Fetch Phase - Offline First with Cache Fallback
+// 3. Fetch - Network-First for App Shell (HTML, JS, CSS) so updates appear instantly
 self.addEventListener('fetch', (event) => {
-  // Only handle GET requests
   if (event.request.method !== 'GET') return;
 
   const url = new URL(event.request.url);
-
-  // Ignore cross-origin non-http(s) requests
   if (!url.protocol.startsWith('http')) return;
 
-  // Realtime Cloud Database (Firebase) must never be cached by service worker
+  // Firebase Realtime DB must bypass SW completely
   if (url.hostname.includes('firebaseio.com') || url.hostname.includes('firebasedatabase.app')) {
     return;
   }
 
-  // HTML Navigation requests: Network-first, fallback to cached index.html
-  if (event.request.mode === 'navigate' || event.request.destination === 'document') {
+  // Network-First for Navigation and App Code (HTML, JS, CSS)
+  const isCodeOrDoc = event.request.mode === 'navigate' ||
+                      event.request.destination === 'document' ||
+                      url.pathname.endsWith('.html') ||
+                      url.pathname.endsWith('.js') ||
+                      url.pathname.endsWith('.css');
+
+  if (isCodeOrDoc) {
     event.respondWith(
       fetch(event.request)
         .then((networkResponse) => {
           if (networkResponse && networkResponse.status === 200) {
-            const responseToCache = networkResponse.clone();
-            caches.open(CACHE_NAME).then((cache) => {
-              cache.put(event.request, responseToCache);
-            });
+            const copy = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
           }
           return networkResponse;
         })
         .catch(async () => {
-          // Offline fallback
-          const cachedResponse = await caches.match(event.request);
-          if (cachedResponse) return cachedResponse;
+          // Offline fallback from cache
+          const cached = await caches.match(event.request);
+          if (cached) return cached;
           return caches.match('./index.html') || caches.match('./');
         })
     );
     return;
   }
 
-  // Static Assets (CSS, JS, Images, Icons, Fonts): Cache-first with background network update
+  // Cache-First for static media/icons with background revalidation
   event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      if (cachedResponse) {
-        // Return from cache immediately, optionally fetch in background
-        fetch(event.request)
-          .then((networkResponse) => {
-            if (networkResponse && networkResponse.status === 200) {
-              caches.open(CACHE_NAME).then((cache) => {
-                cache.put(event.request, networkResponse);
-              });
-            }
-          })
-          .catch(() => {
-            // Silently ignore background fetch failure when offline
-          });
-        return cachedResponse;
-      }
-
-      // If not in cache, fetch from network and store in cache
-      return fetch(event.request).then((networkResponse) => {
-        if (!networkResponse || networkResponse.status !== 200) {
-          return networkResponse;
+    caches.match(event.request).then((cached) => {
+      if (cached) return cached;
+      return fetch(event.request).then((res) => {
+        if (res && res.status === 200) {
+          const copy = res.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
         }
-
-        const responseToCache = networkResponse.clone();
-        caches.open(CACHE_NAME).then((cache) => {
-          cache.put(event.request, responseToCache);
-        });
-
-        return networkResponse;
+        return res;
       });
     })
   );
 });
 
-// Listen for message to skip waiting manually
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();

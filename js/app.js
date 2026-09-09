@@ -1,6 +1,6 @@
 /**
- * Pocket Hub - iOS & Offline PWA Core Logic with Cloud Sync
- * Features: Service Worker, Offline Caching, Firebase Realtime Sync, PIN Management
+ * Leb - iOS & Offline PWA with Realtime Cloud Sync
+ * Features: Service Worker v2.0.0, Firebase Realtime Sync, PIN Management, Leblebi UI
  */
 
 // --- 1. Service Worker & Update Manager ---
@@ -12,9 +12,8 @@ function registerServiceWorker() {
       navigator.serviceWorker
         .register('./sw.js')
         .then((registration) => {
-          console.log('[PWA] ServiceWorker registered with scope:', registration.scope);
+          console.log('[Leb] ServiceWorker registered with scope:', registration.scope);
 
-          // Check for pending updates
           registration.addEventListener('updatefound', () => {
             newWorker = registration.installing;
             newWorker.addEventListener('statechange', () => {
@@ -25,7 +24,7 @@ function registerServiceWorker() {
           });
         })
         .catch((err) => {
-          console.error('[PWA] ServiceWorker registration failed:', err);
+          console.error('[Leb] ServiceWorker registration failed:', err);
         });
 
       let refreshing = false;
@@ -62,15 +61,15 @@ function setupNetworkMonitoring() {
     const isOnline = navigator.onLine;
 
     if (isOnline) {
-      badge.className = 'network-badge online';
-      badgeText.textContent = 'Çevrimiçi';
-      offlineBanner.classList.remove('active');
-      // When connection is restored, trigger automatic cloud synchronization!
-      syncWithCloud();
+      if (badge) badge.className = 'network-badge online';
+      if (badgeText) badgeText.textContent = 'Çevrimiçi';
+      if (offlineBanner) offlineBanner.classList.remove('active');
+      // When connection is restored, immediately sync with Firebase!
+      syncWithCloud(true);
     } else {
-      badge.className = 'network-badge offline';
-      badgeText.textContent = 'Çevrimdışı';
-      offlineBanner.classList.add('active');
+      if (badge) badge.className = 'network-badge offline';
+      if (badgeText) badgeText.textContent = 'Çevrimdışı';
+      if (offlineBanner) offlineBanner.classList.add('active');
       updateSyncBadge('offline');
     }
     updateStats();
@@ -89,28 +88,28 @@ function setupIosInstallBanner() {
 
   const banner = document.getElementById('iosInstallBanner');
   const closeBtn = document.getElementById('closeInstallBanner');
-  const dismissed = localStorage.getItem('ios_install_dismissed') === 'true';
+  const dismissed = localStorage.getItem('leb_install_dismissed') === 'true';
 
-  if (isIos && !isStandalone && !dismissed) {
+  if (isIos && !isStandalone && !dismissed && banner) {
     banner.classList.add('active');
   }
 
-  if (closeBtn) {
+  if (closeBtn && banner) {
     closeBtn.addEventListener('click', () => {
       banner.classList.remove('active');
-      localStorage.setItem('ios_install_dismissed', 'true');
+      localStorage.setItem('leb_install_dismissed', 'true');
     });
   }
 }
 
 // --- 4. Cloud Sync Engine (Firebase Realtime Database) ---
 const FIREBASE_DB_URL = 'https://leb1919-default-rtdb.firebaseio.com';
-const STORAGE_KEY = 'pockethub_items_v1';
-const PIN_KEY = 'pockethub_sync_pin_v1';
+const STORAGE_KEY = 'leb_items_v2';
+const PIN_KEY = 'leb_sync_pin_v2';
 const DEFAULT_PIN = 'leb1919';
 
 let isSyncing = false;
-let syncDebounceTimer = null;
+let syncQueued = false;
 
 function getSyncPin() {
   return (localStorage.getItem(PIN_KEY) || DEFAULT_PIN).trim();
@@ -120,7 +119,7 @@ function setSyncPin(newPin) {
   const cleanPin = (newPin || DEFAULT_PIN).trim();
   localStorage.setItem(PIN_KEY, cleanPin);
   updatePinUI();
-  // Immediately pull data for new PIN
+  // Pull data for the new PIN immediately
   syncWithCloud(true);
 }
 
@@ -149,7 +148,7 @@ function updateSyncBadge(status) {
   } else if (status === 'offline') {
     icon.className = '';
     icon.textContent = '📶';
-    text.textContent = 'Çevrimdışı (Beklemede)';
+    text.textContent = 'Çevrimdışı (Kaydedildi)';
   } else if (status === 'error') {
     icon.className = '';
     icon.textContent = '⚠️';
@@ -158,19 +157,21 @@ function updateSyncBadge(status) {
 }
 
 /**
- * Perform bi-directional smart sync with Firebase:
- * 1. Read cloud data
- * 2. Merge local + cloud based on updatedAt timestamps
- * 3. Save merged result to local storage
- * 4. Push final merged result back to cloud
+ * Smart Bi-directional Sync with Firebase:
+ * Merges local and remote items using updatedAt timestamps.
+ * Soft-deleted items propagate across devices.
  */
-async function syncWithCloud(forcePull = false) {
+async function syncWithCloud(forceSync = false) {
   if (!navigator.onLine) {
     updateSyncBadge('offline');
     return;
   }
 
-  if (isSyncing) return;
+  if (isSyncing) {
+    syncQueued = true;
+    return;
+  }
+
   isSyncing = true;
   updateSyncBadge('syncing');
 
@@ -178,54 +179,47 @@ async function syncWithCloud(forcePull = false) {
   const endpoint = `${FIREBASE_DB_URL}/vaults/${pin}.json`;
 
   try {
-    // 1. Fetch remote vault
+    // 1. Fetch remote data from Firebase
     const response = await fetch(endpoint, { cache: 'no-store' });
     let remoteVault = null;
     if (response.ok) {
       remoteVault = await response.json();
     }
 
-    const localItems = getStoredItems(true); // Include soft-deleted items for sync
-    let mergedItems = [];
+    const localItems = getStoredItems(true); // Include soft-deleted items
+    let mergedMap = new Map();
 
-    if (!remoteVault || !Array.isArray(remoteVault.items)) {
-      // First time initialization on cloud
-      mergedItems = localItems;
-    } else {
-      // Merge local and remote items
-      const itemMap = new Map();
-
-      // Put remote items in map
+    // Add remote items to map
+    if (remoteVault && Array.isArray(remoteVault.items)) {
       remoteVault.items.forEach(item => {
-        if (item && item.id) itemMap.set(item.id, item);
-      });
-
-      // Overlay local items
-      localItems.forEach(localItem => {
-        if (!itemMap.has(localItem.id)) {
-          itemMap.set(localItem.id, localItem);
-        } else {
-          const remoteItem = itemMap.get(localItem.id);
-          const localTime = localItem.updatedAt || 0;
-          const remoteTime = remoteItem.updatedAt || 0;
-
-          // Later update wins
-          if (localTime >= remoteTime) {
-            itemMap.set(localItem.id, localItem);
-          }
+        if (item && item.id) {
+          mergedMap.set(item.id, item);
         }
       });
-
-      mergedItems = Array.from(itemMap.values());
     }
 
-    // Sort by createdAt descending
+    // Merge local items
+    localItems.forEach(localItem => {
+      if (!mergedMap.has(localItem.id)) {
+        mergedMap.set(localItem.id, localItem);
+      } else {
+        const remoteItem = mergedMap.get(localItem.id);
+        const localTime = localItem.updatedAt || 0;
+        const remoteTime = remoteItem.updatedAt || 0;
+        // The most recently modified version wins
+        if (localTime >= remoteTime) {
+          mergedMap.set(localItem.id, localItem);
+        }
+      }
+    });
+
+    let mergedItems = Array.from(mergedMap.values());
     mergedItems.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
 
-    // Save to local storage
+    // Save locally
     localStorage.setItem(STORAGE_KEY, JSON.stringify(mergedItems));
 
-    // 2. Push final state back to Firebase
+    // 2. Push unified state back to Firebase
     await fetch(endpoint, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
@@ -240,25 +234,18 @@ async function syncWithCloud(forcePull = false) {
     updateStats();
     updateSyncBadge('synced');
   } catch (err) {
-    console.warn('[Sync] Network error during sync:', err);
+    console.warn('[Leb Sync] Network warning:', err);
     updateSyncBadge('error');
   } finally {
     isSyncing = false;
+    if (syncQueued) {
+      syncQueued = false;
+      setTimeout(() => syncWithCloud(), 300);
+    }
   }
 }
 
-function triggerDelayedSync() {
-  if (!navigator.onLine) {
-    updateSyncBadge('offline');
-    return;
-  }
-  clearTimeout(syncDebounceTimer);
-  syncDebounceTimer = setTimeout(() => {
-    syncWithCloud();
-  }, 400);
-}
-
-// --- 5. Storage & Item Operations ---
+// --- 5. Storage & Item Management ---
 const DEFAULT_ITEMS = [
   {
     id: 'demo-1',
@@ -280,7 +267,7 @@ const DEFAULT_ITEMS = [
   },
   {
     id: 'demo-3',
-    title: 'PIN ile tüm cihazlarınız (iPhone, PC, tablet) canlı senkronize olur.',
+    title: 'PIN ile tüm cihazlarınız (iPhone, PC, tablet) canlı senkronize olur. 🥜',
     type: 'note',
     completed: false,
     createdAt: new Date().toISOString(),
@@ -293,6 +280,17 @@ function getStoredItems(includeDeleted = false) {
   try {
     const data = localStorage.getItem(STORAGE_KEY);
     if (!data) {
+      // Also migrate old v1 items if available
+      const oldData = localStorage.getItem('pockethub_items_v1');
+      if (oldData) {
+        try {
+          const oldItems = JSON.parse(oldData);
+          if (Array.isArray(oldItems) && oldItems.length > 0) {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(oldItems));
+            return includeDeleted ? oldItems : oldItems.filter(i => !i.deleted);
+          }
+        } catch (e) {}
+      }
       localStorage.setItem(STORAGE_KEY, JSON.stringify(DEFAULT_ITEMS));
       return DEFAULT_ITEMS;
     }
@@ -321,6 +319,8 @@ function renderItems() {
   const listContainer = document.getElementById('itemsList');
   const emptyState = document.getElementById('emptyState');
 
+  if (!listContainer) return;
+
   const filtered = items.filter(item => {
     if (activeFilter === 'all') return true;
     return item.type === activeFilter;
@@ -329,10 +329,10 @@ function renderItems() {
   listContainer.innerHTML = '';
 
   if (filtered.length === 0) {
-    emptyState.style.display = 'flex';
+    if (emptyState) emptyState.style.display = 'flex';
     return;
   }
-  emptyState.style.display = 'none';
+  if (emptyState) emptyState.style.display = 'none';
 
   filtered.forEach(item => {
     const card = document.createElement('div');
@@ -370,10 +370,11 @@ function renderItems() {
       </button>
     `;
 
-    // Event listeners
+    // Checkbox toggle
     const checkbox = card.querySelector('.item-checkbox');
     checkbox.addEventListener('click', () => toggleItem(item.id));
 
+    // Delete item
     const deleteBtn = card.querySelector('.item-delete-btn');
     deleteBtn.addEventListener('click', () => deleteItem(item.id));
 
@@ -398,7 +399,9 @@ function addItem(title, type) {
   allItems.unshift(newItem);
   saveItemsLocally(allItems);
   renderItems();
-  triggerDelayedSync();
+
+  // Instant cloud sync
+  syncWithCloud();
 }
 
 function toggleItem(id) {
@@ -409,7 +412,7 @@ function toggleItem(id) {
     target.updatedAt = Date.now();
     saveItemsLocally(allItems);
     renderItems();
-    triggerDelayedSync();
+    syncWithCloud();
   }
 }
 
@@ -417,12 +420,12 @@ function deleteItem(id) {
   const allItems = getStoredItems(true);
   const target = allItems.find(it => it.id === id);
   if (target) {
-    // Soft delete with timestamp so deletion propagates to cloud & other devices
+    // Soft delete so other devices know it's deleted
     target.deleted = true;
     target.updatedAt = Date.now();
     saveItemsLocally(allItems);
     renderItems();
-    triggerDelayedSync();
+    syncWithCloud();
   }
 }
 
@@ -448,7 +451,7 @@ function escapeHtml(text) {
   return div.innerHTML;
 }
 
-// --- 6. PIN Settings Modal Setup ---
+// --- 6. PIN Settings Modal ---
 function setupPinModal() {
   const modal = document.getElementById('pinModal');
   const openBtn = document.getElementById('openPinModalBtn');
@@ -458,20 +461,22 @@ function setupPinModal() {
   const pinInput = document.getElementById('pinInput');
 
   function openModal() {
-    pinInput.value = getSyncPin();
-    modal.classList.add('active');
-    pinInput.focus();
+    if (pinInput) pinInput.value = getSyncPin();
+    if (modal) modal.classList.add('active');
+    if (pinInput) pinInput.focus();
   }
 
   function closeModal() {
-    modal.classList.remove('active');
+    if (modal) modal.classList.remove('active');
   }
 
   function handleSave() {
-    const val = pinInput.value.trim();
-    if (val) {
-      setSyncPin(val);
-      closeModal();
+    if (pinInput) {
+      const val = pinInput.value.trim();
+      if (val) {
+        setSyncPin(val);
+        closeModal();
+      }
     }
   }
 
@@ -487,7 +492,6 @@ function setupPinModal() {
     });
   }
 
-  // Click outside to close
   if (modal) {
     modal.addEventListener('click', (e) => {
       if (e.target === modal) closeModal();
@@ -505,12 +509,12 @@ document.addEventListener('DOMContentLoaded', () => {
   renderItems();
   updateStats();
 
-  // Initial cloud sync on load
+  // Initial cloud sync
   if (navigator.onLine) {
-    syncWithCloud();
+    syncWithCloud(true);
   }
 
-  // Manual Sync button
+  // Manual "Eşitle" button
   const manualSyncBtn = document.getElementById('manualSyncBtn');
   if (manualSyncBtn) {
     manualSyncBtn.addEventListener('click', () => {
@@ -518,19 +522,19 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Auto-sync when returning to app (Tab focus / iPhone unlock)
+  // Auto-sync on Tab Focus / iPhone unlock
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible' && navigator.onLine) {
       syncWithCloud();
     }
   });
 
-  // Periodic background check every 25 seconds if online
+  // Real-time live polling every 4 seconds when active
   setInterval(() => {
     if (navigator.onLine && document.visibilityState === 'visible') {
       syncWithCloud();
     }
-  }, 25000);
+  }, 4000);
 
   // Add Item form submit
   const addBtn = document.getElementById('addItemBtn');
@@ -547,12 +551,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  addBtn.addEventListener('click', handleAdd);
-  inputTitle.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') {
-      handleAdd();
-    }
-  });
+  if (addBtn) addBtn.addEventListener('click', handleAdd);
+  if (inputTitle) {
+    inputTitle.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        handleAdd();
+      }
+    });
+  }
 
   // Category filter tabs
   const filterTabs = document.querySelectorAll('.filter-tab');
@@ -576,7 +582,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (infoBtn) {
     infoBtn.addEventListener('click', () => {
       const banner = document.getElementById('iosInstallBanner');
-      banner.classList.toggle('active');
+      if (banner) banner.classList.toggle('active');
     });
   }
 });

@@ -1,13 +1,13 @@
 {
-  "name": "Pocket Hub - Offline PWA",
-  "short_name": "PocketHub",
-  "description": "iPhone için optimize edilmiş, uçak modunda ve internetsiz çalışan çevrimdışı PWA uygulaması.",
+  "name": "Leb",
+  "short_name": "Leb",
+  "description": "iPhone için optimize edilmiş, uçak modunda ve bulut senkronizasyonuyla çalışan leblebi gibi hızlı PWA uygulaması.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#0B0E14",
-  "theme_color": "#0B0E14",
+  "background_color": "#1E1B18",
+  "theme_color": "#1E1B18",
   "categories": ["productivity", "utilities"],
   "icons": [
     {
