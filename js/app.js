@@ -1,6 +1,6 @@
 /**
- * Leb - iOS & Offline PWA with Silent Realtime Cloud Sync
- * Features: Service Worker v2.1.0, Silent Firebase Sync, PIN Management, Leblebi UI
+ * Leb - iOS & Offline PWA with Silent Realtime Cloud Sync (v2.2.0)
+ * Features: Service Worker v2.2.0, Zero-Jitter Smart Rendering, Silent Firebase Sync
  */
 
 // --- 1. Service Worker & Update Manager ---
@@ -62,7 +62,6 @@ function setupNetworkMonitoring() {
       if (badge) badge.className = 'network-dot online';
       if (badgeText) badgeText.textContent = 'Çevrimiçi';
       if (offlineBanner) offlineBanner.classList.remove('active');
-      // When connection is restored, silently sync
       syncWithCloud({ isManual: false });
     } else {
       if (badge) badge.className = 'network-dot offline';
@@ -108,6 +107,7 @@ const DEFAULT_PIN = 'leb1919';
 
 let isSyncing = false;
 let syncQueued = false;
+let lastRenderedHash = '';
 
 function getSyncPin() {
   return (localStorage.getItem(PIN_KEY) || DEFAULT_PIN).trim();
@@ -125,9 +125,6 @@ function updatePinUI() {
   if (pinEl) pinEl.textContent = getSyncPin();
 }
 
-/**
- * Calm, peaceful sync status update (No distracting animations)
- */
 function updateSyncBadge(status) {
   const indicator = document.getElementById('syncStatusIndicator');
   const icon = document.getElementById('syncStatusIcon');
@@ -153,7 +150,8 @@ function updateSyncBadge(status) {
 }
 
 /**
- * Smart Bi-directional Silent Sync with Firebase
+ * Smart Bi-directional Silent Sync with Firebase:
+ * Compares data before re-rendering so zero UI jitter occurs.
  */
 async function syncWithCloud(options = {}) {
   const { isManual = false } = options;
@@ -170,7 +168,6 @@ async function syncWithCloud(options = {}) {
 
   isSyncing = true;
 
-  // Spin the manual sync button only if user explicitly tapped it
   const manualBtn = document.getElementById('manualSyncBtn');
   if (isManual && manualBtn) {
     manualBtn.classList.add('sync-spin-icon');
@@ -216,22 +213,27 @@ async function syncWithCloud(options = {}) {
     let mergedItems = Array.from(mergedMap.values());
     mergedItems.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
 
-    // Save locally
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(mergedItems));
+    // Check if items changed compared to local storage
+    const currentLocalStr = localStorage.getItem(STORAGE_KEY);
+    const newItemsStr = JSON.stringify(mergedItems);
 
-    // 2. Push unified state back to Firebase
-    await fetch(endpoint, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        items: mergedItems,
-        lastSync: Date.now(),
-        updatedBy: navigator.userAgent
-      })
-    });
+    if (currentLocalStr !== newItemsStr) {
+      localStorage.setItem(STORAGE_KEY, newItemsStr);
+      renderItems(); // Only renders if data changed!
+      updateStats();
 
-    renderItems();
-    updateStats();
+      // Push final merged state back to Firebase
+      await fetch(endpoint, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          items: mergedItems,
+          lastSync: Date.now(),
+          updatedBy: navigator.userAgent
+        })
+      });
+    }
+
     updateSyncBadge('synced');
   } catch (err) {
     console.warn('[Leb Sync] Warning:', err);
@@ -239,7 +241,7 @@ async function syncWithCloud(options = {}) {
   } finally {
     isSyncing = false;
     if (isManual && manualBtn) {
-      setTimeout(() => manualBtn.classList.remove('sync-spin-icon'), 500);
+      setTimeout(() => manualBtn.classList.remove('sync-spin-icon'), 400);
     }
     if (syncQueued) {
       syncQueued = false;
@@ -306,7 +308,11 @@ function saveItemsLocally(items) {
 
 let activeFilter = 'all';
 
-function renderItems() {
+/**
+ * Jitter-Free DOM Renderer:
+ * Only updates DOM elements if content or filter actually changed!
+ */
+function renderItems(force = false) {
   const items = getStoredItems(false);
   const listContainer = document.getElementById('itemsList');
   const emptyState = document.getElementById('emptyState');
@@ -317,6 +323,12 @@ function renderItems() {
     if (activeFilter === 'all') return true;
     return item.type === activeFilter;
   });
+
+  const currentHash = JSON.stringify(filtered);
+  if (!force && currentHash === lastRenderedHash) {
+    return; // ZERO DOM operations if list is identical!
+  }
+  lastRenderedHash = currentHash;
 
   listContainer.innerHTML = '';
 
@@ -388,10 +400,10 @@ function addItem(title, type) {
 
   allItems.unshift(newItem);
   saveItemsLocally(allItems);
-  renderItems();
+  renderItems(true);
 
-  // Instant silent cloud sync
-  syncWithCloud();
+  // Push to cloud
+  syncWithCloud({ isManual: false });
 }
 
 function toggleItem(id) {
@@ -401,8 +413,8 @@ function toggleItem(id) {
     target.completed = !target.completed;
     target.updatedAt = Date.now();
     saveItemsLocally(allItems);
-    renderItems();
-    syncWithCloud();
+    renderItems(true);
+    syncWithCloud({ isManual: false });
   }
 }
 
@@ -413,8 +425,8 @@ function deleteItem(id) {
     target.deleted = true;
     target.updatedAt = Date.now();
     saveItemsLocally(allItems);
-    renderItems();
-    syncWithCloud();
+    renderItems(true);
+    syncWithCloud({ isManual: false });
   }
 }
 
@@ -495,12 +507,12 @@ document.addEventListener('DOMContentLoaded', () => {
   setupIosInstallBanner();
   setupPinModal();
   updatePinUI();
-  renderItems();
+  renderItems(true);
   updateStats();
 
-  // Initial silent cloud sync
+  // Initial cloud sync
   if (navigator.onLine) {
-    syncWithCloud();
+    syncWithCloud({ isManual: false });
   }
 
   // Manual "Eşitle" button
@@ -518,12 +530,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // Real-time silent live polling every 5 seconds when active
+  // Background silent polling every 8 seconds (Zero jitter!)
   setInterval(() => {
     if (navigator.onLine && document.visibilityState === 'visible') {
       syncWithCloud({ isManual: false });
     }
-  }, 5000);
+  }, 8000);
 
   // Add Item form submit
   const addBtn = document.getElementById('addItemBtn');
@@ -556,7 +568,7 @@ document.addEventListener('DOMContentLoaded', () => {
       filterTabs.forEach(t => t.classList.remove('active'));
       tab.classList.add('active');
       activeFilter = tab.dataset.filter;
-      renderItems();
+      renderItems(true);
     });
   });
 
