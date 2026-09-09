@@ -1,6 +1,6 @@
 /**
- * Pocket Hub - iOS & Offline PWA Core Logic
- * Handles Service Worker, Network Events, Local Storage & iOS Installation
+ * Pocket Hub - iOS & Offline PWA Core Logic with Cloud Sync
+ * Features: Service Worker, Offline Caching, Firebase Realtime Sync, PIN Management
  */
 
 // --- 1. Service Worker & Update Manager ---
@@ -19,7 +19,6 @@ function registerServiceWorker() {
             newWorker = registration.installing;
             newWorker.addEventListener('statechange', () => {
               if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                // New update available
                 showUpdateToast();
               }
             });
@@ -66,10 +65,13 @@ function setupNetworkMonitoring() {
       badge.className = 'network-badge online';
       badgeText.textContent = 'Çevrimiçi';
       offlineBanner.classList.remove('active');
+      // When connection is restored, trigger automatic cloud synchronization!
+      syncWithCloud();
     } else {
       badge.className = 'network-badge offline';
       badgeText.textContent = 'Çevrimdışı';
       offlineBanner.classList.add('active');
+      updateSyncBadge('offline');
     }
     updateStats();
   }
@@ -89,7 +91,6 @@ function setupIosInstallBanner() {
   const closeBtn = document.getElementById('closeInstallBanner');
   const dismissed = localStorage.getItem('ios_install_dismissed') === 'true';
 
-  // Show banner only if iOS and not currently in standalone PWA mode
   if (isIos && !isStandalone && !dismissed) {
     banner.classList.add('active');
   }
@@ -102,48 +103,209 @@ function setupIosInstallBanner() {
   }
 }
 
-// --- 4. Offline Storage & Item Management ---
+// --- 4. Cloud Sync Engine (Firebase Realtime Database) ---
+const FIREBASE_DB_URL = 'https://leb1919-default-rtdb.firebaseio.com';
 const STORAGE_KEY = 'pockethub_items_v1';
+const PIN_KEY = 'pockethub_sync_pin_v1';
+const DEFAULT_PIN = 'leb1919';
 
+let isSyncing = false;
+let syncDebounceTimer = null;
+
+function getSyncPin() {
+  return (localStorage.getItem(PIN_KEY) || DEFAULT_PIN).trim();
+}
+
+function setSyncPin(newPin) {
+  const cleanPin = (newPin || DEFAULT_PIN).trim();
+  localStorage.setItem(PIN_KEY, cleanPin);
+  updatePinUI();
+  // Immediately pull data for new PIN
+  syncWithCloud(true);
+}
+
+function updatePinUI() {
+  const pinEl = document.getElementById('currentPinText');
+  if (pinEl) pinEl.textContent = getSyncPin();
+}
+
+function updateSyncBadge(status) {
+  const indicator = document.getElementById('syncStatusIndicator');
+  const icon = document.getElementById('syncStatusIcon');
+  const text = document.getElementById('syncStatusText');
+
+  if (!indicator || !icon || !text) return;
+
+  indicator.className = `sync-status-indicator ${status}`;
+
+  if (status === 'syncing') {
+    icon.className = 'sync-spin-icon';
+    icon.textContent = '🔄';
+    text.textContent = 'Eşitleniyor...';
+  } else if (status === 'synced') {
+    icon.className = '';
+    icon.textContent = '☁️';
+    text.textContent = 'Bulutla Eşitlendi';
+  } else if (status === 'offline') {
+    icon.className = '';
+    icon.textContent = '📶';
+    text.textContent = 'Çevrimdışı (Beklemede)';
+  } else if (status === 'error') {
+    icon.className = '';
+    icon.textContent = '⚠️';
+    text.textContent = 'Bağlantı Hatası';
+  }
+}
+
+/**
+ * Perform bi-directional smart sync with Firebase:
+ * 1. Read cloud data
+ * 2. Merge local + cloud based on updatedAt timestamps
+ * 3. Save merged result to local storage
+ * 4. Push final merged result back to cloud
+ */
+async function syncWithCloud(forcePull = false) {
+  if (!navigator.onLine) {
+    updateSyncBadge('offline');
+    return;
+  }
+
+  if (isSyncing) return;
+  isSyncing = true;
+  updateSyncBadge('syncing');
+
+  const pin = encodeURIComponent(getSyncPin());
+  const endpoint = `${FIREBASE_DB_URL}/vaults/${pin}.json`;
+
+  try {
+    // 1. Fetch remote vault
+    const response = await fetch(endpoint, { cache: 'no-store' });
+    let remoteVault = null;
+    if (response.ok) {
+      remoteVault = await response.json();
+    }
+
+    const localItems = getStoredItems(true); // Include soft-deleted items for sync
+    let mergedItems = [];
+
+    if (!remoteVault || !Array.isArray(remoteVault.items)) {
+      // First time initialization on cloud
+      mergedItems = localItems;
+    } else {
+      // Merge local and remote items
+      const itemMap = new Map();
+
+      // Put remote items in map
+      remoteVault.items.forEach(item => {
+        if (item && item.id) itemMap.set(item.id, item);
+      });
+
+      // Overlay local items
+      localItems.forEach(localItem => {
+        if (!itemMap.has(localItem.id)) {
+          itemMap.set(localItem.id, localItem);
+        } else {
+          const remoteItem = itemMap.get(localItem.id);
+          const localTime = localItem.updatedAt || 0;
+          const remoteTime = remoteItem.updatedAt || 0;
+
+          // Later update wins
+          if (localTime >= remoteTime) {
+            itemMap.set(localItem.id, localItem);
+          }
+        }
+      });
+
+      mergedItems = Array.from(itemMap.values());
+    }
+
+    // Sort by createdAt descending
+    mergedItems.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+
+    // Save to local storage
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(mergedItems));
+
+    // 2. Push final state back to Firebase
+    await fetch(endpoint, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        items: mergedItems,
+        lastSync: Date.now(),
+        updatedBy: navigator.userAgent
+      })
+    });
+
+    renderItems();
+    updateStats();
+    updateSyncBadge('synced');
+  } catch (err) {
+    console.warn('[Sync] Network error during sync:', err);
+    updateSyncBadge('error');
+  } finally {
+    isSyncing = false;
+  }
+}
+
+function triggerDelayedSync() {
+  if (!navigator.onLine) {
+    updateSyncBadge('offline');
+    return;
+  }
+  clearTimeout(syncDebounceTimer);
+  syncDebounceTimer = setTimeout(() => {
+    syncWithCloud();
+  }, 400);
+}
+
+// --- 5. Storage & Item Operations ---
 const DEFAULT_ITEMS = [
   {
     id: 'demo-1',
     title: 'iPhone Ana Ekranına Ekle (Paylaş > Ana Ekrana Ekle)',
     type: 'todo',
     completed: false,
-    createdAt: new Date().toISOString()
+    createdAt: new Date().toISOString(),
+    updatedAt: Date.now(),
+    deleted: false
   },
   {
     id: 'demo-2',
-    title: 'Uçak modunu açıp bu uygulamayı internetsiz test et ✈️',
+    title: 'Uçak modunda internetsiz not ekle, internet gelince otomatik eşitlensin! ✈️',
     type: 'todo',
     completed: false,
-    createdAt: new Date().toISOString()
+    createdAt: new Date().toISOString(),
+    updatedAt: Date.now(),
+    deleted: false
   },
   {
     id: 'demo-3',
-    title: 'Bu veri tamamen cihazınızda (LocalStorage / Cache) saklanır, internete ihtiyaç duymaz.',
+    title: 'PIN ile tüm cihazlarınız (iPhone, PC, tablet) canlı senkronize olur.',
     type: 'note',
     completed: false,
-    createdAt: new Date().toISOString()
+    createdAt: new Date().toISOString(),
+    updatedAt: Date.now(),
+    deleted: false
   }
 ];
 
-function getStoredItems() {
+function getStoredItems(includeDeleted = false) {
   try {
     const data = localStorage.getItem(STORAGE_KEY);
     if (!data) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(DEFAULT_ITEMS));
       return DEFAULT_ITEMS;
     }
-    return JSON.parse(data);
+    const parsed = JSON.parse(data);
+    if (includeDeleted) return parsed;
+    return parsed.filter(i => !i.deleted);
   } catch (e) {
     console.error('[Storage] Read error:', e);
     return [];
   }
 }
 
-function saveItems(items) {
+function saveItemsLocally(items) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
     updateStats();
@@ -155,7 +317,7 @@ function saveItems(items) {
 let activeFilter = 'all';
 
 function renderItems() {
-  const items = getStoredItems();
+  const items = getStoredItems(false);
   const listContainer = document.getElementById('itemsList');
   const emptyState = document.getElementById('emptyState');
 
@@ -222,46 +384,57 @@ function renderItems() {
 function addItem(title, type) {
   if (!title.trim()) return;
 
-  const items = getStoredItems();
+  const allItems = getStoredItems(true);
   const newItem = {
     id: 'item_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
     title: title.trim(),
     type: type || 'note',
     completed: false,
-    createdAt: new Date().toISOString()
+    createdAt: new Date().toISOString(),
+    updatedAt: Date.now(),
+    deleted: false
   };
 
-  items.unshift(newItem);
-  saveItems(items);
+  allItems.unshift(newItem);
+  saveItemsLocally(allItems);
   renderItems();
+  triggerDelayedSync();
 }
 
 function toggleItem(id) {
-  const items = getStoredItems();
-  const target = items.find(it => it.id === id);
+  const allItems = getStoredItems(true);
+  const target = allItems.find(it => it.id === id);
   if (target) {
     target.completed = !target.completed;
-    saveItems(items);
+    target.updatedAt = Date.now();
+    saveItemsLocally(allItems);
     renderItems();
+    triggerDelayedSync();
   }
 }
 
 function deleteItem(id) {
-  const items = getStoredItems();
-  const remaining = items.filter(it => it.id !== id);
-  saveItems(remaining);
-  renderItems();
+  const allItems = getStoredItems(true);
+  const target = allItems.find(it => it.id === id);
+  if (target) {
+    // Soft delete with timestamp so deletion propagates to cloud & other devices
+    target.deleted = true;
+    target.updatedAt = Date.now();
+    saveItemsLocally(allItems);
+    renderItems();
+    triggerDelayedSync();
+  }
 }
 
 function updateStats() {
-  const items = getStoredItems();
+  const activeItems = getStoredItems(false);
   const totalCountEl = document.getElementById('statTotal');
   const pendingCountEl = document.getElementById('statPending');
   const cacheStatusEl = document.getElementById('statCache');
 
-  if (totalCountEl) totalCountEl.textContent = items.length;
+  if (totalCountEl) totalCountEl.textContent = activeItems.length;
   if (pendingCountEl) {
-    const pending = items.filter(i => i.type === 'todo' && !i.completed).length;
+    const pending = activeItems.filter(i => i.type === 'todo' && !i.completed).length;
     pendingCountEl.textContent = pending;
   }
   if (cacheStatusEl) {
@@ -275,13 +448,89 @@ function escapeHtml(text) {
   return div.innerHTML;
 }
 
-// --- 5. DOM Ready & Event Wiring ---
+// --- 6. PIN Settings Modal Setup ---
+function setupPinModal() {
+  const modal = document.getElementById('pinModal');
+  const openBtn = document.getElementById('openPinModalBtn');
+  const closeBtn = document.getElementById('closePinModal');
+  const cancelBtn = document.getElementById('cancelPinBtn');
+  const saveBtn = document.getElementById('savePinBtn');
+  const pinInput = document.getElementById('pinInput');
+
+  function openModal() {
+    pinInput.value = getSyncPin();
+    modal.classList.add('active');
+    pinInput.focus();
+  }
+
+  function closeModal() {
+    modal.classList.remove('active');
+  }
+
+  function handleSave() {
+    const val = pinInput.value.trim();
+    if (val) {
+      setSyncPin(val);
+      closeModal();
+    }
+  }
+
+  if (openBtn) openBtn.addEventListener('click', openModal);
+  if (closeBtn) closeBtn.addEventListener('click', closeModal);
+  if (cancelBtn) cancelBtn.addEventListener('click', closeModal);
+  if (saveBtn) saveBtn.addEventListener('click', handleSave);
+
+  if (pinInput) {
+    pinInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') handleSave();
+      if (e.key === 'Escape') closeModal();
+    });
+  }
+
+  // Click outside to close
+  if (modal) {
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) closeModal();
+    });
+  }
+}
+
+// --- 7. DOM Ready & Event Wiring ---
 document.addEventListener('DOMContentLoaded', () => {
   registerServiceWorker();
   setupNetworkMonitoring();
   setupIosInstallBanner();
+  setupPinModal();
+  updatePinUI();
   renderItems();
   updateStats();
+
+  // Initial cloud sync on load
+  if (navigator.onLine) {
+    syncWithCloud();
+  }
+
+  // Manual Sync button
+  const manualSyncBtn = document.getElementById('manualSyncBtn');
+  if (manualSyncBtn) {
+    manualSyncBtn.addEventListener('click', () => {
+      syncWithCloud(true);
+    });
+  }
+
+  // Auto-sync when returning to app (Tab focus / iPhone unlock)
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && navigator.onLine) {
+      syncWithCloud();
+    }
+  });
+
+  // Periodic background check every 25 seconds if online
+  setInterval(() => {
+    if (navigator.onLine && document.visibilityState === 'visible') {
+      syncWithCloud();
+    }
+  }, 25000);
 
   // Add Item form submit
   const addBtn = document.getElementById('addItemBtn');

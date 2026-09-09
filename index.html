@@ -80,6 +80,29 @@
       </div>
     </section>
 
+    <!-- Cloud Sync & Cross-Device PIN Bar -->
+    <section class="sync-card">
+      <div class="sync-info-left">
+        <div id="syncStatusIndicator" class="sync-status-indicator synced">
+          <span id="syncStatusIcon">☁️</span>
+          <span id="syncStatusText">Bulutla Eşitlendi</span>
+        </div>
+        <button id="openPinModalBtn" class="sync-pin-tag" title="PIN Değiştir veya Görüntüle">
+          PIN: <span id="currentPinText">leb1919</span>
+        </button>
+      </div>
+      <div class="sync-actions">
+        <button id="manualSyncBtn" class="btn-secondary-mini" title="Şimdi Eşitle">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="23 4 23 10 17 10"></polyline>
+            <polyline points="1 20 1 14 7 14"></polyline>
+            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+          </svg>
+          Eşitle
+        </button>
+      </div>
+    </section>
+
     <!-- Quick Add Input Card -->
     <section class="input-card">
       <input type="text" id="itemTitleInput" class="input-field" placeholder="Yeni bir not veya görev yazın..." autocomplete="off">
@@ -148,6 +171,28 @@
     <span>✨ Yeni bir sürüm mevcut!</span>
     <button id="btnUpdateApp" class="update-toast-btn">Yenile</button>
   </aside>
+
+  <!-- Cloud Sync PIN Settings Modal -->
+  <div id="pinModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="pinModalTitle">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title" id="pinModalTitle">
+          <span>🔄</span>
+          <span>Cihazlar Arası Eşitleme PIN'i</span>
+        </div>
+        <button id="closePinModal" class="close-btn" aria-label="Kapat">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p>Diğer cihazınızda da (iPhone, PC, tablet vb.) aynı PIN kodunu kullanarak notlarınızı ve görevlerinizi gerçek zamanlı senkronize edebilirsiniz.</p>
+        <label for="pinInput" style="font-weight: 600; font-size: 0.78rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;">Eşitleme PIN / Anahtar Kodu</label>
+        <input type="text" id="pinInput" class="modal-input" placeholder="Örn: leb1919" maxlength="32" autocomplete="off">
+        <div class="modal-buttons">
+          <button id="cancelPinBtn" class="btn-secondary-mini" style="padding: 8px 14px;">İptal</button>
+          <button id="savePinBtn" class="btn-primary" style="padding: 8px 16px;">Kaydet ve Eşitle</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- Application Script -->
   <script src="js/app.js"></script>

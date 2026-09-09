@@ -1,5 +1,5 @@
 // Pocket Hub - Service Worker (iOS & Offline Optimized)
-const CACHE_VERSION = 'v1.0.0';
+const CACHE_VERSION = 'v1.1.0';
 const CACHE_NAME = `pockethub-${CACHE_VERSION}`;
 
 // Pre-cached App Shell Assets
@@ -50,6 +50,11 @@ self.addEventListener('fetch', (event) => {
 
   // Ignore cross-origin non-http(s) requests
   if (!url.protocol.startsWith('http')) return;
+
+  // Realtime Cloud Database (Firebase) must never be cached by service worker
+  if (url.hostname.includes('firebaseio.com') || url.hostname.includes('firebasedatabase.app')) {
+    return;
+  }
 
   // HTML Navigation requests: Network-first, fallback to cached index.html
   if (event.request.mode === 'navigate' || event.request.destination === 'document') {
