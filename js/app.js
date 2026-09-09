@@ -101,6 +101,7 @@ function setupIosInstallBanner() {
 
 // --- 4. Unified Cloud Sync Engine (Zero PIN - Automatic Memory) ---
 const CLOUD_ENDPOINT = 'https://leb1919-default-rtdb.firebaseio.com/leb_store.json';
+const LEGACY_ENDPOINT = 'https://leb1919-default-rtdb.firebaseio.com/vaults/leb1919.json';
 const STORAGE_KEY = 'leb_unified_notes_v3';
 
 let isSyncing = false;
@@ -129,7 +130,48 @@ function updateSyncBadge(status) {
 }
 
 /**
- * Perform single unified sync with Firebase
+ * Deep item array equality check:
+ * Compares content and timestamps without relying on array ordering.
+ */
+function areItemListsEqual(listA, listB) {
+  if (!Array.isArray(listA) || !Array.isArray(listB)) return false;
+  if (listA.length !== listB.length) return false;
+
+  const mapB = new Map();
+  for (let i = 0; i < listB.length; i++) {
+    const item = listB[i];
+    if (item && item.id) {
+      mapB.set(item.id, item);
+    }
+  }
+
+  if (mapB.size !== listA.length) return false;
+
+  for (let i = 0; i < listA.length; i++) {
+    const a = listA[i];
+    if (!a || !a.id) return false;
+    const b = mapB.get(a.id);
+    if (!b) return false;
+
+    if (
+      a.title !== b.title ||
+      Boolean(a.completed) !== Boolean(b.completed) ||
+      Boolean(a.deleted) !== Boolean(b.deleted) ||
+      a.type !== b.type ||
+      (a.updatedAt || 0) !== (b.updatedAt || 0)
+    ) {
+      return false;
+    }
+  }
+  return true;
+}
+
+/**
+ * Bi-Directional True Real-Time Sync:
+ * - Reads from cloud (primary & legacy bridge)
+ * - Merges with local items using Last-Write-Wins
+ * - Updates local store & UI immediately if remote had newer data
+ * - Pushes to cloud immediately if local had newer data
  */
 async function syncWithCloud(options = {}) {
   const { isManual = false } = options;
@@ -152,61 +194,103 @@ async function syncWithCloud(options = {}) {
   }
 
   try {
-    // 1. Read remote vault
-    const response = await fetch(CLOUD_ENDPOINT, { cache: 'no-store' });
+    // 1. Fetch remote items from primary Firebase store
+    const response = await fetch(CLOUD_ENDPOINT, {
+      cache: 'no-store',
+      headers: { 'Cache-Control': 'no-cache' }
+    });
     let remoteData = null;
     if (response.ok) {
       remoteData = await response.json();
     }
 
+    const remoteItems = (remoteData && Array.isArray(remoteData.items)) ? remoteData.items : [];
     const localItems = getStoredItems(true); // Include soft-deleted items
-    let mergedMap = new Map();
 
-    // Ingest remote items
-    if (remoteData && Array.isArray(remoteData.items)) {
-      remoteData.items.forEach(item => {
-        if (item && item.id) {
-          mergedMap.set(item.id, item);
+    // 2. Build merged map using Last-Write-Wins
+    const mergedMap = new Map();
+
+    // Ingest remote items first
+    remoteItems.forEach(item => {
+      if (item && item.id) {
+        mergedMap.set(item.id, item);
+      }
+    });
+
+    // Also check legacy vault bridge for backward compatibility with unrefreshed devices
+    try {
+      const legacyRes = await fetch(LEGACY_ENDPOINT, { cache: 'no-store' });
+      if (legacyRes.ok) {
+        const legacyData = await legacyRes.json();
+        if (legacyData && Array.isArray(legacyData.items)) {
+          legacyData.items.forEach(legacyItem => {
+            if (legacyItem && legacyItem.id && !legacyItem.id.startsWith('demo-')) {
+              if (!mergedMap.has(legacyItem.id)) {
+                mergedMap.set(legacyItem.id, legacyItem);
+              } else {
+                const existing = mergedMap.get(legacyItem.id);
+                const legTime = legacyItem.updatedAt || (legacyItem.createdAt ? new Date(legacyItem.createdAt).getTime() : 0);
+                const exTime = existing.updatedAt || (existing.createdAt ? new Date(existing.createdAt).getTime() : 0);
+                if (legTime > exTime) {
+                  mergedMap.set(legacyItem.id, legacyItem);
+                }
+              }
+            }
+          });
         }
-      });
-    }
+      }
+    } catch (e) {}
 
     // Overlay local items
     localItems.forEach(localItem => {
+      if (!localItem || !localItem.id) return;
+
       if (!mergedMap.has(localItem.id)) {
         mergedMap.set(localItem.id, localItem);
       } else {
         const remoteItem = mergedMap.get(localItem.id);
-        const localTime = localItem.updatedAt || 0;
-        const remoteTime = remoteItem.updatedAt || 0;
+        const localTime = localItem.updatedAt || (localItem.createdAt ? new Date(localItem.createdAt).getTime() : 0);
+        const remoteTime = remoteItem.updatedAt || (remoteItem.createdAt ? new Date(remoteItem.createdAt).getTime() : 0);
         if (localTime >= remoteTime) {
           mergedMap.set(localItem.id, localItem);
         }
       }
     });
 
-    let mergedItems = Array.from(mergedMap.values());
+    // 3. Prepare sorted list of merged items
+    const mergedItems = Array.from(mergedMap.values());
     mergedItems.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
 
-    // Compare with current local storage
-    const currentLocalStr = localStorage.getItem(STORAGE_KEY);
-    const newItemsStr = JSON.stringify(mergedItems);
-
-    if (currentLocalStr !== newItemsStr) {
-      localStorage.setItem(STORAGE_KEY, newItemsStr);
+    // 4. Update local storage & DOM if remote provided new/modified items
+    const localNeedsUpdate = !areItemListsEqual(localItems, mergedItems);
+    if (localNeedsUpdate) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(mergedItems));
       renderItems();
       updateStats();
+    }
 
-      // Push final unified state back to Firebase
+    // 5. Push to cloud if local provided new/modified items
+    const remoteNeedsUpdate = !areItemListsEqual(remoteItems, mergedItems);
+    if (remoteNeedsUpdate) {
+      const payload = JSON.stringify({
+        items: mergedItems,
+        lastSync: Date.now(),
+        updatedBy: navigator.userAgent
+      });
+
+      // Write to primary unified store
       await fetch(CLOUD_ENDPOINT, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          items: mergedItems,
-          lastSync: Date.now(),
-          updatedBy: navigator.userAgent
-        })
+        body: payload
       });
+
+      // Mirror to legacy vault so unrefreshed devices also stay in sync
+      fetch(LEGACY_ENDPOINT, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: payload
+      }).catch(() => {});
     }
 
     updateSyncBadge('synced');
@@ -431,19 +515,28 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Auto-sync on Tab Focus / iPhone unlock (Silent)
+  // Auto-sync on Tab Focus, Window Focus, or iPhone unlock
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible' && navigator.onLine) {
+      syncWithCloud({ isManual: false });
+      if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+        navigator.serviceWorker.ready.then(reg => reg.update()).catch(() => {});
+      }
+    }
+  });
+
+  window.addEventListener('focus', () => {
+    if (navigator.onLine) {
       syncWithCloud({ isManual: false });
     }
   });
 
-  // Background silent polling every 6 seconds (Zero jitter!)
+  // Background silent polling every 3.5 seconds (Zero jitter!)
   setInterval(() => {
     if (navigator.onLine && document.visibilityState === 'visible') {
       syncWithCloud({ isManual: false });
     }
-  }, 6000);
+  }, 3500);
 
   // Add Item form submit
   const addBtn = document.getElementById('addItemBtn');

@@ -1,5 +1,5 @@
-// Leb - Service Worker v2.3.0 (Network-First with Offline Fallback)
-const CACHE_VERSION = 'v2.3.0';
+// Leb - Service Worker v2.3.1 (Network-First with Offline Fallback)
+const CACHE_VERSION = 'v2.3.1';
 const CACHE_NAME = `leb-${CACHE_VERSION}`;
 
 const PRECACHE_ASSETS = [
