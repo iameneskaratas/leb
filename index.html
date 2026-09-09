@@ -2,7 +2,7 @@
 <html lang="tr">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   
   <title>Leb - Çevrimdışı & Bulut Not Defteri</title>
   <meta name="description" content="iPhone ve tüm cihazlarda internet olmadan da çalışan, Leblebi hızında bulut senkronizasyonlu PWA uygulaması.">
@@ -11,123 +11,145 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Leb">
-  <link rel="apple-touch-icon" href="icons/apple-touch-icon-180.png">
-  <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon-180.png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon-180.png?v=2.1.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon-180.png?v=2.1.0">
 
   <!-- Web App Manifest -->
-  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="manifest" href="manifest.webmanifest?v=2.1.0">
 
   <!-- Favicon & Theme Colors -->
-  <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon.png">
-  <link rel="icon" type="image/svg+xml" href="icons/icon.svg">
-  <meta name="theme-color" content="#1E1B18" media="(prefers-color-scheme: dark)">
-  <meta name="theme-color" content="#FAF7F2" media="(prefers-color-scheme: light)">
+  <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon.png?v=2.1.0">
+  <link rel="icon" type="image/svg+xml" href="icons/icon.svg?v=2.1.0">
+  <meta name="theme-color" content="#0F1218">
 
-  <!-- Stylesheet (v2.0.0 Cache-Busted) -->
-  <link rel="stylesheet" href="css/app.css?v=2.0.0">
+  <!-- Stylesheet (v2.1.0) -->
+  <link rel="stylesheet" href="css/app.css?v=2.1.0">
 </head>
 <body>
 
-  <!-- Top Sticky Navigation Bar -->
-  <header class="navbar">
-    <div class="brand-wrap">
-      <img src="icons/apple-touch-icon-180.png" alt="Leb Logo" class="app-icon-mini">
-      <div class="brand-titles">
+  <!-- Cinematic Desert/Sky Atmospheric Background Layer -->
+  <div class="cinematic-backdrop">
+    <div class="atmosphere-glow"></div>
+    <div class="dunes-silhouette"></div>
+  </div>
+
+  <!-- Giant Background Typography Watermark (Matching Egypt/Winzy Reference) -->
+  <div class="watermark-title" aria-hidden="true">LEB</div>
+
+  <!-- Top Floating Capsule Navigation Bar (Like Winzy) -->
+  <header class="navbar-wrapper">
+    <nav class="navbar-capsule">
+      <div class="brand-wrap">
+        <img src="icons/apple-touch-icon-180.png?v=2.1.0" alt="Leb Logo" class="app-icon-mini">
         <span class="brand-title">Leb</span>
-        <span class="brand-subtitle">Çevrimdışı & Bulut Eşitleme</span>
       </div>
-    </div>
-    <div class="nav-actions">
-      <div id="networkBadge" class="network-badge online">
-        <span class="status-dot"></span>
-        <span id="networkText">Çevrimiçi</span>
+
+      <!-- Center / Right Pill Badges -->
+      <div class="nav-right-cluster">
+        <!-- Calm, Steady Sync Badge (No flicker) -->
+        <div id="syncStatusIndicator" class="sync-pill synced" title="Bulut Senkronizasyon Durumu">
+          <span id="syncStatusIcon">☁️</span>
+          <span id="syncStatusText">Eşitlendi</span>
+        </div>
+
+        <!-- PIN Capsule -->
+        <button id="openPinModalBtn" class="pill-btn pin-pill" title="Eşitleme PIN'ini Değiştir">
+          <span>🔑</span>
+          <span id="currentPinText">leb1919</span>
+        </button>
+
+        <!-- Circular Sync Button -->
+        <button id="manualSyncBtn" class="circle-btn" title="Şimdi Eşitle" aria-label="Eşitle">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="23 4 23 10 17 10"></polyline>
+            <polyline points="1 20 1 14 7 14"></polyline>
+            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+          </svg>
+        </button>
+
+        <!-- Network Dot Badge -->
+        <div id="networkBadge" class="network-dot online" title="Ağ Durumu">
+          <span class="dot-indicator"></span>
+          <span id="networkText" class="sr-only">Çevrimiçi</span>
+        </div>
+
+        <!-- Info / Install Button -->
+        <button id="infoBtn" class="circle-btn" title="Uygulama Bilgisi" aria-label="Bilgi">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="16" x2="12" y2="12"></line>
+            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+          </svg>
+        </button>
       </div>
-      <button id="infoBtn" class="icon-btn" title="Kurulum Bilgisi" aria-label="Bilgi">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="12" r="10"></circle>
-          <line x1="12" y1="16" x2="12" y2="12"></line>
-          <line x1="12" y1="8" x2="12.01" y2="8"></line>
-        </svg>
-      </button>
-    </div>
+    </nav>
   </header>
 
-  <!-- Main Content Container -->
+  <!-- Main Scrollable Content Container -->
   <main class="app-container">
 
     <!-- Offline Alert Banner (Internetsiz / Uçak Modu Durumunda Görünür) -->
     <div id="offlineBanner" class="offline-banner">
       <div class="offline-banner-icon">⚡</div>
       <div class="offline-banner-text">
-        <h4>Çevrimdışı Mod Aktif</h4>
-        <p>İnternet bağlantısı yok veya uçak modundasınız. Tüm verileriniz yerel önbellekte güvende ve kaydedilmeye devam ediyor.</p>
+        <h4>Uçak Modu / Çevrimdışı</h4>
+        <p>İnternet bağlantısı yok. Notlarınız cihazınızda güvende ve internet gelince buluta eşitlenecektir.</p>
       </div>
     </div>
 
-    <!-- Stats Summary Card -->
-    <section class="stats-card">
-      <div class="stat-item">
-        <span id="statTotal" class="stat-num">0</span>
-        <span class="stat-label">Toplam Kayıt</span>
+    <!-- Big Bold Stats Metrics (Matching Winzy "20K+ 2K+ 5K+" Style) -->
+    <section class="stats-hero">
+      <div class="stat-box">
+        <span id="statTotal" class="stat-number">0</span>
+        <span class="stat-caption">Toplam Kayıt</span>
       </div>
-      <div class="stat-item">
-        <span id="statPending" class="stat-num">0</span>
-        <span class="stat-label">Bekleyen Görev</span>
+      <div class="stat-divider"></div>
+      <div class="stat-box">
+        <span id="statPending" class="stat-number">0</span>
+        <span class="stat-caption">Bekleyen Görev</span>
       </div>
-      <div class="stat-item">
-        <span id="statCache" class="stat-num" style="color: var(--ios-green);">Aktif (SW)</span>
-        <span class="stat-label">Offline Önbellek</span>
+      <div class="stat-divider"></div>
+      <div class="stat-box">
+        <span id="statCache" class="stat-number stat-highlight">OK</span>
+        <span class="stat-caption">Offline Hazır</span>
       </div>
     </section>
 
-    <!-- Cloud Sync & Cross-Device PIN Bar -->
-    <section class="sync-card">
-      <div class="sync-info-left">
-        <div id="syncStatusIndicator" class="sync-status-indicator synced">
-          <span id="syncStatusIcon">☁️</span>
-          <span id="syncStatusText">Bulutla Eşitlendi</span>
+    <!-- Quick Add Input Card (Frosted Glass with Winzy Style Button) -->
+    <section class="action-card">
+      <div class="input-glow-wrapper">
+        <input type="text" id="itemTitleInput" class="cinematic-input" placeholder="Yeni bir not, fikir veya görev yazın..." autocomplete="off">
+      </div>
+      <div class="action-bar-row">
+        <div class="type-picker-wrap">
+          <select id="itemTypeSelect" class="pill-select">
+            <option value="note">📝 Not</option>
+            <option value="todo">✅ Görev</option>
+            <option value="idea">💡 Fikir</option>
+          </select>
         </div>
-        <button id="openPinModalBtn" class="sync-pin-tag" title="PIN Değiştir veya Görüntüle">
-          PIN: <span id="currentPinText">leb1919</span>
-        </button>
-      </div>
-      <div class="sync-actions">
-        <button id="manualSyncBtn" class="btn-secondary-mini" title="Şimdi Eşitle">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="23 4 23 10 17 10"></polyline>
-            <polyline points="1 20 1 14 7 14"></polyline>
-            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
-          </svg>
-          Eşitle
-        </button>
-      </div>
-    </section>
-
-    <!-- Quick Add Input Card -->
-    <section class="input-card">
-      <input type="text" id="itemTitleInput" class="input-field" placeholder="Yeni bir not veya görev yazın..." autocomplete="off">
-      <div class="input-row">
-        <select id="itemTypeSelect" class="select-type">
-          <option value="note">📝 Not</option>
-          <option value="todo">✅ Görev</option>
-          <option value="idea">💡 Fikir</option>
-        </select>
-        <button id="addItemBtn" class="btn-primary">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="12" y1="5" x2="12" y2="19"></line>
-            <line x1="5" y1="12" x2="19" y2="12"></line>
-          </svg>
-          Ekle
-        </button>
+        
+        <!-- Winzy Style White Pill Action Button + Arrow Circle -->
+        <div class="btn-group-action">
+          <button id="addItemBtn" class="btn-winzy-primary">
+            Ekle
+          </button>
+          <div class="btn-winzy-arrow" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="7" y1="17" x2="17" y2="7"></line>
+              <polyline points="7 7 17 7 17 17"></polyline>
+            </svg>
+          </div>
+        </div>
       </div>
     </section>
 
-    <!-- Category Filter Bar (iOS Segmented Control) -->
-    <nav class="filter-bar" aria-label="Kategori Filtresi">
-      <button class="filter-tab active" data-filter="all">Tümü</button>
-      <button class="filter-tab" data-filter="note">Notlar</button>
-      <button class="filter-tab" data-filter="todo">Görevler</button>
-      <button class="filter-tab" data-filter="idea">Fikirler</button>
+    <!-- Category Filter Bar (Translucent Pill Capsules) -->
+    <nav class="filter-capsules" aria-label="Kategori Filtresi">
+      <button class="filter-pill active" data-filter="all">Tümü</button>
+      <button class="filter-pill" data-filter="note">Notlar</button>
+      <button class="filter-pill" data-filter="todo">Görevler</button>
+      <button class="filter-pill" data-filter="idea">Fikirler</button>
     </nav>
 
     <!-- Dynamic Items List -->
@@ -135,7 +157,7 @@
 
     <!-- Empty State -->
     <div id="emptyState" class="empty-state" style="display: none;">
-      <div class="empty-icon">📂</div>
+      <div class="empty-icon">🥜</div>
       <p>Bu kategoride henüz kayıt yok.</p>
     </div>
 
@@ -153,22 +175,22 @@
     <div class="install-steps">
       <div class="install-step">
         <span class="step-num">1</span>
-        <span>Safari tarayıcısının altındaki <span class="share-icon-badge">Paylaş (⬆️)</span> düğmesine dokunun.</span>
+        <span>Safari altındaki <span class="share-icon-badge">Paylaş (⬆️)</span> simgesine dokunun.</span>
       </div>
       <div class="install-step">
         <span class="step-num">2</span>
-        <span>Açılan menüde aşağı kaydırıp <strong>"Ana Ekrana Ekle"</strong> (➕) seçeneğini seçin.</span>
+        <span>Menüde aşağı kaydırıp <strong>"Ana Ekrana Ekle"</strong> (➕) seçeneğine dokunun.</span>
       </div>
       <div class="install-step">
         <span class="step-num">3</span>
-        <span>Sağ üstteki <strong>"Ekle"</strong>ye dokunun. Artık internetsiz de bir yerel iOS uygulaması gibi açılacaktır!</span>
+        <span>Sağ üstteki <strong>"Ekle"</strong>ye basın. Uygulama leblebi ikonuyla ana ekranınıza gelecektir!</span>
       </div>
     </div>
   </aside>
 
   <!-- Service Worker Update Toast -->
   <aside id="updateToast" class="update-toast" aria-label="Güncelleme Bildirimi">
-    <span>✨ Yeni bir sürüm mevcut!</span>
+    <span>✨ Leb için yeni bir sürüm hazır!</span>
     <button id="btnUpdateApp" class="update-toast-btn">Yenile</button>
   </aside>
 
@@ -183,18 +205,18 @@
         <button id="closePinModal" class="close-btn" aria-label="Kapat">&times;</button>
       </div>
       <div class="modal-body">
-        <p>Diğer cihazınızda da (iPhone, PC, tablet vb.) aynı PIN kodunu kullanarak notlarınızı ve görevlerinizi gerçek zamanlı senkronize edebilirsiniz.</p>
-        <label for="pinInput" style="font-weight: 600; font-size: 0.78rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;">Eşitleme PIN / Anahtar Kodu</label>
+        <p>Diğer cihazınızda da (iPhone, PC, tablet vb.) aynı PIN kodunu kullanarak notlarınızı anında senkronize edebilirsiniz.</p>
+        <label for="pinInput" class="modal-label">EŞİTLEME PIN KODU</label>
         <input type="text" id="pinInput" class="modal-input" placeholder="Örn: leb1919" maxlength="32" autocomplete="off">
         <div class="modal-buttons">
-          <button id="cancelPinBtn" class="btn-secondary-mini" style="padding: 8px 14px;">İptal</button>
-          <button id="savePinBtn" class="btn-primary" style="padding: 8px 16px;">Kaydet ve Eşitle</button>
+          <button id="cancelPinBtn" class="pill-btn cancel-btn">İptal</button>
+          <button id="savePinBtn" class="btn-winzy-primary" style="padding: 10px 20px;">Kaydet ve Eşitle</button>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Application Script (v2.0.0 Cache-Busted) -->
-  <script src="js/app.js?v=2.0.0"></script>
+  <!-- Application Script (v2.1.0 Cache-Busted) -->
+  <script src="js/app.js?v=2.1.0"></script>
 </body>
 </html>

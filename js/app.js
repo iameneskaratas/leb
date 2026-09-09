@@ -1,6 +1,6 @@
 /**
- * Leb - iOS & Offline PWA with Realtime Cloud Sync
- * Features: Service Worker v2.0.0, Firebase Realtime Sync, PIN Management, Leblebi UI
+ * Leb - iOS & Offline PWA with Silent Realtime Cloud Sync
+ * Features: Service Worker v2.1.0, Silent Firebase Sync, PIN Management, Leblebi UI
  */
 
 // --- 1. Service Worker & Update Manager ---
@@ -12,8 +12,6 @@ function registerServiceWorker() {
       navigator.serviceWorker
         .register('./sw.js')
         .then((registration) => {
-          console.log('[Leb] ServiceWorker registered with scope:', registration.scope);
-
           registration.addEventListener('updatefound', () => {
             newWorker = registration.installing;
             newWorker.addEventListener('statechange', () => {
@@ -24,7 +22,7 @@ function registerServiceWorker() {
           });
         })
         .catch((err) => {
-          console.error('[Leb] ServiceWorker registration failed:', err);
+          console.error('[Leb] ServiceWorker registration error:', err);
         });
 
       let refreshing = false;
@@ -61,13 +59,13 @@ function setupNetworkMonitoring() {
     const isOnline = navigator.onLine;
 
     if (isOnline) {
-      if (badge) badge.className = 'network-badge online';
+      if (badge) badge.className = 'network-dot online';
       if (badgeText) badgeText.textContent = 'Çevrimiçi';
       if (offlineBanner) offlineBanner.classList.remove('active');
-      // When connection is restored, immediately sync with Firebase!
-      syncWithCloud(true);
+      // When connection is restored, silently sync
+      syncWithCloud({ isManual: false });
     } else {
-      if (badge) badge.className = 'network-badge offline';
+      if (badge) badge.className = 'network-dot offline';
       if (badgeText) badgeText.textContent = 'Çevrimdışı';
       if (offlineBanner) offlineBanner.classList.add('active');
       updateSyncBadge('offline');
@@ -119,8 +117,7 @@ function setSyncPin(newPin) {
   const cleanPin = (newPin || DEFAULT_PIN).trim();
   localStorage.setItem(PIN_KEY, cleanPin);
   updatePinUI();
-  // Pull data for the new PIN immediately
-  syncWithCloud(true);
+  syncWithCloud({ isManual: true });
 }
 
 function updatePinUI() {
@@ -128,6 +125,9 @@ function updatePinUI() {
   if (pinEl) pinEl.textContent = getSyncPin();
 }
 
+/**
+ * Calm, peaceful sync status update (No distracting animations)
+ */
 function updateSyncBadge(status) {
   const indicator = document.getElementById('syncStatusIndicator');
   const icon = document.getElementById('syncStatusIcon');
@@ -135,20 +135,16 @@ function updateSyncBadge(status) {
 
   if (!indicator || !icon || !text) return;
 
-  indicator.className = `sync-status-indicator ${status}`;
+  indicator.className = `sync-pill ${status}`;
 
-  if (status === 'syncing') {
-    icon.className = 'sync-spin-icon';
-    icon.textContent = '🔄';
-    text.textContent = 'Eşitleniyor...';
-  } else if (status === 'synced') {
+  if (status === 'synced') {
     icon.className = '';
     icon.textContent = '☁️';
-    text.textContent = 'Bulutla Eşitlendi';
+    text.textContent = 'Eşitlendi';
   } else if (status === 'offline') {
     icon.className = '';
     icon.textContent = '📶';
-    text.textContent = 'Çevrimdışı (Kaydedildi)';
+    text.textContent = 'Çevrimdışı';
   } else if (status === 'error') {
     icon.className = '';
     icon.textContent = '⚠️';
@@ -157,11 +153,11 @@ function updateSyncBadge(status) {
 }
 
 /**
- * Smart Bi-directional Sync with Firebase:
- * Merges local and remote items using updatedAt timestamps.
- * Soft-deleted items propagate across devices.
+ * Smart Bi-directional Silent Sync with Firebase
  */
-async function syncWithCloud(forceSync = false) {
+async function syncWithCloud(options = {}) {
+  const { isManual = false } = options;
+
   if (!navigator.onLine) {
     updateSyncBadge('offline');
     return;
@@ -173,7 +169,12 @@ async function syncWithCloud(forceSync = false) {
   }
 
   isSyncing = true;
-  updateSyncBadge('syncing');
+
+  // Spin the manual sync button only if user explicitly tapped it
+  const manualBtn = document.getElementById('manualSyncBtn');
+  if (isManual && manualBtn) {
+    manualBtn.classList.add('sync-spin-icon');
+  }
 
   const pin = encodeURIComponent(getSyncPin());
   const endpoint = `${FIREBASE_DB_URL}/vaults/${pin}.json`;
@@ -206,7 +207,6 @@ async function syncWithCloud(forceSync = false) {
         const remoteItem = mergedMap.get(localItem.id);
         const localTime = localItem.updatedAt || 0;
         const remoteTime = remoteItem.updatedAt || 0;
-        // The most recently modified version wins
         if (localTime >= remoteTime) {
           mergedMap.set(localItem.id, localItem);
         }
@@ -234,10 +234,13 @@ async function syncWithCloud(forceSync = false) {
     updateStats();
     updateSyncBadge('synced');
   } catch (err) {
-    console.warn('[Leb Sync] Network warning:', err);
+    console.warn('[Leb Sync] Warning:', err);
     updateSyncBadge('error');
   } finally {
     isSyncing = false;
+    if (isManual && manualBtn) {
+      setTimeout(() => manualBtn.classList.remove('sync-spin-icon'), 500);
+    }
     if (syncQueued) {
       syncQueued = false;
       setTimeout(() => syncWithCloud(), 300);
@@ -280,17 +283,6 @@ function getStoredItems(includeDeleted = false) {
   try {
     const data = localStorage.getItem(STORAGE_KEY);
     if (!data) {
-      // Also migrate old v1 items if available
-      const oldData = localStorage.getItem('pockethub_items_v1');
-      if (oldData) {
-        try {
-          const oldItems = JSON.parse(oldData);
-          if (Array.isArray(oldItems) && oldItems.length > 0) {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(oldItems));
-            return includeDeleted ? oldItems : oldItems.filter(i => !i.deleted);
-          }
-        } catch (e) {}
-      }
       localStorage.setItem(STORAGE_KEY, JSON.stringify(DEFAULT_ITEMS));
       return DEFAULT_ITEMS;
     }
@@ -370,11 +362,9 @@ function renderItems() {
       </button>
     `;
 
-    // Checkbox toggle
     const checkbox = card.querySelector('.item-checkbox');
     checkbox.addEventListener('click', () => toggleItem(item.id));
 
-    // Delete item
     const deleteBtn = card.querySelector('.item-delete-btn');
     deleteBtn.addEventListener('click', () => deleteItem(item.id));
 
@@ -400,7 +390,7 @@ function addItem(title, type) {
   saveItemsLocally(allItems);
   renderItems();
 
-  // Instant cloud sync
+  // Instant silent cloud sync
   syncWithCloud();
 }
 
@@ -420,7 +410,6 @@ function deleteItem(id) {
   const allItems = getStoredItems(true);
   const target = allItems.find(it => it.id === id);
   if (target) {
-    // Soft delete so other devices know it's deleted
     target.deleted = true;
     target.updatedAt = Date.now();
     saveItemsLocally(allItems);
@@ -441,7 +430,7 @@ function updateStats() {
     pendingCountEl.textContent = pending;
   }
   if (cacheStatusEl) {
-    cacheStatusEl.textContent = 'Aktif (SW)';
+    cacheStatusEl.textContent = 'OK';
   }
 }
 
@@ -509,32 +498,32 @@ document.addEventListener('DOMContentLoaded', () => {
   renderItems();
   updateStats();
 
-  // Initial cloud sync
+  // Initial silent cloud sync
   if (navigator.onLine) {
-    syncWithCloud(true);
+    syncWithCloud();
   }
 
   // Manual "Eşitle" button
   const manualSyncBtn = document.getElementById('manualSyncBtn');
   if (manualSyncBtn) {
     manualSyncBtn.addEventListener('click', () => {
-      syncWithCloud(true);
+      syncWithCloud({ isManual: true });
     });
   }
 
-  // Auto-sync on Tab Focus / iPhone unlock
+  // Auto-sync on Tab Focus / iPhone unlock (Silent)
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible' && navigator.onLine) {
-      syncWithCloud();
+      syncWithCloud({ isManual: false });
     }
   });
 
-  // Real-time live polling every 4 seconds when active
+  // Real-time silent live polling every 5 seconds when active
   setInterval(() => {
     if (navigator.onLine && document.visibilityState === 'visible') {
-      syncWithCloud();
+      syncWithCloud({ isManual: false });
     }
-  }, 4000);
+  }, 5000);
 
   // Add Item form submit
   const addBtn = document.getElementById('addItemBtn');
@@ -560,8 +549,8 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Category filter tabs
-  const filterTabs = document.querySelectorAll('.filter-tab');
+  // Category filter capsules
+  const filterTabs = document.querySelectorAll('.filter-pill');
   filterTabs.forEach(tab => {
     tab.addEventListener('click', () => {
       filterTabs.forEach(t => t.classList.remove('active'));
