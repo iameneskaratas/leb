@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  
+  <title>Pocket Hub - iPhone Offline PWA</title>
+  <meta name="description" content="iPhone ve tüm cihazlarda internet olmadan da çalışan, Vercel hazır modern PWA uygulaması.">
+
+  <!-- iOS / Apple PWA Spesifik Meta Etiketleri -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="PocketHub">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon-180.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon-180.png">
+
+  <!-- Web App Manifest -->
+  <link rel="manifest" href="manifest.webmanifest">
+
+  <!-- Favicon & Theme Colors -->
+  <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon.png">
+  <link rel="icon" type="image/svg+xml" href="icons/icon.svg">
+  <meta name="theme-color" content="#090B0F" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#F2F4F7" media="(prefers-color-scheme: light)">
+
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+
+  <!-- Top Sticky Navigation Bar -->
+  <header class="navbar">
+    <div class="brand-wrap">
+      <img src="icons/apple-touch-icon-180.png" alt="Pocket Hub Logo" class="app-icon-mini">
+      <div class="brand-titles">
+        <span class="brand-title">Pocket Hub</span>
+        <span class="brand-subtitle">iOS Offline PWA</span>
+      </div>
+    </div>
+    <div class="nav-actions">
+      <div id="networkBadge" class="network-badge online">
+        <span class="status-dot"></span>
+        <span id="networkText">Çevrimiçi</span>
+      </div>
+      <button id="infoBtn" class="icon-btn" title="Kurulum Bilgisi" aria-label="Bilgi">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="12" y1="16" x2="12" y2="12"></line>
+          <line x1="12" y1="8" x2="12.01" y2="8"></line>
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Content Container -->
+  <main class="app-container">
+
+    <!-- Offline Alert Banner (Internetsiz / Uçak Modu Durumunda Görünür) -->
+    <div id="offlineBanner" class="offline-banner">
+      <div class="offline-banner-icon">⚡</div>
+      <div class="offline-banner-text">
+        <h4>Çevrimdışı Mod Aktif</h4>
+        <p>İnternet bağlantısı yok veya uçak modundasınız. Tüm verileriniz yerel önbellekte güvende ve kaydedilmeye devam ediyor.</p>
+      </div>
+    </div>
+
+    <!-- Stats Summary Card -->
+    <section class="stats-card">
+      <div class="stat-item">
+        <span id="statTotal" class="stat-num">0</span>
+        <span class="stat-label">Toplam Kayıt</span>
+      </div>
+      <div class="stat-item">
+        <span id="statPending" class="stat-num">0</span>
+        <span class="stat-label">Bekleyen Görev</span>
+      </div>
+      <div class="stat-item">
+        <span id="statCache" class="stat-num" style="color: var(--ios-green);">Aktif (SW)</span>
+        <span class="stat-label">Offline Önbellek</span>
+      </div>
+    </section>
+
+    <!-- Quick Add Input Card -->
+    <section class="input-card">
+      <input type="text" id="itemTitleInput" class="input-field" placeholder="Yeni bir not veya görev yazın..." autocomplete="off">
+      <div class="input-row">
+        <select id="itemTypeSelect" class="select-type">
+          <option value="note">📝 Not</option>
+          <option value="todo">✅ Görev</option>
+          <option value="idea">💡 Fikir</option>
+        </select>
+        <button id="addItemBtn" class="btn-primary">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+          Ekle
+        </button>
+      </div>
+    </section>
+
+    <!-- Category Filter Bar (iOS Segmented Control) -->
+    <nav class="filter-bar" aria-label="Kategori Filtresi">
+      <button class="filter-tab active" data-filter="all">Tümü</button>
+      <button class="filter-tab" data-filter="note">Notlar</button>
+      <button class="filter-tab" data-filter="todo">Görevler</button>
+      <button class="filter-tab" data-filter="idea">Fikirler</button>
+    </nav>
+
+    <!-- Dynamic Items List -->
+    <section id="itemsList" class="items-list"></section>
+
+    <!-- Empty State -->
+    <div id="emptyState" class="empty-state" style="display: none;">
+      <div class="empty-icon">📂</div>
+      <p>Bu kategoride henüz kayıt yok.</p>
+    </div>
+
+  </main>
+
+  <!-- iOS Safari Kurulum Rehberi Modal (Ana Ekrana Ekle) -->
+  <aside id="iosInstallBanner" class="ios-install-banner" aria-label="iOS Kurulum Rehberi">
+    <div class="install-header">
+      <div class="install-title">
+        <span>📲</span>
+        <span>iPhone'a Uygulama Olarak Yükle</span>
+      </div>
+      <button id="closeInstallBanner" class="close-btn" aria-label="Kapat">&times;</button>
+    </div>
+    <div class="install-steps">
+      <div class="install-step">
+        <span class="step-num">1</span>
+        <span>Safari tarayıcısının altındaki <span class="share-icon-badge">Paylaş (⬆️)</span> düğmesine dokunun.</span>
+      </div>
+      <div class="install-step">
+        <span class="step-num">2</span>
+        <span>Açılan menüde aşağı kaydırıp <strong>"Ana Ekrana Ekle"</strong> (➕) seçeneğini seçin.</span>
+      </div>
+      <div class="install-step">
+        <span class="step-num">3</span>
+        <span>Sağ üstteki <strong>"Ekle"</strong>ye dokunun. Artık internetsiz de bir yerel iOS uygulaması gibi açılacaktır!</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Service Worker Update Toast -->
+  <aside id="updateToast" class="update-toast" aria-label="Güncelleme Bildirimi">
+    <span>✨ Yeni bir sürüm mevcut!</span>
+    <button id="btnUpdateApp" class="update-toast-btn">Yenile</button>
+  </aside>
+
+  <!-- Application Script -->
+  <script src="js/app.js"></script>
+</body>
+</html>
