@@ -1,6 +1,6 @@
 /**
- * Leb - iOS & Offline PWA with Silent Realtime Cloud Sync (v2.2.0)
- * Features: Service Worker v2.2.0, Zero-Jitter Smart Rendering, Silent Firebase Sync
+ * Leb - iOS & Offline PWA with Unified Automatic Cloud Sync (v2.3.0)
+ * Features: Service Worker v2.3.0, Zero-PIN Unified Memory, Silent Realtime Sync
  */
 
 // --- 1. Service Worker & Update Manager ---
@@ -22,7 +22,7 @@ function registerServiceWorker() {
           });
         })
         .catch((err) => {
-          console.error('[Leb] ServiceWorker registration error:', err);
+          console.error('[Leb] ServiceWorker error:', err);
         });
 
       let refreshing = false;
@@ -74,7 +74,7 @@ function setupNetworkMonitoring() {
 
   window.addEventListener('online', updateStatus);
   window.addEventListener('offline', updateStatus);
-  updateStatus(); // Initial check
+  updateStatus();
 }
 
 // --- 3. iOS Detection & Standalone Mode Check ---
@@ -99,31 +99,13 @@ function setupIosInstallBanner() {
   }
 }
 
-// --- 4. Cloud Sync Engine (Firebase Realtime Database) ---
-const FIREBASE_DB_URL = 'https://leb1919-default-rtdb.firebaseio.com';
-const STORAGE_KEY = 'leb_items_v2';
-const PIN_KEY = 'leb_sync_pin_v2';
-const DEFAULT_PIN = 'leb1919';
+// --- 4. Unified Cloud Sync Engine (Zero PIN - Automatic Memory) ---
+const CLOUD_ENDPOINT = 'https://leb1919-default-rtdb.firebaseio.com/leb_store.json';
+const STORAGE_KEY = 'leb_unified_notes_v3';
 
 let isSyncing = false;
 let syncQueued = false;
 let lastRenderedHash = '';
-
-function getSyncPin() {
-  return (localStorage.getItem(PIN_KEY) || DEFAULT_PIN).trim();
-}
-
-function setSyncPin(newPin) {
-  const cleanPin = (newPin || DEFAULT_PIN).trim();
-  localStorage.setItem(PIN_KEY, cleanPin);
-  updatePinUI();
-  syncWithCloud({ isManual: true });
-}
-
-function updatePinUI() {
-  const pinEl = document.getElementById('currentPinText');
-  if (pinEl) pinEl.textContent = getSyncPin();
-}
 
 function updateSyncBadge(status) {
   const indicator = document.getElementById('syncStatusIndicator');
@@ -135,23 +117,19 @@ function updateSyncBadge(status) {
   indicator.className = `sync-pill ${status}`;
 
   if (status === 'synced') {
-    icon.className = '';
     icon.textContent = '☁️';
     text.textContent = 'Eşitlendi';
   } else if (status === 'offline') {
-    icon.className = '';
     icon.textContent = '📶';
     text.textContent = 'Çevrimdışı';
   } else if (status === 'error') {
-    icon.className = '';
     icon.textContent = '⚠️';
     text.textContent = 'Bağlantı Hatası';
   }
 }
 
 /**
- * Smart Bi-directional Silent Sync with Firebase:
- * Compares data before re-rendering so zero UI jitter occurs.
+ * Perform single unified sync with Firebase
  */
 async function syncWithCloud(options = {}) {
   const { isManual = false } = options;
@@ -173,30 +151,27 @@ async function syncWithCloud(options = {}) {
     manualBtn.classList.add('sync-spin-icon');
   }
 
-  const pin = encodeURIComponent(getSyncPin());
-  const endpoint = `${FIREBASE_DB_URL}/vaults/${pin}.json`;
-
   try {
-    // 1. Fetch remote data from Firebase
-    const response = await fetch(endpoint, { cache: 'no-store' });
-    let remoteVault = null;
+    // 1. Read remote vault
+    const response = await fetch(CLOUD_ENDPOINT, { cache: 'no-store' });
+    let remoteData = null;
     if (response.ok) {
-      remoteVault = await response.json();
+      remoteData = await response.json();
     }
 
     const localItems = getStoredItems(true); // Include soft-deleted items
     let mergedMap = new Map();
 
-    // Add remote items to map
-    if (remoteVault && Array.isArray(remoteVault.items)) {
-      remoteVault.items.forEach(item => {
+    // Ingest remote items
+    if (remoteData && Array.isArray(remoteData.items)) {
+      remoteData.items.forEach(item => {
         if (item && item.id) {
           mergedMap.set(item.id, item);
         }
       });
     }
 
-    // Merge local items
+    // Overlay local items
     localItems.forEach(localItem => {
       if (!mergedMap.has(localItem.id)) {
         mergedMap.set(localItem.id, localItem);
@@ -213,17 +188,17 @@ async function syncWithCloud(options = {}) {
     let mergedItems = Array.from(mergedMap.values());
     mergedItems.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
 
-    // Check if items changed compared to local storage
+    // Compare with current local storage
     const currentLocalStr = localStorage.getItem(STORAGE_KEY);
     const newItemsStr = JSON.stringify(mergedItems);
 
     if (currentLocalStr !== newItemsStr) {
       localStorage.setItem(STORAGE_KEY, newItemsStr);
-      renderItems(); // Only renders if data changed!
+      renderItems();
       updateStats();
 
-      // Push final merged state back to Firebase
-      await fetch(endpoint, {
+      // Push final unified state back to Firebase
+      await fetch(CLOUD_ENDPOINT, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -236,7 +211,7 @@ async function syncWithCloud(options = {}) {
 
     updateSyncBadge('synced');
   } catch (err) {
-    console.warn('[Leb Sync] Warning:', err);
+    console.warn('[Leb Sync] Network warning:', err);
     updateSyncBadge('error');
   } finally {
     isSyncing = false;
@@ -250,43 +225,26 @@ async function syncWithCloud(options = {}) {
   }
 }
 
-// --- 5. Storage & Item Management ---
-const DEFAULT_ITEMS = [
-  {
-    id: 'demo-1',
-    title: 'iPhone Ana Ekranına Ekle (Paylaş > Ana Ekrana Ekle)',
-    type: 'todo',
-    completed: false,
-    createdAt: new Date().toISOString(),
-    updatedAt: Date.now(),
-    deleted: false
-  },
-  {
-    id: 'demo-2',
-    title: 'Uçak modunda internetsiz not ekle, internet gelince otomatik eşitlensin! ✈️',
-    type: 'todo',
-    completed: false,
-    createdAt: new Date().toISOString(),
-    updatedAt: Date.now(),
-    deleted: false
-  },
-  {
-    id: 'demo-3',
-    title: 'PIN ile tüm cihazlarınız (iPhone, PC, tablet) canlı senkronize olur. 🥜',
-    type: 'note',
-    completed: false,
-    createdAt: new Date().toISOString(),
-    updatedAt: Date.now(),
-    deleted: false
-  }
-];
-
+// --- 5. Storage & Local Data Operations ---
 function getStoredItems(includeDeleted = false) {
   try {
     const data = localStorage.getItem(STORAGE_KEY);
     if (!data) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(DEFAULT_ITEMS));
-      return DEFAULT_ITEMS;
+      // Migrate old data if present
+      for (const oldKey of ['leb_items_v2', 'pockethub_items_v1']) {
+        const oldData = localStorage.getItem(oldKey);
+        if (oldData) {
+          try {
+            const parsed = JSON.parse(oldData);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              const clean = parsed.filter(i => !i.id.startsWith('demo-'));
+              localStorage.setItem(STORAGE_KEY, JSON.stringify(clean));
+              return includeDeleted ? clean : clean.filter(i => !i.deleted);
+            }
+          } catch (e) {}
+        }
+      }
+      return [];
     }
     const parsed = JSON.parse(data);
     if (includeDeleted) return parsed;
@@ -310,7 +268,7 @@ let activeFilter = 'all';
 
 /**
  * Jitter-Free DOM Renderer:
- * Only updates DOM elements if content or filter actually changed!
+ * Only mutates the DOM if items or active filter actually changed!
  */
 function renderItems(force = false) {
   const items = getStoredItems(false);
@@ -402,7 +360,7 @@ function addItem(title, type) {
   saveItemsLocally(allItems);
   renderItems(true);
 
-  // Push to cloud
+  // Push to unified cloud immediately
   syncWithCloud({ isManual: false });
 }
 
@@ -452,65 +410,15 @@ function escapeHtml(text) {
   return div.innerHTML;
 }
 
-// --- 6. PIN Settings Modal ---
-function setupPinModal() {
-  const modal = document.getElementById('pinModal');
-  const openBtn = document.getElementById('openPinModalBtn');
-  const closeBtn = document.getElementById('closePinModal');
-  const cancelBtn = document.getElementById('cancelPinBtn');
-  const saveBtn = document.getElementById('savePinBtn');
-  const pinInput = document.getElementById('pinInput');
-
-  function openModal() {
-    if (pinInput) pinInput.value = getSyncPin();
-    if (modal) modal.classList.add('active');
-    if (pinInput) pinInput.focus();
-  }
-
-  function closeModal() {
-    if (modal) modal.classList.remove('active');
-  }
-
-  function handleSave() {
-    if (pinInput) {
-      const val = pinInput.value.trim();
-      if (val) {
-        setSyncPin(val);
-        closeModal();
-      }
-    }
-  }
-
-  if (openBtn) openBtn.addEventListener('click', openModal);
-  if (closeBtn) closeBtn.addEventListener('click', closeModal);
-  if (cancelBtn) cancelBtn.addEventListener('click', closeModal);
-  if (saveBtn) saveBtn.addEventListener('click', handleSave);
-
-  if (pinInput) {
-    pinInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') handleSave();
-      if (e.key === 'Escape') closeModal();
-    });
-  }
-
-  if (modal) {
-    modal.addEventListener('click', (e) => {
-      if (e.target === modal) closeModal();
-    });
-  }
-}
-
-// --- 7. DOM Ready & Event Wiring ---
+// --- 6. DOM Ready & Event Wiring ---
 document.addEventListener('DOMContentLoaded', () => {
   registerServiceWorker();
   setupNetworkMonitoring();
   setupIosInstallBanner();
-  setupPinModal();
-  updatePinUI();
   renderItems(true);
   updateStats();
 
-  // Initial cloud sync
+  // Initial cloud sync on startup
   if (navigator.onLine) {
     syncWithCloud({ isManual: false });
   }
@@ -530,12 +438,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // Background silent polling every 8 seconds (Zero jitter!)
+  // Background silent polling every 6 seconds (Zero jitter!)
   setInterval(() => {
     if (navigator.onLine && document.visibilityState === 'visible') {
       syncWithCloud({ isManual: false });
     }
-  }, 8000);
+  }, 6000);
 
   // Add Item form submit
   const addBtn = document.getElementById('addItemBtn');

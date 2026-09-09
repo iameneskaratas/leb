@@ -22,8 +22,8 @@
   <link rel="icon" type="image/svg+xml" href="icons/icon.svg?v=2.1.0">
   <meta name="theme-color" content="#FAF8F4">
 
-  <!-- Stylesheet (v2.2.0) -->
-  <link rel="stylesheet" href="css/app.css?v=2.2.0">
+  <!-- Stylesheet (v2.3.0) -->
+  <link rel="stylesheet" href="css/app.css?v=2.3.0">
 </head>
 <body>
 
@@ -51,12 +51,6 @@
           <span id="syncStatusIcon">☁️</span>
           <span id="syncStatusText">Eşitlendi</span>
         </div>
-
-        <!-- PIN Capsule -->
-        <button id="openPinModalBtn" class="pill-btn pin-pill" title="Eşitleme PIN'ini Değiştir">
-          <span>🔑</span>
-          <span id="currentPinText">leb1919</span>
-        </button>
 
         <!-- Circular Sync Button -->
         <button id="manualSyncBtn" class="circle-btn" title="Şimdi Eşitle" aria-label="Eşitle">
@@ -194,29 +188,7 @@
     <button id="btnUpdateApp" class="update-toast-btn">Yenile</button>
   </aside>
 
-  <!-- Cloud Sync PIN Settings Modal -->
-  <div id="pinModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="pinModalTitle">
-    <div class="modal-card">
-      <div class="modal-header">
-        <div class="modal-title" id="pinModalTitle">
-          <span>🔄</span>
-          <span>Cihazlar Arası Eşitleme PIN'i</span>
-        </div>
-        <button id="closePinModal" class="close-btn" aria-label="Kapat">&times;</button>
-      </div>
-      <div class="modal-body">
-        <p>Diğer cihazınızda da (iPhone, PC, tablet vb.) aynı PIN kodunu kullanarak notlarınızı anında senkronize edebilirsiniz.</p>
-        <label for="pinInput" class="modal-label">EŞİTLEME PIN KODU</label>
-        <input type="text" id="pinInput" class="modal-input" placeholder="Örn: leb1919" maxlength="32" autocomplete="off">
-        <div class="modal-buttons">
-          <button id="cancelPinBtn" class="pill-btn cancel-btn">İptal</button>
-          <button id="savePinBtn" class="btn-winzy-primary" style="padding: 10px 20px;">Kaydet ve Eşitle</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Application Script (v2.2.0 Cache-Busted) -->
-  <script src="js/app.js?v=2.2.0"></script>
+  <!-- Application Script (v2.3.0 Cache-Busted) -->
+  <script src="js/app.js?v=2.3.0"></script>
 </body>
 </html>
