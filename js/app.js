@@ -1,7 +1,7 @@
 /**
- * Leb - Fleet & Driver Compliance Engine (v4.0.0)
+ * Leb - Fleet & Driver Compliance Engine (v4.1.0)
  * Calm Palette, Zero Eye Strain, Instant Hard Delete (No Confirmation),
- * Anti-Resurrection Shield, Roder & Pasaport Tracking, Categorized Excel Export
+ * Anti-Resurrection Shield, Vehicle Roder & Tako TÜV, Driver Passport Tracking
  */
 
 // --- 1. Service Worker & Update Manager ---
@@ -11,7 +11,7 @@ function registerServiceWorker() {
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
       navigator.serviceWorker
-        .register('./sw.js?v=4.0.0')
+        .register('./sw.js?v=4.1.0')
         .then((registration) => {
           registration.addEventListener('updatefound', () => {
             newWorker = registration.installing;
@@ -147,7 +147,7 @@ function triggerNotificationCheck(force = false) {
 
 // --- 5. Quiet Bottom Sync Engine with Robust Deduplication ---
 const CLOUD_ENDPOINT = 'https://leb1919-default-rtdb.firebaseio.com/leb_store.json';
-const STORAGE_KEY = 'leb_fleet_store_v6';
+const STORAGE_KEY = 'leb_fleet_store_v7';
 
 let isSyncing = false;
 let syncQueued = false;
@@ -299,6 +299,8 @@ function areItemListsEqual(listA, listB) {
       a.insuranceDate !== b.insuranceDate ||
       a.licenseDate !== b.licenseDate ||
       a.greenCardDate !== b.greenCardDate ||
+      a.roderDate !== b.roderDate ||
+      a.takoTuvDate !== b.takoTuvDate ||
       a.passportDate !== b.passportDate ||
       a.passport !== b.passport
     ) {
@@ -352,7 +354,7 @@ async function syncWithCloud(options = {}) {
       const payload = {
         items: deduplicated,
         lastSync: Date.now(),
-        updatedBy: 'Leb v4.0.0 Engine'
+        updatedBy: 'Leb v4.1.0 Engine'
       };
 
       await fetch(CLOUD_ENDPOINT, {
@@ -407,6 +409,8 @@ const SEED_RECORDS = [
     inspectionDate: getFutureDate(4),
     insuranceDate: getFutureDate(120),
     greenCardDate: getFutureDate(30),
+    roderDate: getFutureDate(60),
+    takoTuvDate: getFutureDate(90),
     notes: '',
     createdAt: new Date().toISOString(),
     updatedAt: Date.now(),
@@ -420,6 +424,8 @@ const SEED_RECORDS = [
     inspectionDate: getFutureDate(18),
     insuranceDate: getFutureDate(200),
     greenCardDate: getFutureDate(18),
+    roderDate: getFutureDate(45),
+    takoTuvDate: null,
     notes: '',
     createdAt: new Date().toISOString(),
     updatedAt: Date.now(),
@@ -429,10 +435,12 @@ const SEED_RECORDS = [
     id: 'veh_3',
     type: 'vehicle',
     title: '34 LEB 2024',
-    subType: 'Roder',
-    inspectionDate: getFutureDate(45),
+    subType: 'Dorse',
+    inspectionDate: getFutureDate(150),
     insuranceDate: getFutureDate(180),
     greenCardDate: getFutureDate(60),
+    roderDate: getFutureDate(120),
+    takoTuvDate: null,
     notes: '',
     createdAt: new Date().toISOString(),
     updatedAt: Date.now(),
@@ -446,6 +454,8 @@ const SEED_RECORDS = [
     inspectionDate: getFutureDate(150),
     insuranceDate: getFutureDate(90),
     greenCardDate: null,
+    roderDate: null,
+    takoTuvDate: null,
     notes: '',
     createdAt: new Date().toISOString(),
     updatedAt: Date.now(),
@@ -539,7 +549,9 @@ function calculateRecordUrgency(rec) {
   if (rec.type === 'vehicle') {
     if (rec.inspectionDate) dates.push({ label: 'Muayene', date: rec.inspectionDate });
     if (rec.insuranceDate) dates.push({ label: 'Sigorta', date: rec.insuranceDate });
-    if (rec.greenCardDate) dates.push({ label: 'Yeşil Kart', date: rec.greenCardDate });
+    if (rec.greenCardDate) dates.push({ label: 'Yeşil Sigorta', date: rec.greenCardDate });
+    if (rec.roderDate) dates.push({ label: 'Roder', date: rec.roderDate });
+    if (rec.takoTuvDate) dates.push({ label: 'Tako Tüv', date: rec.takoTuvDate });
   } else {
     if (rec.visaDate) dates.push({ label: 'Vize', date: rec.visaDate });
     if (rec.licenseDate) dates.push({ label: 'Ehliyet', date: rec.licenseDate });
@@ -688,40 +700,33 @@ function renderSubFilterPills() {
   if (!container) return;
 
   container.innerHTML = '';
-  container.style.display = 'flex';
 
-  let pills = [];
   if (currentSection === 'vehicles') {
-    pills = [
+    container.style.display = 'flex';
+    const pills = [
       { id: 'all', label: 'Tümü' },
       { id: 'Çekici', label: 'Çekici' },
       { id: 'Dorse', label: 'Dorse' },
-      { id: 'Roder', label: 'Roder' },
       { id: 'Otomobil', label: 'Otomobil' }
     ];
-  } else {
-    // Sürücüler kategori filtreleri: Tümü, Pasaport, Vize, Ehliyet
-    pills = [
-      { id: 'all', label: 'Tümü' },
-      { id: 'Pasaport', label: 'Pasaport' },
-      { id: 'Vize', label: 'Vize' },
-      { id: 'Ehliyet', label: 'Ehliyet' }
-    ];
-  }
 
-  pills.forEach(pill => {
-    const btn = document.createElement('button');
-    btn.className = `filter-pill ${currentSubFilter === pill.id ? 'active' : ''}`;
-    btn.textContent = pill.label;
-    btn.dataset.sub = pill.id;
-    btn.addEventListener('click', () => {
-      if (currentSubFilter === pill.id) return;
-      currentSubFilter = pill.id;
-      renderSubFilterPills();
-      triggerSmoothRender();
+    pills.forEach(pill => {
+      const btn = document.createElement('button');
+      btn.className = `filter-pill ${currentSubFilter === pill.id ? 'active' : ''}`;
+      btn.textContent = pill.label;
+      btn.dataset.sub = pill.id;
+      btn.addEventListener('click', () => {
+        if (currentSubFilter === pill.id) return;
+        currentSubFilter = pill.id;
+        renderSubFilterPills();
+        triggerSmoothRender();
+      });
+      container.appendChild(btn);
     });
-    container.appendChild(btn);
-  });
+  } else {
+    // Sürücülerde alt kategori hapları gösterilmez (yalnızca araçlarda alt filtre hapları olur)
+    container.style.display = 'none';
+  }
 }
 
 function setupStatFilters() {
@@ -831,19 +836,9 @@ function renderCurrentView() {
   // 1. Filter by Section (Araçlar vs Sürücüler)
   let list = records.filter(r => r.type === (currentSection === 'vehicles' ? 'vehicle' : 'driver'));
 
-  // 2. Filter by SubType or Document Category
-  if (currentSubFilter !== 'all') {
-    if (currentSection === 'vehicles') {
-      list = list.filter(r => (r.subType || '') === currentSubFilter);
-    } else {
-      if (currentSubFilter === 'Pasaport') {
-        list = list.filter(r => Boolean(r.passportDate || r.passport));
-      } else if (currentSubFilter === 'Vize') {
-        list = list.filter(r => Boolean(r.visaDate));
-      } else if (currentSubFilter === 'Ehliyet') {
-        list = list.filter(r => Boolean(r.licenseDate));
-      }
-    }
+  // 2. Filter by SubType (Yalnızca Araçlar sekmesinde alt filtre çalışır)
+  if (currentSection === 'vehicles' && currentSubFilter !== 'all') {
+    list = list.filter(r => (r.subType || '') === currentSubFilter);
   }
 
   // 3. Filter by Stat (Critical, Warning, Safe)
@@ -926,8 +921,24 @@ function renderCurrentView() {
       if (rec.greenCardDate) {
         datesItems.push(`
           <span class="date-item">
-            <span class="date-name">Yeşil Kart:</span>
+            <span class="date-name">Yeşil Sigorta:</span>
             <span class="date-val">${formatDisplayDate(rec.greenCardDate)}</span>
+          </span>
+        `);
+      }
+      if (rec.roderDate) {
+        datesItems.push(`
+          <span class="date-item">
+            <span class="date-name">Roder:</span>
+            <span class="date-val">${formatDisplayDate(rec.roderDate)}</span>
+          </span>
+        `);
+      }
+      if (rec.takoTuvDate) {
+        datesItems.push(`
+          <span class="date-item">
+            <span class="date-name">Tako Tüv:</span>
+            <span class="date-val">${formatDisplayDate(rec.takoTuvDate)}</span>
           </span>
         `);
       }
@@ -1391,11 +1402,34 @@ function setupModals() {
   // Themed Segmented Buttons for Vehicle Type
   const vTypeBtns = document.querySelectorAll('#vehicleTypeTrack .type-segment-btn');
   const selectVType = document.getElementById('selectVehicleType');
+  const rowHeavyDocs = document.getElementById('rowVehicleHeavyDocs');
+  const groupRoder = document.getElementById('groupRoderDate');
+  const groupTakoTuv = document.getElementById('groupTakoTuvDate');
+
+  function updateVehicleTypeVisibility(vType) {
+    if (vType === 'Çekici') {
+      if (rowHeavyDocs) rowHeavyDocs.style.display = 'flex';
+      if (groupRoder) groupRoder.style.display = 'block';
+      if (groupTakoTuv) groupTakoTuv.style.display = 'block';
+    } else if (vType === 'Dorse') {
+      if (rowHeavyDocs) rowHeavyDocs.style.display = 'flex';
+      if (groupRoder) groupRoder.style.display = 'block';
+      if (groupTakoTuv) groupTakoTuv.style.display = 'none';
+      setCustomDate('inputTakoTuvDate', '');
+    } else { // Otomobil
+      if (rowHeavyDocs) rowHeavyDocs.style.display = 'none';
+      setCustomDate('inputRoderDate', '');
+      setCustomDate('inputTakoTuvDate', '');
+    }
+  }
+
   vTypeBtns.forEach(btn => {
     btn.addEventListener('click', () => {
       vTypeBtns.forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
-      if (selectVType) selectVType.value = btn.dataset.val;
+      const val = btn.dataset.val;
+      if (selectVType) selectVType.value = val;
+      updateVehicleTypeVisibility(val);
     });
   });
 
@@ -1426,9 +1460,12 @@ function setupModals() {
       setCustomDate('inputInspectionDate', '');
       setCustomDate('inputInsuranceDate', '');
       setCustomDate('inputGreenCardDate', '');
+      setCustomDate('inputRoderDate', '');
+      setCustomDate('inputTakoTuvDate', '');
       setCustomDate('inputVisaDate', '');
       setCustomDate('inputLicenseDate', '');
       setCustomDate('inputPassportDate', '');
+      updateVehicleTypeVisibility('Çekici');
       closeCalendar();
     }
   }
@@ -1464,6 +1501,8 @@ function setupModals() {
       const inspDate = document.getElementById('inputInspectionDate').value;
       const insDate = document.getElementById('inputInsuranceDate').value || null;
       const greenDate = document.getElementById('inputGreenCardDate').value || null;
+      const roderDate = (vType === 'Çekici' || vType === 'Dorse') ? (document.getElementById('inputRoderDate').value || null) : null;
+      const takoTuvDate = (vType === 'Çekici') ? (document.getElementById('inputTakoTuvDate').value || null) : null;
 
       if (!plate) {
         document.getElementById('inputPlate').focus();
@@ -1487,6 +1526,8 @@ function setupModals() {
         inspectionDate: inspDate,
         insuranceDate: insDate,
         greenCardDate: greenDate,
+        roderDate: roderDate,
+        takoTuvDate: takoTuvDate,
         notes: '',
         createdAt: new Date().toISOString(),
         updatedAt: Date.now(),
@@ -1642,15 +1683,32 @@ function openQuickModal(id) {
   // Options according to type
   let docOptions = [];
   if (rec.type === 'vehicle') {
-    docOptions = [
-      { field: 'inspectionDate', label: 'Muayene' },
-      { field: 'insuranceDate', label: 'Sigorta' },
-      { field: 'greenCardDate', label: 'Yeşil Sigorta' }
-    ];
+    if (rec.subType === 'Çekici') {
+      docOptions = [
+        { field: 'inspectionDate', label: 'Muayene' },
+        { field: 'insuranceDate', label: 'Sigorta' },
+        { field: 'greenCardDate', label: 'Yeşil Sigorta' },
+        { field: 'roderDate', label: 'Roder' },
+        { field: 'takoTuvDate', label: 'Tako Tüv' }
+      ];
+    } else if (rec.subType === 'Dorse') {
+      docOptions = [
+        { field: 'inspectionDate', label: 'Muayene' },
+        { field: 'insuranceDate', label: 'Sigorta' },
+        { field: 'greenCardDate', label: 'Yeşil Sigorta' },
+        { field: 'roderDate', label: 'Roder' }
+      ];
+    } else {
+      docOptions = [
+        { field: 'inspectionDate', label: 'Muayene' },
+        { field: 'insuranceDate', label: 'Sigorta' },
+        { field: 'greenCardDate', label: 'Yeşil Sigorta' }
+      ];
+    }
   } else {
     docOptions = [
       { field: 'visaDate', label: 'Vize' },
-      { field: 'licenseDate', label: 'Ehliyet / SRC' },
+      { field: 'licenseDate', label: 'Ehliyet' },
       { field: 'passportDate', label: 'Pasaport' }
     ];
   }
@@ -1783,10 +1841,10 @@ function exportVehiclesCsv() {
   const vehicles = records
     .filter(r => r.type === 'vehicle')
     .sort((a, b) => {
-      // 1. Sort by subType: Çekici, Dorse, Roder, Otomobil
-      const order = { 'Çekici': 1, 'Dorse': 2, 'Roder': 3, 'Otomobil': 4 };
-      const rankA = order[a.subType] || 5;
-      const rankB = order[b.subType] || 5;
+      // 1. Sort by subType: Çekici, Dorse, Otomobil
+      const order = { 'Çekici': 1, 'Dorse': 2, 'Otomobil': 3 };
+      const rankA = order[a.subType] || 4;
+      const rankB = order[b.subType] || 4;
       if (rankA !== rankB) return rankA - rankB;
       // 2. Sort by plate
       return compareTurkish(a.title, b.title);
@@ -1808,7 +1866,9 @@ function exportVehiclesCsv() {
     escapeCsvCell('En Acil Durum'),
     escapeCsvCell('Muayene Bitiş ve Durumu'),
     escapeCsvCell('Sigorta / Kasko Bitiş ve Durumu'),
-    escapeCsvCell('Yeşil Kart Bitiş ve Durumu'),
+    escapeCsvCell('Yeşil Sigorta Bitiş ve Durumu'),
+    escapeCsvCell('Roder Bitiş ve Durumu'),
+    escapeCsvCell('Tako Tüv Bitiş ve Durumu'),
     escapeCsvCell('Notlar')
   ]);
 
@@ -1816,14 +1876,20 @@ function exportVehiclesCsv() {
     const muayene = getSingleDateStatus(v.inspectionDate);
     const sigorta = getSingleDateStatus(v.insuranceDate);
     const yesilKart = getSingleDateStatus(v.greenCardDate);
+    const roder = getSingleDateStatus(v.roderDate);
+    const takoTuv = getSingleDateStatus(v.takoTuvDate);
     const urgency = calculateRecordUrgency(v);
     const statusText = urgency.status === 'critical' ? 'KRİTİK' : urgency.status === 'warning' ? 'YAKLAŞAN' : 'SORUNSUZ';
 
     const muayeneCell = v.inspectionDate ? `${formatExcelDate(v.inspectionDate)} (${muayene.text})` : '—';
     const sigortaCell = v.insuranceDate ? `${formatExcelDate(v.insuranceDate)} (${sigorta.text})` : '—';
-    const yesilKartCell = v.subType === 'Otomobil'
-      ? (v.greenCardDate ? `${formatExcelDate(v.greenCardDate)} (${yesilKart.text})` : 'Muaf')
-      : (v.greenCardDate ? `${formatExcelDate(v.greenCardDate)} (${yesilKart.text})` : '—');
+    const yesilKartCell = v.greenCardDate ? `${formatExcelDate(v.greenCardDate)} (${yesilKart.text})` : (v.subType === 'Otomobil' ? 'Muaf' : '—');
+    const roderCell = (v.subType === 'Çekici' || v.subType === 'Dorse')
+      ? (v.roderDate ? `${formatExcelDate(v.roderDate)} (${roder.text})` : '—')
+      : 'Muaf';
+    const takoTuvCell = (v.subType === 'Çekici')
+      ? (v.takoTuvDate ? `${formatExcelDate(v.takoTuvDate)} (${takoTuv.text})` : 'Muaf')
+      : 'Muaf';
 
     rows.push([
       escapeCsvCell('Araç'),
@@ -1834,6 +1900,8 @@ function exportVehiclesCsv() {
       escapeCsvCell(muayeneCell),
       escapeCsvCell(sigortaCell),
       escapeCsvCell(yesilKartCell),
+      escapeCsvCell(roderCell),
+      escapeCsvCell(takoTuvCell),
       escapeCsvCell(v.notes || '')
     ]);
   });
@@ -1908,9 +1976,9 @@ function exportAllUnifiedCsv() {
   const vehicles = records
     .filter(r => r.type === 'vehicle')
     .sort((a, b) => {
-      const order = { 'Çekici': 1, 'Dorse': 2, 'Roder': 3, 'Otomobil': 4 };
-      const rankA = order[a.subType] || 5;
-      const rankB = order[b.subType] || 5;
+      const order = { 'Çekici': 1, 'Dorse': 2, 'Otomobil': 3 };
+      const rankA = order[a.subType] || 4;
+      const rankB = order[b.subType] || 4;
       if (rankA !== rankB) return rankA - rankB;
       return compareTurkish(a.title, b.title);
     });
@@ -1931,7 +1999,9 @@ function exportAllUnifiedCsv() {
     escapeCsvCell('En Acil Durum'),
     escapeCsvCell('Muayene / Vize Durumu'),
     escapeCsvCell('Sigorta / Ehliyet Durumu'),
-    escapeCsvCell('Yeşil Kart / Pasaport Durumu'),
+    escapeCsvCell('Yeşil Sigorta / Pasaport Durumu'),
+    escapeCsvCell('Roder Durumu'),
+    escapeCsvCell('Tako Tüv Durumu'),
     escapeCsvCell('Notlar')
   ]);
 
@@ -1940,14 +2010,20 @@ function exportAllUnifiedCsv() {
     const muayene = getSingleDateStatus(v.inspectionDate);
     const sigorta = getSingleDateStatus(v.insuranceDate);
     const yesilKart = getSingleDateStatus(v.greenCardDate);
+    const roder = getSingleDateStatus(v.roderDate);
+    const takoTuv = getSingleDateStatus(v.takoTuvDate);
     const urgency = calculateRecordUrgency(v);
     const statusText = urgency.status === 'critical' ? 'KRİTİK' : urgency.status === 'warning' ? 'YAKLAŞAN' : 'SORUNSUZ';
 
     const muayeneCell = v.inspectionDate ? `Muayene: ${formatExcelDate(v.inspectionDate)} (${muayene.text})` : '—';
     const sigortaCell = v.insuranceDate ? `Sigorta: ${formatExcelDate(v.insuranceDate)} (${sigorta.text})` : '—';
-    const yesilKartCell = v.subType === 'Otomobil'
-      ? (v.greenCardDate ? `Yeşil Kart: ${formatExcelDate(v.greenCardDate)} (${yesilKart.text})` : 'Muaf')
-      : (v.greenCardDate ? `Yeşil Kart: ${formatExcelDate(v.greenCardDate)} (${yesilKart.text})` : '—');
+    const yesilKartCell = v.greenCardDate ? `Yeşil Sigorta: ${formatExcelDate(v.greenCardDate)} (${yesilKart.text})` : (v.subType === 'Otomobil' ? 'Muaf' : '—');
+    const roderCell = (v.subType === 'Çekici' || v.subType === 'Dorse')
+      ? (v.roderDate ? `Roder: ${formatExcelDate(v.roderDate)} (${roder.text})` : '—')
+      : 'Muaf';
+    const takoTuvCell = (v.subType === 'Çekici')
+      ? (v.takoTuvDate ? `Tako Tüv: ${formatExcelDate(v.takoTuvDate)} (${takoTuv.text})` : '—')
+      : 'Muaf';
 
     rows.push([
       escapeCsvCell('Araç'),
@@ -1959,6 +2035,8 @@ function exportAllUnifiedCsv() {
       escapeCsvCell(muayeneCell),
       escapeCsvCell(sigortaCell),
       escapeCsvCell(yesilKartCell),
+      escapeCsvCell(roderCell),
+      escapeCsvCell(takoTuvCell),
       escapeCsvCell(v.notes || '')
     ]);
   });
@@ -1985,6 +2063,8 @@ function exportAllUnifiedCsv() {
       escapeCsvCell(vizeCell),
       escapeCsvCell(ehliyetCell),
       escapeCsvCell(pasaportCell),
+      escapeCsvCell('—'),
+      escapeCsvCell('—'),
       escapeCsvCell(d.notes || '')
     ]);
   });

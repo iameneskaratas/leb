@@ -22,8 +22,8 @@
   <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png?v=3.9.0">
   <meta name="theme-color" content="#F8F9FA">
 
-  <!-- Stylesheet (Leb v4.0.0) -->
-  <link rel="stylesheet" href="css/app.css?v=4.0.0">
+  <!-- Stylesheet (Leb v4.1.0) -->
+  <link rel="stylesheet" href="css/app.css?v=4.1.0">
 </head>
 <body>
 
@@ -184,7 +184,6 @@
           <div class="type-segment-track" id="vehicleTypeTrack">
             <button type="button" class="type-segment-btn active" data-val="Çekici">Çekici</button>
             <button type="button" class="type-segment-btn" data-val="Dorse">Dorse</button>
-            <button type="button" class="type-segment-btn" data-val="Roder">Roder</button>
             <button type="button" class="type-segment-btn" data-val="Otomobil">Otomobil</button>
           </div>
           <input type="hidden" id="selectVehicleType" value="Çekici">
@@ -252,6 +251,49 @@
                 <span class="date-display-text is-placeholder" id="display_inputGreenCardDate">Tarih seçin...</span>
               </button>
               <input type="hidden" id="inputGreenCardDate">
+            </div>
+          </div>
+        </div>
+
+        <div class="form-row" id="rowVehicleHeavyDocs">
+          <div class="form-group" id="groupRoderDate">
+            <div class="label-with-presets">
+              <label for="trigger_inputRoderDate">Roder Bitiş</label>
+              <div class="chip-presets">
+                <button type="button" class="preset-chip" data-target="inputRoderDate" data-months="12">+1 Yıl</button>
+              </div>
+            </div>
+            <div class="leb-datepicker" data-field="inputRoderDate">
+              <button type="button" class="leb-date-trigger" id="trigger_inputRoderDate" data-field="inputRoderDate">
+                <svg class="date-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                  <line x1="16" y1="2" x2="16" y2="6"></line>
+                  <line x1="8" y1="2" x2="8" y2="6"></line>
+                  <line x1="3" y1="10" x2="21" y2="10"></line>
+                </svg>
+                <span class="date-display-text is-placeholder" id="display_inputRoderDate">Tarih seçin...</span>
+              </button>
+              <input type="hidden" id="inputRoderDate">
+            </div>
+          </div>
+          <div class="form-group" id="groupTakoTuvDate">
+            <div class="label-with-presets">
+              <label for="trigger_inputTakoTuvDate">Tako Tüv Bitiş</label>
+              <div class="chip-presets">
+                <button type="button" class="preset-chip" data-target="inputTakoTuvDate" data-months="24">+2 Yıl</button>
+              </div>
+            </div>
+            <div class="leb-datepicker" data-field="inputTakoTuvDate">
+              <button type="button" class="leb-date-trigger" id="trigger_inputTakoTuvDate" data-field="inputTakoTuvDate">
+                <svg class="date-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                  <line x1="16" y1="2" x2="16" y2="6"></line>
+                  <line x1="8" y1="2" x2="8" y2="6"></line>
+                  <line x1="3" y1="10" x2="21" y2="10"></line>
+                </svg>
+                <span class="date-display-text is-placeholder" id="display_inputTakoTuvDate">Tarih seçin...</span>
+              </button>
+              <input type="hidden" id="inputTakoTuvDate">
             </div>
           </div>
         </div>
@@ -523,7 +565,7 @@
     <button id="btnUpdateApp" class="leb-btn leb-btn-sm leb-btn-primary">Yenile</button>
   </aside>
 
-  <!-- Script v4.0.0 -->
-  <script src="js/app.js?v=4.0.0"></script>
+  <!-- Script v4.1.0 -->
+  <script src="js/app.js?v=4.1.0"></script>
 </body>
 </html>
