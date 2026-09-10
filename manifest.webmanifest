@@ -1,14 +1,14 @@
 {
-  "name": "Leb",
-  "short_name": "Leb",
-  "description": "iPhone için optimize edilmiş, uçak modunda ve bulut senkronizasyonuyla çalışan leblebi gibi hızlı PWA uygulaması.",
+  "name": "Leb Lojistik",
+  "short_name": "Leb Lojistik",
+  "description": "Lojistik Filo ve Sürücü Takip Sistemi - Vize, Ehliyet ve Muayene Bitiş Süreleri",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#1E1B18",
-  "theme_color": "#1E1B18",
-  "categories": ["productivity", "utilities"],
+  "background_color": "#07090E",
+  "theme_color": "#07090E",
+  "categories": ["business", "productivity", "utilities"],
   "icons": [
     {
       "src": "icons/apple-touch-icon-180.png",

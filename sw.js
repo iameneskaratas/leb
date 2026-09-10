@@ -1,6 +1,6 @@
-// Leb - Service Worker v2.3.1 (Network-First with Offline Fallback)
-const CACHE_VERSION = 'v2.3.1';
-const CACHE_NAME = `leb-${CACHE_VERSION}`;
+// Leb Lojistik - Service Worker v3.0.0 (Network-First & Web Notifications)
+const CACHE_VERSION = 'v3.0.0';
+const CACHE_NAME = `leb-lojistik-${CACHE_VERSION}`;
 
 const PRECACHE_ASSETS = [
   './',
@@ -66,7 +66,6 @@ self.addEventListener('fetch', (event) => {
           return networkResponse;
         })
         .catch(async () => {
-          // Offline fallback from cache
           const cached = await caches.match(event.request);
           if (cached) return cached;
           return caches.match('./index.html') || caches.match('./');
@@ -90,8 +89,38 @@ self.addEventListener('fetch', (event) => {
   );
 });
 
+// 4. Message & Local Notification Support
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
   }
+
+  if (event.data && event.data.type === 'SHOW_NOTIFICATION') {
+    const { title, body } = event.data;
+    self.registration.showNotification(title || 'Leb Lojistik Bildirimi', {
+      body: body || 'Süresi yaklaşan muayene ve vize kayıtları bulunmaktadır.',
+      icon: './icons/apple-touch-icon-180.png',
+      badge: './icons/favicon.png',
+      vibrate: [200, 100, 200],
+      tag: 'leb-compliance-alert',
+      renotify: true
+    });
+  }
+});
+
+// 5. Notification Click - Focus or Open Window
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      for (const client of clientList) {
+        if (client.url && 'focus' in client) {
+          return client.focus();
+        }
+      }
+      if (clients.openWindow) {
+        return clients.openWindow('./');
+      }
+    })
+  );
 });

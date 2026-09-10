@@ -1,194 +1,357 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="tr">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   
-  <title>Leb - Çevrimdışı & Bulut Not Defteri</title>
-  <meta name="description" content="iPhone ve tüm cihazlarda internet olmadan da çalışan, Leblebi hızında bulut senkronizasyonlu PWA uygulaması.">
+  <title>Leb Lojistik - Filo & Sürücü Uyumluluk Takip</title>
+  <meta name="description" content="Lojistik filonuz için vize süresi, ehliyet ve araç muayene bitiş tarihlerini takip eden Spatial UI uyumluluk merkezi.">
 
   <!-- iOS / Apple PWA Spesifik Meta Etiketleri -->
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Leb">
-  <link rel="apple-touch-icon" href="icons/apple-touch-icon-180.png?v=2.1.0">
-  <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon-180.png?v=2.1.0">
+  <meta name="apple-mobile-web-app-title" content="Leb Lojistik">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon-180.png?v=3.0.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon-180.png?v=3.0.0">
 
   <!-- Web App Manifest -->
-  <link rel="manifest" href="manifest.webmanifest?v=2.1.0">
+  <link rel="manifest" href="manifest.webmanifest?v=3.0.0">
 
   <!-- Favicon & Theme Colors -->
-  <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon.png?v=2.1.0">
-  <link rel="icon" type="image/svg+xml" href="icons/icon.svg?v=2.1.0">
-  <meta name="theme-color" content="#FAF8F4">
+  <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon.png?v=3.0.0">
+  <link rel="icon" type="image/svg+xml" href="icons/icon.svg?v=3.0.0">
+  <meta name="theme-color" content="#07090E">
 
-  <!-- Stylesheet (v2.3.1) -->
-  <link rel="stylesheet" href="css/app.css?v=2.3.1">
+  <!-- Stylesheet (Spatial UI v3.0.0) -->
+  <link rel="stylesheet" href="css/app.css?v=3.0.0">
 </head>
 <body>
 
-  <!-- Cinematic Desert/Sky Atmospheric Background Layer -->
-  <div class="cinematic-backdrop">
-    <div class="atmosphere-glow"></div>
-    <div class="dunes-silhouette"></div>
+  <!-- Ambient Spatial Volumetric Glow Layers (visionOS Depth) -->
+  <div class="spatial-canvas" aria-hidden="true">
+    <div class="glow-orb orb-primary"></div>
+    <div class="glow-orb orb-secondary"></div>
+    <div class="glow-orb orb-tertiary"></div>
+    <div class="spatial-grid-overlay"></div>
   </div>
 
-  <!-- Giant Background Typography Watermark (Matching Egypt/Winzy Reference) -->
-  <div class="watermark-title" aria-hidden="true">LEB</div>
-
-  <!-- Top Floating Capsule Navigation Bar (Like Winzy) -->
+  <!-- Top Spatial Navigation Capsule -->
   <header class="navbar-wrapper">
-    <nav class="navbar-capsule">
+    <nav class="spatial-navbar">
       <div class="brand-wrap">
-        <img src="icons/apple-touch-icon-180.png?v=2.1.0" alt="Leb Logo" class="app-icon-mini">
-        <span class="brand-title">Leb</span>
+        <div class="spatial-logo-badge">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="1" y="3" width="15" height="13"></rect>
+            <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon>
+            <circle cx="5.5" cy="18.5" r="2.5"></circle>
+            <circle cx="18.5" cy="18.5" r="2.5"></circle>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <span class="brand-title">LEB LOJİSTİK</span>
+          <span class="brand-subtitle">Filo Uyumluluk & Takip</span>
+        </div>
       </div>
 
-      <!-- Center / Right Pill Badges -->
+      <!-- Right Navigation Cluster -->
       <div class="nav-right-cluster">
-        <!-- Calm, Steady Sync Badge (No flicker) -->
-        <div id="syncStatusIndicator" class="sync-pill synced" title="Bulut Senkronizasyon Durumu">
+        <!-- Device Mode Pill -->
+        <div id="deviceModeBadge" class="mode-pill" title="Cihaz Çalışma Modu">
+          <span id="deviceModeIcon">🖥️</span>
+          <span id="deviceModeText">Yönetim Modu</span>
+        </div>
+
+        <!-- Sync Pill -->
+        <div id="syncStatusIndicator" class="sync-pill synced" title="Bulut Senkronizasyonu">
           <span id="syncStatusIcon">☁️</span>
           <span id="syncStatusText">Eşitlendi</span>
         </div>
 
-        <!-- Circular Sync Button -->
-        <button id="manualSyncBtn" class="circle-btn" title="Şimdi Eşitle" aria-label="Eşitle">
+        <!-- Refresh Button -->
+        <button id="manualSyncBtn" class="spatial-circle-btn" title="Şimdi Eşitle" aria-label="Eşitle">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="23 4 23 10 17 10"></polyline>
             <polyline points="1 20 1 14 7 14"></polyline>
             <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
           </svg>
         </button>
-
-        <!-- Network Dot Badge -->
-        <div id="networkBadge" class="network-dot online" title="Ağ Durumu">
-          <span class="dot-indicator"></span>
-          <span id="networkText" class="sr-only">Çevrimiçi</span>
-        </div>
-
-        <!-- Info / Install Button -->
-        <button id="infoBtn" class="circle-btn" title="Uygulama Bilgisi" aria-label="Bilgi">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="10"></circle>
-            <line x1="12" y1="16" x2="12" y2="12"></line>
-            <line x1="12" y1="8" x2="12.01" y2="8"></line>
-          </svg>
-        </button>
       </div>
     </nav>
   </header>
 
-  <!-- Main Scrollable Content Container -->
-  <main class="app-container">
+  <!-- Main Content Viewport -->
+  <main class="spatial-main">
 
-    <!-- Offline Alert Banner (Internetsiz / Uçak Modu Durumunda Görünür) -->
-    <div id="offlineBanner" class="offline-banner">
-      <div class="offline-banner-icon">⚡</div>
-      <div class="offline-banner-text">
-        <h4>Uçak Modu / Çevrimdışı</h4>
-        <p>İnternet bağlantısı yok. Notlarınız cihazınızda güvende ve internet gelince buluta eşitlenecektir.</p>
+    <!-- Mobile Notification Banner (Active only if supported & not yet granted) -->
+    <section id="notificationBanner" class="spatial-glass-card notification-banner" style="display: none;">
+      <div class="notification-banner-content">
+        <div class="notif-icon-bubble">🔔</div>
+        <div class="notif-text-wrap">
+          <div class="notif-title">Mobil Uyarı Bildirimlerini Aç</div>
+          <div class="notif-desc">Vizesi veya muayenesi yaklaşan araç ve sürücüler için telefonunuza anlık bildirim gelsin.</div>
+        </div>
       </div>
-    </div>
+      <button id="btnEnableNotifications" class="spatial-btn-primary">Bildirimleri Etkinleştir</button>
+    </section>
 
-    <!-- Big Bold Stats Metrics (Matching Winzy "20K+ 2K+ 5K+" Style) -->
-    <section class="stats-hero">
-      <div class="stat-box">
-        <span id="statTotal" class="stat-number">0</span>
-        <span class="stat-caption">Toplam Kayıt</span>
+    <!-- Spatial Analytics Overview (Bento Glass Grid) -->
+    <section class="spatial-metrics-grid" aria-label="Filo Durum Özeti">
+      <!-- Total -->
+      <div class="spatial-metric-card" data-filter="all">
+        <div class="metric-icon-wrap icon-total">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+            <circle cx="9" cy="7" r="4"></circle>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+          </svg>
+        </div>
+        <div class="metric-details">
+          <span class="metric-label">Toplam Filo & Sürücü</span>
+          <span id="statTotal" class="metric-value">0</span>
+        </div>
       </div>
-      <div class="stat-divider"></div>
-      <div class="stat-box">
-        <span id="statPending" class="stat-number">0</span>
-        <span class="stat-caption">Bekleyen Görev</span>
+
+      <!-- Critical (<7 days or expired) -->
+      <div class="spatial-metric-card card-critical" data-filter="critical">
+        <div class="metric-icon-wrap icon-critical">🔴</div>
+        <div class="metric-details">
+          <span class="metric-label">Kritik Süre (< 7 Gün)</span>
+          <span id="statCritical" class="metric-value">0</span>
+        </div>
       </div>
-      <div class="stat-divider"></div>
-      <div class="stat-box">
-        <span id="statCache" class="stat-number stat-highlight">OK</span>
-        <span class="stat-caption">Offline Hazır</span>
+
+      <!-- Warning (<30 days) -->
+      <div class="spatial-metric-card card-warning" data-filter="warning">
+        <div class="metric-icon-wrap icon-warning">🟡</div>
+        <div class="metric-details">
+          <span class="metric-label">Yaklaşan (< 30 Gün)</span>
+          <span id="statWarning" class="metric-value">0</span>
+        </div>
+      </div>
+
+      <!-- Safe (>30 days) -->
+      <div class="spatial-metric-card card-safe" data-filter="safe">
+        <div class="metric-icon-wrap icon-safe">🟢</div>
+        <div class="metric-details">
+          <span class="metric-label">Sorunsuz Kayıtlar</span>
+          <span id="statSafe" class="metric-value">0</span>
+        </div>
       </div>
     </section>
 
-    <!-- Quick Add Input Card (Frosted Glass with Winzy Style Button) -->
-    <section class="action-card">
-      <div class="input-glow-wrapper">
-        <input type="text" id="itemTitleInput" class="cinematic-input" placeholder="Yeni bir not, fikir veya görev yazın..." autocomplete="off">
+    <!-- Spatial Filter & Action Bar -->
+    <section class="spatial-filter-bar">
+      <!-- Search Input -->
+      <div class="spatial-search-box">
+        <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        <input type="text" id="searchInput" placeholder="Plaka, Sürücü veya Belge Ara..." autocomplete="off">
+        <button id="clearSearchBtn" class="clear-btn" aria-label="Temizle" style="display: none;">&times;</button>
       </div>
-      <div class="action-bar-row">
-        <div class="type-picker-wrap">
-          <select id="itemTypeSelect" class="pill-select">
-            <option value="note">📝 Not</option>
-            <option value="todo">✅ Görev</option>
-            <option value="idea">💡 Fikir</option>
-          </select>
-        </div>
-        
-        <!-- Winzy Style White Pill Action Button + Arrow Circle -->
-        <div class="btn-group-action">
-          <button id="addItemBtn" class="btn-winzy-primary">
-            Ekle
-          </button>
-          <div class="btn-winzy-arrow" aria-hidden="true">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <line x1="7" y1="17" x2="17" y2="7"></line>
-              <polyline points="7 7 17 7 17 17"></polyline>
-            </svg>
-          </div>
-        </div>
+
+      <!-- Quick Filter Pills -->
+      <div class="spatial-pills-row" role="tablist">
+        <button class="spatial-pill active" data-filter="all">Tümü</button>
+        <button class="spatial-pill" data-filter="critical">🔴 Kritik (< 7 Gün)</button>
+        <button class="spatial-pill" data-filter="warning">🟡 Yaklaşan (< 30 Gün)</button>
+        <button class="spatial-pill" data-filter="vehicle">🚚 Araçlar (Muayene)</button>
+        <button class="spatial-pill" data-filter="driver">👤 Sürücüler (Vize & Ehliyet)</button>
+      </div>
+
+      <!-- Desktop Add Record Button (Hidden or lock-gated on Mobile) -->
+      <div class="desktop-action-wrap">
+        <button id="openAddRecordModalBtn" class="spatial-btn-primary add-record-btn">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+          <span>Yeni Kayıt Ekle</span>
+        </button>
       </div>
     </section>
 
-    <!-- Category Filter Bar (Translucent Pill Capsules) -->
-    <nav class="filter-capsules" aria-label="Kategori Filtresi">
-      <button class="filter-pill active" data-filter="all">Tümü</button>
-      <button class="filter-pill" data-filter="note">Notlar</button>
-      <button class="filter-pill" data-filter="todo">Görevler</button>
-      <button class="filter-pill" data-filter="idea">Fikirler</button>
-    </nav>
+    <!-- Records List Container -->
+    <section class="spatial-records-container">
+      <div id="recordsList" class="records-grid">
+        <!-- Rendered dynamically via app.js -->
+      </div>
 
-    <!-- Dynamic Items List -->
-    <section id="itemsList" class="items-list"></section>
-
-    <!-- Empty State -->
-    <div id="emptyState" class="empty-state" style="display: none;">
-      <div class="empty-icon">🥜</div>
-      <p>Bu kategoride henüz kayıt yok.</p>
-    </div>
+      <!-- Empty State -->
+      <div id="emptyState" class="spatial-empty-state" style="display: none;">
+        <div class="empty-icon">🚛</div>
+        <h3 class="empty-title">Kayıt Bulunamadı</h3>
+        <p class="empty-desc">Seçili filtreye veya arama terimine uygun araç veya sürücü kaydı mevcut değil.</p>
+        <button id="btnEmptyReset" class="spatial-btn-secondary">Filtreleri Sıfırla</button>
+      </div>
+    </section>
 
   </main>
 
-  <!-- iOS Safari Kurulum Rehberi Modal (Ana Ekrana Ekle) -->
-  <aside id="iosInstallBanner" class="ios-install-banner" aria-label="iOS Kurulum Rehberi">
-    <div class="install-header">
-      <div class="install-title">
-        <span>📲</span>
-        <span>iPhone'a Uygulama Olarak Yükle</span>
+  <!-- MODAL 1: Yeni Kayıt Ekle (Desktop / Admin) -->
+  <div id="addRecordModal" class="spatial-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="spatial-modal-card">
+      <div class="spatial-modal-header">
+        <div class="modal-title-wrap">
+          <span class="modal-badge-icon">➕</span>
+          <h2 id="modalTitle">Yeni Lojistik Kaydı</h2>
+        </div>
+        <button id="closeAddRecordModal" class="spatial-close-btn" aria-label="Kapat">&times;</button>
       </div>
-      <button id="closeInstallBanner" class="close-btn" aria-label="Kapat">&times;</button>
+
+      <!-- Record Type Selector -->
+      <div class="modal-type-switcher">
+        <button type="button" id="switchTypeVehicle" class="switcher-btn active" data-type="vehicle">
+          <span>🚚</span>
+          <span>Araç / Dorse</span>
+        </button>
+        <button type="button" id="switchTypeDriver" class="switcher-btn" data-type="driver">
+          <span>👤</span>
+          <span>Sürücü</span>
+        </button>
+      </div>
+
+      <!-- Vehicle Form Fields -->
+      <form id="vehicleForm" class="modal-form">
+        <div class="form-group">
+          <label for="vehiclePlate">Araç Plakası *</label>
+          <input type="text" id="vehiclePlate" placeholder="Örn: 34 LEB 1919" uppercase required>
+        </div>
+
+        <div class="form-group">
+          <label for="vehicleType">Araç Türü</label>
+          <select id="vehicleType">
+            <option value="Çekici">Çekici</option>
+            <option value="Dorse / Römork">Dorse / Römork</option>
+            <option value="Kamyon">Kamyon</option>
+            <option value="Kamyonet / Hafif Ticari">Kamyonet / Hafif Ticari</option>
+          </select>
+        </div>
+
+        <div class="form-group highlight-input">
+          <label for="vehicleInspectionDate">🛠️ TÜVTÜRK Muayene Bitiş Tarihi *</label>
+          <input type="date" id="vehicleInspectionDate" required>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="vehicleInsuranceDate">📄 Trafik Sigortası Bitiş</label>
+            <input type="date" id="vehicleInsuranceDate">
+          </div>
+          <div class="form-group">
+            <label for="vehicleGreenCardDate">🌐 Yeşil Sigorta (Yurtdışı)</label>
+            <input type="date" id="vehicleGreenCardDate">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="vehicleNotes">Notlar / Açıklama</label>
+          <input type="text" id="vehicleNotes" placeholder="Şasi no, güzergah veya özel not...">
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="spatial-btn-secondary" id="btnCancelVehicle">İptal</button>
+          <button type="submit" class="spatial-btn-primary">Araç Kaydet</button>
+        </div>
+      </form>
+
+      <!-- Driver Form Fields -->
+      <form id="driverForm" class="modal-form" style="display: none;">
+        <div class="form-group">
+          <label for="driverName">Sürücü Adı Soyadı *</label>
+          <input type="text" id="driverName" placeholder="Örn: Ahmet Yılmaz" required>
+        </div>
+
+        <div class="form-group highlight-input">
+          <label for="driverVisaDate">🛂 Vize Bitiş Tarihi (Schengen vb.) *</label>
+          <input type="date" id="driverVisaDate" required>
+        </div>
+
+        <div class="form-group">
+          <label for="driverLicenseDate">🪪 Ehliyet / SRC / Psikoteknik Bitiş</label>
+          <input type="date" id="driverLicenseDate">
+        </div>
+
+        <div class="form-group">
+          <label for="driverPassport">📘 Pasaport No / Bitiş</label>
+          <input type="text" id="driverPassport" placeholder="Örn: U12345678 (Bitiş: 2028)">
+        </div>
+
+        <div class="form-group">
+          <label for="driverNotes">Notlar</label>
+          <input type="text" id="driverNotes" placeholder="Telefon, aktif güzergah veya not...">
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="spatial-btn-secondary" id="btnCancelDriver">İptal</button>
+          <button type="submit" class="spatial-btn-primary">Sürücü Kaydet</button>
+        </div>
+      </form>
     </div>
-    <div class="install-steps">
-      <div class="install-step">
-        <span class="step-num">1</span>
-        <span>Safari altındaki <span class="share-icon-badge">Paylaş (⬆️)</span> simgesine dokunun.</span>
+  </div>
+
+  <!-- MODAL 2: Hızlı Tarih Güncelle / Yenile (Quick Renewal Modal) -->
+  <div id="quickUpdateModal" class="spatial-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="quickUpdateTitle">
+    <div class="spatial-modal-card small-modal">
+      <div class="spatial-modal-header">
+        <div class="modal-title-wrap">
+          <span class="modal-badge-icon">📅</span>
+          <h2 id="quickUpdateTitle">Tarih Güncelle</h2>
+        </div>
+        <button id="closeQuickUpdateModal" class="spatial-close-btn" aria-label="Kapat">&times;</button>
       </div>
-      <div class="install-step">
-        <span class="step-num">2</span>
-        <span>Menüde aşağı kaydırıp <strong>"Ana Ekrana Ekle"</strong> (➕) seçeneğine dokunun.</span>
-      </div>
-      <div class="install-step">
-        <span class="step-num">3</span>
-        <span>Sağ üstteki <strong>"Ekle"</strong>ye basın. Uygulama leblebi ikonuyla ana ekranınıza gelecektir!</span>
+
+      <div class="quick-update-body">
+        <p id="quickUpdateItemTitle" class="quick-update-subtitle">34 LEB 1919</p>
+
+        <div class="form-group">
+          <label for="quickDateFieldSelect">Güncellenecek Belge</label>
+          <select id="quickDateFieldSelect">
+            <!-- Populated dynamically based on vehicle vs driver -->
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="quickNewDateInput">Yeni Bitiş Tarihi</label>
+          <input type="date" id="quickNewDateInput">
+        </div>
+
+        <!-- Quick Shortcut Buttons: +1 Yıl, +6 Ay, +2 Yıl -->
+        <div class="quick-date-presets">
+          <button type="button" class="preset-btn" data-add-months="6">+6 Ay</button>
+          <button type="button" class="preset-btn active" data-add-months="12">+1 Yıl</button>
+          <button type="button" class="preset-btn" data-add-months="24">+2 Yıl</button>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="spatial-btn-secondary" id="btnCancelQuickUpdate">İptal</button>
+          <button type="button" class="spatial-btn-primary" id="btnSaveQuickUpdate">Kaydet ve Eşitle</button>
+        </div>
       </div>
     </div>
-  </aside>
+  </div>
+
+  <!-- Mobile Floating Action / Mode Switcher -->
+  <div class="mobile-bottom-bar" id="mobileBottomBar">
+    <div class="mobile-bar-info">
+      <span class="status-dot"></span>
+      <span id="mobileStatusText">Canlı Takip Aktif</span>
+    </div>
+    <button id="mobileAdminToggleBtn" class="spatial-pill-btn-small" title="Yönetici Kilidini Aç">
+      <span>🔐</span>
+      <span id="mobileAdminBtnText">Yönetici Girişi</span>
+    </button>
+  </div>
 
   <!-- Service Worker Update Toast -->
-  <aside id="updateToast" class="update-toast" aria-label="Güncelleme Bildirimi">
-    <span>✨ Leb için yeni bir sürüm hazır!</span>
-    <button id="btnUpdateApp" class="update-toast-btn">Yenile</button>
+  <aside id="updateToast" class="spatial-update-toast" aria-label="Güncelleme Bildirimi">
+    <span>✨ Leb Lojistik yeni sürüm hazır!</span>
+    <button id="btnUpdateApp" class="spatial-toast-btn">Yenile</button>
   </aside>
 
-  <!-- Application Script (v2.3.1 Cache-Busted) -->
-  <script src="js/app.js?v=2.3.1"></script>
+  <!-- Application Script (v3.0.0 Spatial UI Engine) -->
+  <script src="js/app.js?v=3.0.0"></script>
 </body>
 </html>
