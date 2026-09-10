@@ -151,18 +151,22 @@ function triggerNotificationCheck(force = false) {
 // --- 5. Realtime Cloud Sync Engine (Firebase RTDB + SSE + Instant Deletion Mirror) ---
 const CLOUD_ENDPOINT = 'https://leb1919-default-rtdb.firebaseio.com/leb_store.json';
 const STORAGE_KEY = 'leb_fleet_store_v8';
-const DELETED_IDS_KEY = 'leb_deleted_ids_v8';
+const DELETED_IDS_KEY = 'leb_deleted_ids_permanent';
 
-// One-time initialization for v4.2.0: clean legacy test keys
-if (!localStorage.getItem('leb_v420_init')) {
-  try {
-    localStorage.removeItem('leb_deleted_ids');
-    localStorage.removeItem('leb_deleted_ids_v7');
-    localStorage.removeItem('leb_fleet_store_v6');
-    localStorage.removeItem('leb_fleet_store_v7');
-    localStorage.setItem('leb_v420_init', 'true');
-  } catch (e) {}
-}
+// Migrate all past deleted IDs into permanent registry so deleted records NEVER return!
+try {
+  const legacyKeys = ['leb_deleted_ids', 'leb_deleted_ids_v7', 'leb_deleted_ids_v8'];
+  let permanent = JSON.parse(localStorage.getItem(DELETED_IDS_KEY) || '[]');
+  legacyKeys.forEach(k => {
+    try {
+      const arr = JSON.parse(localStorage.getItem(k) || '[]');
+      if (Array.isArray(arr) && arr.length > 0) {
+        permanent = Array.from(new Set([...permanent, ...arr]));
+      }
+    } catch (e) {}
+  });
+  localStorage.setItem(DELETED_IDS_KEY, JSON.stringify(permanent.slice(-1000)));
+} catch (e) {}
 
 let isSyncing = false;
 let syncQueued = false;
@@ -176,7 +180,7 @@ function markRecordDeletedLocally(id) {
     const deletedIds = JSON.parse(localStorage.getItem(DELETED_IDS_KEY) || '[]');
     if (!deletedIds.includes(id)) {
       deletedIds.push(id);
-      localStorage.setItem(DELETED_IDS_KEY, JSON.stringify(deletedIds.slice(-300)));
+      localStorage.setItem(DELETED_IDS_KEY, JSON.stringify(deletedIds.slice(-1000)));
     }
   } catch (e) {}
 }
@@ -387,33 +391,40 @@ function handleRemoteDataPayload(remoteData) {
       ? Object.values(remoteData.deletedIds)
       : [];
 
-  // Ingest deleted IDs from cloud into local registry
+  // Ingest deleted IDs from cloud into local permanent registry
   if (remoteDeletedIds.length > 0) {
     try {
       const localDeleted = JSON.parse(localStorage.getItem(DELETED_IDS_KEY) || '[]');
-      const combined = Array.from(new Set([...localDeleted, ...remoteDeletedIds])).slice(-300);
+      const combined = Array.from(new Set([...localDeleted, ...remoteDeletedIds])).slice(-1000);
       localStorage.setItem(DELETED_IDS_KEY, JSON.stringify(combined));
     } catch (e) {}
   }
 
   const cleanRemote = cleanGarbageRecords(remoteRaw);
 
-  // Check if there are newly created local items that haven't reached cloud yet
-  const localRaw = getStoredRecords(true);
-  const remoteIdSet = new Set(cleanRemote.map(r => r.id));
-  const deletedSet = getDeletedIdsSet();
-  const locallyAdded = localRaw.filter(r => !remoteIdSet.has(r.id) && !deletedSet.has(r.id));
-
-  if (locallyAdded.length > 0) {
-    const merged = cleanGarbageRecords(deduplicateItems([...cleanRemote, ...locallyAdded]));
-    saveRecordsLocally(merged);
-    lastRenderedHash = '';
-    renderCurrentView();
-    pushToCloud(merged);
-  } else {
+  if (isMobileDevice()) {
+    // MOBILE: Pure viewer! Always mirrors cloud state directly
     saveRecordsLocally(cleanRemote);
     lastRenderedHash = '';
     renderCurrentView();
+  } else {
+    // DESKTOP: Check if there are newly added items offline that are not yet in cloud and not deleted
+    const localRaw = getStoredRecords(true);
+    const remoteIdSet = new Set(cleanRemote.map(r => r.id));
+    const deletedSet = getDeletedIdsSet();
+    const locallyAdded = localRaw.filter(r => !remoteIdSet.has(r.id) && !deletedSet.has(r.id));
+
+    if (locallyAdded.length > 0) {
+      const merged = cleanGarbageRecords(deduplicateItems([...cleanRemote, ...locallyAdded]));
+      saveRecordsLocally(merged);
+      lastRenderedHash = '';
+      renderCurrentView();
+      pushToCloud(merged);
+    } else {
+      saveRecordsLocally(cleanRemote);
+      lastRenderedHash = '';
+      renderCurrentView();
+    }
   }
 
   updateSyncBadge('synced');
@@ -735,8 +746,7 @@ function getStoredRecords(includeDeleted = false) {
   try {
     const data = localStorage.getItem(STORAGE_KEY);
     if (!data) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(SEED_RECORDS));
-      return includeDeleted ? SEED_RECORDS : SEED_RECORDS.filter(r => !r.deleted);
+      return [];
     }
     let parsed = JSON.parse(data);
     parsed = cleanGarbageRecords(deduplicateItems(parsed));
@@ -857,61 +867,60 @@ let currentSubFilter = 'all';     // 'all' | 'Çekici' | 'Dorse' | 'Otomobil'
 let currentSearchQuery = '';
 
 function triggerSmoothRender() {
-  const listContainer = document.getElementById('recordsList');
-  if (listContainer) {
-    listContainer.classList.add('switching');
-    setTimeout(() => {
-      lastRenderedHash = '';
-      renderCurrentView();
-      requestAnimationFrame(() => {
-        listContainer.classList.remove('switching');
-      });
-    }, 90);
-  } else {
-    renderCurrentView();
-  }
+  lastRenderedHash = '';
+  renderCurrentView();
 }
 
 function setupSectionTabs() {
   const tabVehicles = document.getElementById('tabVehicles');
   const tabDrivers = document.getElementById('tabDrivers');
   const addBtnLabel = document.getElementById('addBtnLabel');
-  const listContainer = document.getElementById('recordsList');
 
   function switchSection(target) {
     if (currentSection === target) return;
     currentSection = target;
 
-    if (listContainer) {
-      listContainer.classList.add('switching');
-    }
-
     if (target === 'vehicles') {
-      tabVehicles.classList.add('active');
-      tabVehicles.setAttribute('aria-selected', 'true');
-      tabDrivers.classList.remove('active');
-      tabDrivers.setAttribute('aria-selected', 'false');
+      if (tabVehicles) {
+        tabVehicles.classList.add('active');
+        tabVehicles.setAttribute('aria-selected', 'true');
+      }
+      if (tabDrivers) {
+        tabDrivers.classList.remove('active');
+        tabDrivers.setAttribute('aria-selected', 'false');
+      }
       if (addBtnLabel) addBtnLabel.textContent = 'Yeni Araç Ekle';
     } else {
-      tabDrivers.classList.add('active');
-      tabDrivers.setAttribute('aria-selected', 'true');
-      tabVehicles.classList.remove('active');
-      tabVehicles.setAttribute('aria-selected', 'false');
+      if (tabDrivers) {
+        tabDrivers.classList.add('active');
+        tabDrivers.setAttribute('aria-selected', 'true');
+      }
+      if (tabVehicles) {
+        tabVehicles.classList.remove('active');
+        tabVehicles.setAttribute('aria-selected', 'false');
+      }
       if (addBtnLabel) addBtnLabel.textContent = 'Yeni Sürücü Ekle';
     }
 
+    // Reset filters on tab switch so vehicles and drivers NEVER clash or hide!
     currentSubFilter = 'all';
+    currentStatFilter = 'all';
+    currentSearchQuery = '';
+
+    const searchInput = document.getElementById('searchInput');
+    const clearBtn = document.getElementById('clearSearchBtn');
+    if (searchInput) searchInput.value = '';
+    if (clearBtn) clearBtn.style.display = 'none';
+
+    document.querySelectorAll('.leb-stat-card').forEach(c => {
+      c.classList.toggle('active-stat', c.dataset.filter === 'all');
+    });
+
     renderSubFilterPills();
 
-    setTimeout(() => {
-      lastRenderedHash = '';
-      renderCurrentView();
-      if (listContainer) {
-        requestAnimationFrame(() => {
-          listContainer.classList.remove('switching');
-        });
-      }
-    }, 100);
+    // Instant redraw, zero timeout delay
+    lastRenderedHash = '';
+    renderCurrentView();
   }
 
   if (tabVehicles && tabDrivers) {
@@ -1784,16 +1793,6 @@ function setupModals() {
       lastRenderedHash = '';
       renderCurrentView();
 
-      // Highlight new card and scroll into view smoothly
-      setTimeout(() => {
-        const newCard = document.querySelector(`.leb-row-card[data-id="${newRec.id}"]`);
-        if (newCard) {
-          newCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          newCard.classList.add('newly-saved-pulse');
-          setTimeout(() => newCard.classList.remove('newly-saved-pulse'), 1800);
-        }
-      }, 100);
-
       showToast(`✅ ${newRec.title} aracı kaydedildi`);
       pushToCloud(records);
     });
@@ -1858,16 +1857,6 @@ function setupModals() {
       renderSubFilterPills();
       lastRenderedHash = '';
       renderCurrentView();
-
-      // Highlight new card
-      setTimeout(() => {
-        const newCard = document.querySelector(`.leb-row-card[data-id="${newRec.id}"]`);
-        if (newCard) {
-          newCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          newCard.classList.add('newly-saved-pulse');
-          setTimeout(() => newCard.classList.remove('newly-saved-pulse'), 1800);
-        }
-      }, 100);
 
       showToast(`✅ ${newRec.title} sürücüsü kaydedildi`);
       pushToCloud(records);

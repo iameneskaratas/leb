@@ -165,8 +165,8 @@ body {
   line-height: 1;
 }
 
-/* Header Action Bar (Absolute Right) */
-.header-actions {
+/* Header Action Button (Desktop Only, Absolute Right) */
+.desktop-admin-bar {
   position: absolute;
   right: 0;
   display: flex;
@@ -1510,88 +1510,18 @@ body {
   }
 }
 
-.newly-saved-pulse {
-  animation: cardHighlightGlow 1.6s ease-out;
-}
-
-@keyframes cardHighlightGlow {
-  0% {
-    background-color: #ECFDF5;
-    border-color: #10B981;
-    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.25);
-  }
-  100% {
-    background-color: var(--bg-surface);
-    border-color: var(--border-subtle);
-    box-shadow: var(--shadow-card);
-  }
-}
-
 /* ==========================================================================
-   MOBILE RESPONSIVE RULES (max-width: 768px)
+   STRICT MOBILE READ-ONLY GATE & RESPONSIVE RULES (max-width: 768px)
+   Mobile is strictly for viewing! All admin tools, modals, and actions hidden.
    ========================================================================== */
 @media (max-width: 768px) {
-  /* Excel Export remains strictly Desktop-only (as requested) */
+  /* Hide Admin bar, Add button, Export Button, Modals, Card Actions & Search strictly on Mobile */
+  .desktop-admin-bar,
   .export-btn,
+  .card-actions,
+  .leb-modal-overlay,
   .leb-search-container {
     display: none !important;
-  }
-
-  /* Compact Header Actions on Mobile */
-  .header-actions {
-    position: absolute;
-    right: 12px;
-    gap: 6px;
-  }
-
-  .header-actions .add-btn {
-    padding: 6px 12px;
-    font-size: 0.78rem;
-    border-radius: 20px;
-    font-weight: 600;
-  }
-
-  /* Responsive Modals on Mobile */
-  .leb-modal-overlay {
-    padding: 12px;
-    align-items: flex-end;
-  }
-
-  .leb-modal-box {
-    width: 100%;
-    max-width: 100%;
-    max-height: 88vh;
-    border-radius: 20px 20px 14px 14px;
-    padding: 18px 16px;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-    box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.2);
-    animation: modalSlideUp 0.22s cubic-bezier(0.16, 1, 0.3, 1);
-  }
-
-  @keyframes modalSlideUp {
-    from {
-      opacity: 0;
-      transform: translateY(20px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-
-  /* Mobile Card Action Buttons */
-  .card-actions {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-  }
-
-  .action-btn {
-    padding: 3px 8px;
-    font-size: 0.68rem;
-    font-weight: 600;
-    border-radius: 6px;
   }
 
   .leb-main {
