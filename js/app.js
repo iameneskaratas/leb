@@ -1,7 +1,7 @@
 /**
- * Leb - Fleet & Driver Compliance Engine (v3.8.0)
+ * Leb - Fleet & Driver Compliance Engine (v3.9.0)
  * Calm Palette, Zero Eye Strain, Deduplicated Cloud Sync,
- * Smooth Filter Transitions, Turkish Diacritic Search, Desktop Excel Export
+ * Smooth Filter Transitions, Turkish Diacritic Search, Categorized Excel Export
  */
 
 // --- 1. Service Worker & Update Manager ---
@@ -11,7 +11,7 @@ function registerServiceWorker() {
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
       navigator.serviceWorker
-        .register('./sw.js?v=3.8.0')
+        .register('./sw.js?v=3.9.0')
         .then((registration) => {
           registration.addEventListener('updatefound', () => {
             newWorker = registration.installing;
@@ -147,7 +147,7 @@ function triggerNotificationCheck(force = false) {
 
 // --- 5. Quiet Bottom Sync Engine with Robust Deduplication ---
 const CLOUD_ENDPOINT = 'https://leb1919-default-rtdb.firebaseio.com/leb_store.json';
-const STORAGE_KEY = 'leb_fleet_store_v4';
+const STORAGE_KEY = 'leb_fleet_store_v5';
 
 let isSyncing = false;
 let syncQueued = false;
@@ -500,7 +500,7 @@ function calculateRecordUrgency(rec) {
   if (minDays < 0) {
     return {
       status: 'critical',
-      text: `${Math.abs(minDays)}G önce doldu`,
+      text: `${Math.abs(minDays)} gün geçti`,
       minDays,
       label: mostUrgentLabel
     };
@@ -1623,7 +1623,15 @@ function deleteRecord(id) {
   }
 }
 
-// --- 13. Desktop Excel (CSV) Export Engine ---
+// --- 13. Desktop Excel (CSV) Export Engine (Clean, Categorized, Separate Tables) ---
+function getTodayDateStr() {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, '0');
+  const d = String(now.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
 function formatExcelDate(dateStr) {
   if (!dateStr) return '';
   try {
@@ -1637,11 +1645,11 @@ function formatExcelDate(dateStr) {
 function getSingleDateStatus(dateStr) {
   if (!dateStr) return { text: 'Belirtilmedi', days: '' };
   const days = getDaysRemaining(dateStr);
-  if (days < 0) return { text: `Süresi Doldu (${Math.abs(days)} gün önce)`, days };
+  if (days < 0) return { text: `${Math.abs(days)} gün geçti`, days };
   if (days === 0) return { text: 'Bugün Son Gün', days: 0 };
-  if (days <= 7) return { text: `Kritik (${days} gün kaldı)`, days };
-  if (days <= 30) return { text: `Yaklaşıyor (${days} gün kaldı)`, days };
-  return { text: `Sorunsuz (${days} gün var)`, days };
+  if (days <= 7) return { text: `${days} gün kaldı`, days };
+  if (days <= 30) return { text: `${days} gün kaldı`, days };
+  return { text: 'Sorunsuz', days };
 }
 
 function escapeCsvCell(val) {
@@ -1650,9 +1658,138 @@ function escapeCsvCell(val) {
   return `"${str}"`;
 }
 
-function exportToExcel() {
+function downloadCsvFile(filename, csvContent) {
+  // UTF-8 BOM (\uFEFF) ensures Microsoft Excel displays Turkish characters flawlessly
+  const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.setAttribute('download', filename);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
+function exportVehiclesCsv() {
   const records = getStoredRecords(false);
-  if (!records || records.length === 0) {
+  const vehicles = records
+    .filter(r => r.type === 'vehicle')
+    .sort((a, b) => {
+      // 1. Sort by subType: Çekici, Dorse, Otomobil
+      const order = { 'Çekici': 1, 'Dorse': 2, 'Otomobil': 3 };
+      const rankA = order[a.subType] || 4;
+      const rankB = order[b.subType] || 4;
+      if (rankA !== rankB) return rankA - rankB;
+      // 2. Sort by plate
+      return compareTurkish(a.title, b.title);
+    });
+
+  if (vehicles.length === 0) {
+    alert('Dışa aktarılacak araç kaydı bulunamadı.');
+    return;
+  }
+
+  const rows = [];
+
+  // Row 1: Direct Column Headers (No Column1, Column2 auto-filter bug in Excel)
+  rows.push([
+    escapeCsvCell('Ana Kategori'),
+    escapeCsvCell('Alt Kategori'),
+    escapeCsvCell('Plaka'),
+    escapeCsvCell('Genel Durum'),
+    escapeCsvCell('En Acil Durum'),
+    escapeCsvCell('Muayene Bitiş ve Durumu'),
+    escapeCsvCell('Sigorta / Kasko Bitiş ve Durumu'),
+    escapeCsvCell('Yeşil Kart Bitiş ve Durumu'),
+    escapeCsvCell('Notlar')
+  ]);
+
+  vehicles.forEach(v => {
+    const muayene = getSingleDateStatus(v.inspectionDate);
+    const sigorta = getSingleDateStatus(v.insuranceDate);
+    const yesilKart = getSingleDateStatus(v.greenCardDate);
+    const urgency = calculateRecordUrgency(v);
+    const statusText = urgency.status === 'critical' ? 'KRİTİK' : urgency.status === 'warning' ? 'YAKLAŞAN' : 'SORUNSUZ';
+
+    const muayeneCell = v.inspectionDate ? `${formatExcelDate(v.inspectionDate)} (${muayene.text})` : '—';
+    const sigortaCell = v.insuranceDate ? `${formatExcelDate(v.insuranceDate)} (${sigorta.text})` : '—';
+    const yesilKartCell = v.subType === 'Otomobil'
+      ? (v.greenCardDate ? `${formatExcelDate(v.greenCardDate)} (${yesilKart.text})` : 'Muaf')
+      : (v.greenCardDate ? `${formatExcelDate(v.greenCardDate)} (${yesilKart.text})` : '—');
+
+    rows.push([
+      escapeCsvCell('Araç'),
+      escapeCsvCell(v.subType || 'Araç'),
+      escapeCsvCell(v.title || ''),
+      escapeCsvCell(statusText),
+      escapeCsvCell(urgency.text),
+      escapeCsvCell(muayeneCell),
+      escapeCsvCell(sigortaCell),
+      escapeCsvCell(yesilKartCell),
+      escapeCsvCell(v.notes || '')
+    ]);
+  });
+
+  const csvContent = rows.map(r => r.join(';')).join('\r\n');
+  downloadCsvFile(`leb_araclar_${getTodayDateStr()}.csv`, csvContent);
+}
+
+function exportDriversCsv() {
+  const records = getStoredRecords(false);
+  const drivers = records
+    .filter(r => r.type === 'driver')
+    .sort((a, b) => compareTurkish(a.title, b.title));
+
+  if (drivers.length === 0) {
+    alert('Dışa aktarılacak şoför kaydı bulunamadı.');
+    return;
+  }
+
+  const rows = [];
+
+  // Row 1: Direct Column Headers
+  rows.push([
+    escapeCsvCell('Ana Kategori'),
+    escapeCsvCell('Alt Kategori'),
+    escapeCsvCell('Ad Soyad'),
+    escapeCsvCell('Pasaport No'),
+    escapeCsvCell('Genel Durum'),
+    escapeCsvCell('En Acil Durum'),
+    escapeCsvCell('Vize Bitiş ve Durumu'),
+    escapeCsvCell('Ehliyet / SRC Bitiş ve Durumu'),
+    escapeCsvCell('Notlar')
+  ]);
+
+  drivers.forEach(d => {
+    const vize = getSingleDateStatus(d.visaDate);
+    const ehliyet = getSingleDateStatus(d.licenseDate);
+    const urgency = calculateRecordUrgency(d);
+    const statusText = urgency.status === 'critical' ? 'KRİTİK' : urgency.status === 'warning' ? 'YAKLAŞAN' : 'SORUNSUZ';
+
+    const vizeCell = d.visaDate ? `${formatExcelDate(d.visaDate)} (${vize.text})` : '—';
+    const ehliyetCell = d.licenseDate ? `${formatExcelDate(d.licenseDate)} (${ehliyet.text})` : '—';
+
+    rows.push([
+      escapeCsvCell('Sürücü'),
+      escapeCsvCell(d.subType || 'Şoför'),
+      escapeCsvCell(d.title || ''),
+      escapeCsvCell(d.passport || '—'),
+      escapeCsvCell(statusText),
+      escapeCsvCell(urgency.text),
+      escapeCsvCell(vizeCell),
+      escapeCsvCell(ehliyetCell),
+      escapeCsvCell(d.notes || '')
+    ]);
+  });
+
+  const csvContent = rows.map(r => r.join(';')).join('\r\n');
+  downloadCsvFile(`leb_soforler_${getTodayDateStr()}.csv`, csvContent);
+}
+
+function exportAllUnifiedCsv() {
+  const records = getStoredRecords(false);
+  if (records.length === 0) {
     alert('Dışa aktarılacak kayıt bulunamadı.');
     return;
   }
@@ -1660,8 +1797,10 @@ function exportToExcel() {
   const vehicles = records
     .filter(r => r.type === 'vehicle')
     .sort((a, b) => {
-      const subComp = compareTurkish(a.subType, b.subType);
-      if (subComp !== 0) return subComp;
+      const order = { 'Çekici': 1, 'Dorse': 2, 'Otomobil': 3 };
+      const rankA = order[a.subType] || 4;
+      const rankB = order[b.subType] || 4;
+      if (rankA !== rankB) return rankA - rankB;
       return compareTurkish(a.title, b.title);
     });
 
@@ -1671,113 +1810,143 @@ function exportToExcel() {
 
   const rows = [];
 
-  // Header Banner
-  const nowStr = new Date().toLocaleDateString('tr-TR', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  });
-  rows.push([escapeCsvCell(`LEB FİLO VE SÜRÜCÜ UYUM RAPORU - ${nowStr}`)]);
-  rows.push([]);
-
-  // --- 1. ARAÇLAR TABLOSU ---
-  rows.push([escapeCsvCell('--- ARAÇ FİLOSU ---')]);
+  // Row 1: Direct Column Headers (Aligned for both vehicles and drivers)
   rows.push([
-    escapeCsvCell('Kategori'),
-    escapeCsvCell('Plaka'),
-    escapeCsvCell('Muayene Tarihi'),
-    escapeCsvCell('Muayene Kalan Gün'),
-    escapeCsvCell('Muayene Durumu'),
-    escapeCsvCell('Sigorta / Kasko Tarihi'),
-    escapeCsvCell('Sigorta Kalan Gün'),
-    escapeCsvCell('Sigorta Durumu'),
-    escapeCsvCell('Yeşil Kart Tarihi'),
-    escapeCsvCell('Yeşil Kart Kalan Gün'),
-    escapeCsvCell('Yeşil Kart Durumu'),
+    escapeCsvCell('Ana Kategori'),
+    escapeCsvCell('Alt Kategori'),
+    escapeCsvCell('Tanım (Plaka / İsim)'),
+    escapeCsvCell('Pasaport No'),
     escapeCsvCell('Genel Durum'),
+    escapeCsvCell('En Acil Durum'),
+    escapeCsvCell('Muayene / Vize Durumu'),
+    escapeCsvCell('Sigorta / Ehliyet Durumu'),
+    escapeCsvCell('Yeşil Kart Durumu'),
     escapeCsvCell('Notlar')
   ]);
 
+  // Vehicles
   vehicles.forEach(v => {
     const muayene = getSingleDateStatus(v.inspectionDate);
     const sigorta = getSingleDateStatus(v.insuranceDate);
     const yesilKart = getSingleDateStatus(v.greenCardDate);
     const urgency = calculateRecordUrgency(v);
-    const urgencyText = urgency.status === 'critical' ? 'KRİTİK' : urgency.status === 'warning' ? 'YAKLAŞAN' : 'SORUNSUZ';
+    const statusText = urgency.status === 'critical' ? 'KRİTİK' : urgency.status === 'warning' ? 'YAKLAŞAN' : 'SORUNSUZ';
+
+    const muayeneCell = v.inspectionDate ? `Muayene: ${formatExcelDate(v.inspectionDate)} (${muayene.text})` : '—';
+    const sigortaCell = v.insuranceDate ? `Sigorta: ${formatExcelDate(v.insuranceDate)} (${sigorta.text})` : '—';
+    const yesilKartCell = v.subType === 'Otomobil'
+      ? (v.greenCardDate ? `Yeşil Kart: ${formatExcelDate(v.greenCardDate)} (${yesilKart.text})` : 'Muaf')
+      : (v.greenCardDate ? `Yeşil Kart: ${formatExcelDate(v.greenCardDate)} (${yesilKart.text})` : '—');
 
     rows.push([
+      escapeCsvCell('Araç'),
       escapeCsvCell(v.subType || 'Araç'),
       escapeCsvCell(v.title || ''),
-      escapeCsvCell(formatExcelDate(v.inspectionDate)),
-      escapeCsvCell(muayene.days),
-      escapeCsvCell(muayene.text),
-      escapeCsvCell(formatExcelDate(v.insuranceDate)),
-      escapeCsvCell(sigorta.days),
-      escapeCsvCell(sigorta.text),
-      escapeCsvCell(formatExcelDate(v.greenCardDate)),
-      escapeCsvCell(yesilKart.days),
-      escapeCsvCell(yesilKart.text),
-      escapeCsvCell(urgencyText),
+      escapeCsvCell('—'),
+      escapeCsvCell(statusText),
+      escapeCsvCell(urgency.text),
+      escapeCsvCell(muayeneCell),
+      escapeCsvCell(sigortaCell),
+      escapeCsvCell(yesilKartCell),
       escapeCsvCell(v.notes || '')
     ]);
   });
 
-  rows.push([]);
-  rows.push([]);
-
-  // --- 2. SÜRÜCÜLER TABLOSU ---
-  rows.push([escapeCsvCell('--- SÜRÜCÜ KADROSU ---')]);
-  rows.push([
-    escapeCsvCell('Kategori'),
-    escapeCsvCell('Ad Soyad'),
-    escapeCsvCell('Pasaport No'),
-    escapeCsvCell('Vize Bitiş Tarihi'),
-    escapeCsvCell('Vize Kalan Gün'),
-    escapeCsvCell('Vize Durumu'),
-    escapeCsvCell('Ehliyet / SRC Tarihi'),
-    escapeCsvCell('Ehliyet Kalan Gün'),
-    escapeCsvCell('Ehliyet Durumu'),
-    escapeCsvCell('Genel Durum'),
-    escapeCsvCell('Notlar')
-  ]);
-
+  // Drivers
   drivers.forEach(d => {
     const vize = getSingleDateStatus(d.visaDate);
     const ehliyet = getSingleDateStatus(d.licenseDate);
     const urgency = calculateRecordUrgency(d);
-    const urgencyText = urgency.status === 'critical' ? 'KRİTİK' : urgency.status === 'warning' ? 'YAKLAŞAN' : 'SORUNSUZ';
+    const statusText = urgency.status === 'critical' ? 'KRİTİK' : urgency.status === 'warning' ? 'YAKLAŞAN' : 'SORUNSUZ';
+
+    const vizeCell = d.visaDate ? `Vize: ${formatExcelDate(d.visaDate)} (${vize.text})` : '—';
+    const ehliyetCell = d.licenseDate ? `Ehliyet: ${formatExcelDate(d.licenseDate)} (${ehliyet.text})` : '—';
 
     rows.push([
-      escapeCsvCell(d.subType || 'Sürücü'),
+      escapeCsvCell('Sürücü'),
+      escapeCsvCell(d.subType || 'Şoför'),
       escapeCsvCell(d.title || ''),
-      escapeCsvCell(d.passport || ''),
-      escapeCsvCell(formatExcelDate(d.visaDate)),
-      escapeCsvCell(vize.days),
-      escapeCsvCell(vize.text),
-      escapeCsvCell(formatExcelDate(d.licenseDate)),
-      escapeCsvCell(ehliyet.days),
-      escapeCsvCell(ehliyet.text),
-      escapeCsvCell(urgencyText),
+      escapeCsvCell(d.passport || '—'),
+      escapeCsvCell(statusText),
+      escapeCsvCell(urgency.text),
+      escapeCsvCell(vizeCell),
+      escapeCsvCell(ehliyetCell),
+      escapeCsvCell('—'),
       escapeCsvCell(d.notes || '')
     ]);
   });
 
-  // Convert to CSV text separated by semicolons
   const csvContent = rows.map(r => r.join(';')).join('\r\n');
+  downloadCsvFile(`leb_tum_filo_${getTodayDateStr()}.csv`, csvContent);
+}
 
-  // Prepend UTF-8 BOM (\uFEFF) so Excel opens Turkish letters flawlessly
-  const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  const fileDate = new Date().toISOString().split('T')[0];
-  link.setAttribute('download', `leb_filo_raporu_${fileDate}.csv`);
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
+// Modal Controls for Export
+function openExportModal() {
+  const records = getStoredRecords(false);
+  const vehiclesCount = records.filter(r => r.type === 'vehicle').length;
+  const driversCount = records.filter(r => r.type === 'driver').length;
+
+  const bVeh = document.getElementById('badgeExportVehicles');
+  const bDrv = document.getElementById('badgeExportDrivers');
+  if (bVeh) bVeh.textContent = `${vehiclesCount} Araç`;
+  if (bDrv) bDrv.textContent = `${driversCount} Şoför`;
+
+  const modal = document.getElementById('exportModal');
+  if (modal) {
+    modal.classList.add('active');
+  }
+}
+
+function closeExportModal() {
+  const modal = document.getElementById('exportModal');
+  if (modal) {
+    modal.classList.remove('active');
+  }
+}
+
+function setupExportModal() {
+  const btnExport = document.getElementById('btnExportExcel');
+  const closeBtn = document.getElementById('closeExportModalBtn');
+  const cancelBtn = document.getElementById('cancelExportBtn');
+  const overlay = document.getElementById('exportModal');
+
+  const btnVehicles = document.getElementById('btnExportVehicles');
+  const btnDrivers = document.getElementById('btnExportDrivers');
+  const btnAll = document.getElementById('btnExportAll');
+
+  if (btnExport) {
+    btnExport.addEventListener('click', openExportModal);
+  }
+  if (closeBtn) {
+    closeBtn.addEventListener('click', closeExportModal);
+  }
+  if (cancelBtn) {
+    cancelBtn.addEventListener('click', closeExportModal);
+  }
+  if (overlay) {
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) closeExportModal();
+    });
+  }
+
+  if (btnVehicles) {
+    btnVehicles.addEventListener('click', () => {
+      exportVehiclesCsv();
+      closeExportModal();
+    });
+  }
+  if (btnDrivers) {
+    btnDrivers.addEventListener('click', () => {
+      exportDriversCsv();
+      closeExportModal();
+    });
+  }
+  if (btnAll) {
+    btnAll.addEventListener('click', () => {
+      exportAllUnifiedCsv();
+      closeExportModal();
+    });
+  }
 }
 
 // Dynamic Header Scroll Blur (Only blurs when scrolled, completely clear at top)
@@ -1814,11 +1983,8 @@ document.addEventListener('DOMContentLoaded', () => {
   // Initial local render
   renderCurrentView();
 
-  // Desktop Excel Export button
-  const btnExport = document.getElementById('btnExportExcel');
-  if (btnExport) {
-    btnExport.addEventListener('click', exportToExcel);
-  }
+  // Desktop Excel Export modal
+  setupExportModal();
 
   // Manual sync button
   const manualBtn = document.getElementById('manualSyncBtn');

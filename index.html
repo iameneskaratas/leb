@@ -18,12 +18,12 @@
   <link rel="manifest" href="manifest.webmanifest?v=3.6.0">
 
   <!-- Favicon & Theme Color -->
-  <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon.png?v=3.8.0">
-  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png?v=3.8.0">
+  <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon.png?v=3.9.0">
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png?v=3.9.0">
   <meta name="theme-color" content="#F8F9FA">
 
-  <!-- Stylesheet (Leb v3.8.0) -->
-  <link rel="stylesheet" href="css/app.css?v=3.8.0">
+  <!-- Stylesheet (Leb v3.9.0) -->
+  <link rel="stylesheet" href="css/app.css?v=3.9.0">
 </head>
 <body>
 
@@ -379,6 +379,63 @@
     </div>
   </div>
 
+  <!-- Export to Excel Modal (Clean, Categorized, Desktop Only) -->
+  <div id="exportModal" class="leb-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="exportModalHeading">
+    <div class="leb-modal-box export-modal-box">
+      <div class="leb-modal-head">
+        <h2 id="exportModalHeading" class="leb-modal-title">Excel Raporu İndir</h2>
+        <button id="closeExportModalBtn" class="leb-close-btn" aria-label="Kapat">&times;</button>
+      </div>
+      <div class="export-modal-body">
+        <p class="export-modal-desc">İndirmek istediğiniz Excel (CSV) tablosunu seçin:</p>
+
+        <div class="export-cards-grid">
+          <!-- 1. Araçlar Raporu -->
+          <button type="button" class="export-card" id="btnExportVehicles">
+            <div class="export-card-icon">🚛</div>
+            <div class="export-card-content">
+              <div class="export-card-title-row">
+                <span class="export-card-title">Araçlar Listesi</span>
+                <span class="export-card-pill" id="badgeExportVehicles">3 Araç</span>
+              </div>
+              <p class="export-card-desc">Çekici, Dorse ve Otomobil alt kategorilerine ayrılmış; Muayene, Sigorta ve Yeşil Kart süreleri.</p>
+            </div>
+            <span class="export-card-arrow">&rarr;</span>
+          </button>
+
+          <!-- 2. Şoförler Raporu -->
+          <button type="button" class="export-card" id="btnExportDrivers">
+            <div class="export-card-icon">👤</div>
+            <div class="export-card-content">
+              <div class="export-card-title-row">
+                <span class="export-card-title">Şoförler Listesi</span>
+                <span class="export-card-pill" id="badgeExportDrivers">3 Şoför</span>
+              </div>
+              <p class="export-card-desc">Vize bitişi, Ehliyet / SRC ve Pasaport numaralarıyla sürücü kadrosu tablosu.</p>
+            </div>
+            <span class="export-card-arrow">&rarr;</span>
+          </button>
+
+          <!-- 3. Tüm Filo (Birleşik Tablo) -->
+          <button type="button" class="export-card" id="btnExportAll">
+            <div class="export-card-icon">📑</div>
+            <div class="export-card-content">
+              <div class="export-card-title-row">
+                <span class="export-card-title">Tüm Filo (Birleşik Tablo)</span>
+                <span class="export-card-pill">Tümü</span>
+              </div>
+              <p class="export-card-desc">Araçlar ve şoförlerin tamamını tek bir düzenli tabloda alt alta listeler.</p>
+            </div>
+            <span class="export-card-arrow">&rarr;</span>
+          </button>
+        </div>
+      </div>
+      <div class="modal-buttons" style="margin-top: 16px;">
+        <button type="button" id="cancelExportBtn" class="leb-btn leb-btn-secondary" style="width: 100%;">Kapat</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Custom Themed Calendar Popover (Replaces ugly browser datepicker completely) -->
   <div id="calBackdrop" class="cal-backdrop" style="display: none;"></div>
   <div id="lebCalendarPopover" class="leb-calendar-popover" role="dialog" aria-modal="true" style="display: none;">
@@ -443,7 +500,7 @@
     <button id="btnUpdateApp" class="leb-btn leb-btn-sm leb-btn-primary">Yenile</button>
   </aside>
 
-  <!-- Script v3.8.0 -->
-  <script src="js/app.js?v=3.8.0"></script>
+  <!-- Script v3.9.0 -->
+  <script src="js/app.js?v=3.9.0"></script>
 </body>
 </html>
