@@ -1,7 +1,7 @@
 /**
- * Leb - Fleet & Driver Compliance Engine (v3.6.0)
+ * Leb - Fleet & Driver Compliance Engine (v3.7.0)
  * Calm Palette, Zero Eye Strain, Deduplicated Cloud Sync,
- * Clean Inline Dates, Themed Segmented Modals
+ * Custom Themed Calendar, Zero Native Browser Datepickers
  */
 
 // --- 1. Service Worker & Update Manager ---
@@ -11,7 +11,7 @@ function registerServiceWorker() {
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
       navigator.serviceWorker
-        .register('./sw.js?v=3.6.0')
+        .register('./sw.js?v=3.7.0')
         .then((registration) => {
           registration.addEventListener('updatefound', () => {
             newWorker = registration.installing;
@@ -276,7 +276,7 @@ async function syncWithCloud(options = {}) {
       const payload = {
         items: deduplicated,
         lastSync: Date.now(),
-        updatedBy: 'Leb v3.6.0 Clean'
+        updatedBy: 'Leb v3.7.0 Clean'
       };
 
       await fetch(CLOUD_ENDPOINT, {
@@ -894,7 +894,357 @@ function escapeHtml(str) {
     .replace(/'/g, '&#039;');
 }
 
-// --- 12. Desktop Modals & Quick Date Handlers ---
+// --- 12. Custom Themed Calendar Engine (Replaces Native Datepickers) ---
+let activeCalFieldId = null;
+let activeCalTriggerEl = null;
+let calCurrentYear = new Date().getFullYear();
+let calCurrentMonth = new Date().getMonth(); // 0-11
+let isCalJumpMode = false;
+
+const CAL_MONTHS_TR = [
+  'Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran',
+  'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'
+];
+
+const CAL_MONTHS_SHORT_TR = [
+  'Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz',
+  'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara'
+];
+
+function setCustomDate(fieldId, dateStr, fireChange = true) {
+  const input = document.getElementById(fieldId);
+  const display = document.getElementById('display_' + fieldId);
+  const trigger = document.getElementById('trigger_' + fieldId);
+
+  if (input) {
+    input.value = dateStr || '';
+    if (fireChange) {
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      input.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+  }
+
+  if (display) {
+    if (dateStr) {
+      display.textContent = formatDisplayDate(dateStr);
+      display.classList.remove('is-placeholder');
+    } else {
+      display.textContent = 'Tarih seçin...';
+      display.classList.add('is-placeholder');
+    }
+  }
+
+  if (trigger) {
+    trigger.classList.remove('is-error');
+  }
+}
+
+function openCalendarFor(fieldId, triggerEl) {
+  activeCalFieldId = fieldId;
+  activeCalTriggerEl = triggerEl;
+
+  const input = document.getElementById(fieldId);
+  const currentVal = input ? input.value : '';
+
+  if (currentVal && /^\d{4}-\d{2}-\d{2}$/.test(currentVal)) {
+    const [y, m] = currentVal.split('-').map(Number);
+    calCurrentYear = y;
+    calCurrentMonth = m - 1;
+  } else {
+    const today = new Date();
+    calCurrentYear = today.getFullYear();
+    calCurrentMonth = today.getMonth();
+  }
+
+  isCalJumpMode = false;
+  const jumpView = document.getElementById('calJumpView');
+  const daysView = document.getElementById('calDaysView');
+  if (jumpView) jumpView.style.display = 'none';
+  if (daysView) daysView.style.display = 'block';
+
+  renderCalendarGrid();
+
+  const popover = document.getElementById('lebCalendarPopover');
+  const backdrop = document.getElementById('calBackdrop');
+  if (!popover || !backdrop) return;
+
+  backdrop.style.display = 'block';
+  popover.style.display = 'block';
+  if (triggerEl) triggerEl.classList.add('is-open');
+
+  // Position popover relative to trigger on desktop
+  if (window.innerWidth > 600 && triggerEl) {
+    const rect = triggerEl.getBoundingClientRect();
+    const popoverWidth = 324;
+    const popoverHeight = 360;
+
+    let left = rect.left;
+    if (left + popoverWidth > window.innerWidth - 16) {
+      left = Math.max(16, window.innerWidth - popoverWidth - 16);
+    }
+
+    let top = rect.bottom + 6;
+    if (top + popoverHeight > window.innerHeight - 16) {
+      top = Math.max(16, rect.top - popoverHeight - 6);
+    }
+
+    popover.style.left = `${left}px`;
+    popover.style.top = `${top}px`;
+  }
+}
+
+function closeCalendar() {
+  const popover = document.getElementById('lebCalendarPopover');
+  const backdrop = document.getElementById('calBackdrop');
+  if (popover) popover.style.display = 'none';
+  if (backdrop) backdrop.style.display = 'none';
+
+  if (activeCalTriggerEl) {
+    activeCalTriggerEl.classList.remove('is-open');
+  }
+  activeCalFieldId = null;
+  activeCalTriggerEl = null;
+}
+
+function renderCalendarGrid() {
+  const titleBtn = document.getElementById('calMonthYearTitle');
+  const grid = document.getElementById('calDaysGrid');
+  if (!titleBtn || !grid) return;
+
+  titleBtn.textContent = `${CAL_MONTHS_TR[calCurrentMonth]} ${calCurrentYear}`;
+  grid.innerHTML = '';
+
+  const input = activeCalFieldId ? document.getElementById(activeCalFieldId) : null;
+  const selectedDateStr = input ? input.value : '';
+
+  const today = new Date();
+  const todayStr = today.toISOString().split('T')[0];
+
+  const daysInMonth = new Date(calCurrentYear, calCurrentMonth + 1, 0).getDate();
+  const firstDay = new Date(calCurrentYear, calCurrentMonth, 1).getDay();
+  const startDayIndex = (firstDay + 6) % 7;
+
+  // Previous month days
+  const prevMonthDays = new Date(calCurrentYear, calCurrentMonth, 0).getDate();
+  for (let i = startDayIndex - 1; i >= 0; i--) {
+    const dayNum = prevMonthDays - i;
+    const cell = document.createElement('button');
+    cell.type = 'button';
+    cell.className = 'cal-day-cell is-other-month';
+    cell.textContent = String(dayNum);
+    cell.tabIndex = -1;
+    cell.addEventListener('click', () => {
+      calCurrentMonth--;
+      if (calCurrentMonth < 0) {
+        calCurrentMonth = 11;
+        calCurrentYear--;
+      }
+      renderCalendarGrid();
+    });
+    grid.appendChild(cell);
+  }
+
+  // Current month days
+  for (let day = 1; day <= daysInMonth; day++) {
+    const cell = document.createElement('button');
+    cell.type = 'button';
+    cell.className = 'cal-day-cell';
+    cell.textContent = String(day);
+
+    const mStr = String(calCurrentMonth + 1).padStart(2, '0');
+    const dStr = String(day).padStart(2, '0');
+    const fullDateStr = `${calCurrentYear}-${mStr}-${dStr}`;
+
+    if (fullDateStr === selectedDateStr) {
+      cell.classList.add('is-selected');
+    }
+    if (fullDateStr === todayStr) {
+      cell.classList.add('is-today');
+    }
+
+    cell.addEventListener('click', () => {
+      if (activeCalFieldId) {
+        setCustomDate(activeCalFieldId, fullDateStr);
+      }
+      closeCalendar();
+    });
+
+    grid.appendChild(cell);
+  }
+
+  // Next month days to fill grid
+  const totalCells = grid.children.length;
+  const remainingCells = totalCells > 35 ? (42 - totalCells) : (35 - totalCells);
+  for (let nextDay = 1; nextDay <= remainingCells; nextDay++) {
+    const cell = document.createElement('button');
+    cell.type = 'button';
+    cell.className = 'cal-day-cell is-other-month';
+    cell.textContent = String(nextDay);
+    cell.tabIndex = -1;
+    cell.addEventListener('click', () => {
+      calCurrentMonth++;
+      if (calCurrentMonth > 11) {
+        calCurrentMonth = 0;
+        calCurrentYear++;
+      }
+      renderCalendarGrid();
+    });
+    grid.appendChild(cell);
+  }
+}
+
+function setupCalendarPopoverEvents() {
+  const prevMonthBtn = document.getElementById('calPrevMonth');
+  const nextMonthBtn = document.getElementById('calNextMonth');
+  const prevYearBtn = document.getElementById('calPrevYear');
+  const nextYearBtn = document.getElementById('calNextYear');
+  const titleBtn = document.getElementById('calMonthYearTitle');
+  const clearBtn = document.getElementById('calBtnClear');
+  const todayBtn = document.getElementById('calBtnToday');
+  const doneBtn = document.getElementById('calBtnDone');
+  const backdrop = document.getElementById('calBackdrop');
+  const jumpView = document.getElementById('calJumpView');
+  const daysView = document.getElementById('calDaysView');
+
+  if (prevMonthBtn) {
+    prevMonthBtn.addEventListener('click', () => {
+      calCurrentMonth--;
+      if (calCurrentMonth < 0) {
+        calCurrentMonth = 11;
+        calCurrentYear--;
+      }
+      renderCalendarGrid();
+    });
+  }
+
+  if (nextMonthBtn) {
+    nextMonthBtn.addEventListener('click', () => {
+      calCurrentMonth++;
+      if (calCurrentMonth > 11) {
+        calCurrentMonth = 0;
+        calCurrentYear++;
+      }
+      renderCalendarGrid();
+    });
+  }
+
+  if (prevYearBtn) {
+    prevYearBtn.addEventListener('click', () => {
+      calCurrentYear--;
+      renderCalendarGrid();
+      if (isCalJumpMode) renderJumpView();
+    });
+  }
+
+  if (nextYearBtn) {
+    nextYearBtn.addEventListener('click', () => {
+      calCurrentYear++;
+      renderCalendarGrid();
+      if (isCalJumpMode) renderJumpView();
+    });
+  }
+
+  if (titleBtn) {
+    titleBtn.addEventListener('click', () => {
+      isCalJumpMode = !isCalJumpMode;
+      if (jumpView && daysView) {
+        jumpView.style.display = isCalJumpMode ? 'flex' : 'none';
+        daysView.style.display = isCalJumpMode ? 'none' : 'block';
+      }
+      if (isCalJumpMode) renderJumpView();
+    });
+  }
+
+  function renderJumpView() {
+    const monthsContainer = document.getElementById('calJumpMonths');
+    const yearsContainer = document.getElementById('calJumpYears');
+    if (!monthsContainer || !yearsContainer) return;
+
+    monthsContainer.innerHTML = '';
+    CAL_MONTHS_SHORT_TR.forEach((mName, idx) => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = `jump-cell ${idx === calCurrentMonth ? 'active' : ''}`;
+      btn.textContent = mName;
+      btn.addEventListener('click', () => {
+        calCurrentMonth = idx;
+        isCalJumpMode = false;
+        if (jumpView) jumpView.style.display = 'none';
+        if (daysView) daysView.style.display = 'block';
+        renderCalendarGrid();
+      });
+      monthsContainer.appendChild(btn);
+    });
+
+    yearsContainer.innerHTML = '';
+    const currentYear = new Date().getFullYear();
+    for (let yr = currentYear - 2; yr <= currentYear + 8; yr++) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = `jump-cell ${yr === calCurrentYear ? 'active' : ''}`;
+      btn.textContent = String(yr);
+      btn.addEventListener('click', () => {
+        calCurrentYear = yr;
+        isCalJumpMode = false;
+        if (jumpView) jumpView.style.display = 'none';
+        if (daysView) daysView.style.display = 'block';
+        renderCalendarGrid();
+      });
+      yearsContainer.appendChild(btn);
+    }
+  }
+
+  // Presets inside calendar popover
+  document.querySelectorAll('.cal-preset-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (!activeCalFieldId) return;
+      const preset = btn.dataset.preset;
+      const d = new Date();
+      if (preset === '6m') d.setMonth(d.getMonth() + 6);
+      else if (preset === '1y') d.setFullYear(d.getFullYear() + 1);
+      else if (preset === '2y') d.setFullYear(d.getFullYear() + 2);
+      setCustomDate(activeCalFieldId, d.toISOString().split('T')[0]);
+      closeCalendar();
+    });
+  });
+
+  if (clearBtn) {
+    clearBtn.addEventListener('click', () => {
+      if (activeCalFieldId) setCustomDate(activeCalFieldId, '');
+      closeCalendar();
+    });
+  }
+
+  if (todayBtn) {
+    todayBtn.addEventListener('click', () => {
+      if (activeCalFieldId) {
+        setCustomDate(activeCalFieldId, new Date().toISOString().split('T')[0]);
+      }
+      closeCalendar();
+    });
+  }
+
+  if (doneBtn) doneBtn.addEventListener('click', closeCalendar);
+  if (backdrop) backdrop.addEventListener('click', closeCalendar);
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeCalendar();
+  });
+}
+
+function initCustomDatePickers() {
+  document.querySelectorAll('.leb-date-trigger').forEach(trigger => {
+    trigger.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const fieldId = trigger.dataset.field;
+      if (fieldId) openCalendarFor(fieldId, trigger);
+    });
+  });
+
+  setupCalendarPopoverEvents();
+}
+
+// --- 13. Desktop Modals & Quick Date Handlers ---
 let activeQuickRecordId = null;
 
 function setupQuickPresetChips() {
@@ -903,11 +1253,10 @@ function setupQuickPresetChips() {
     chip.addEventListener('click', () => {
       const targetId = chip.dataset.target;
       const months = parseInt(chip.dataset.months, 10);
-      const input = document.getElementById(targetId);
-      if (input && months) {
+      if (targetId && months) {
         const d = new Date();
         d.setMonth(d.getMonth() + months);
-        input.value = d.toISOString().split('T')[0];
+        setCustomDate(targetId, d.toISOString().split('T')[0]);
       }
     });
   });
@@ -959,6 +1308,13 @@ function setupModals() {
       if (driverForm) driverForm.reset();
       if (selectVType) selectVType.value = 'Çekici';
       vTypeBtns.forEach((b, idx) => b.classList.toggle('active', idx === 0));
+
+      setCustomDate('inputInspectionDate', '');
+      setCustomDate('inputInsuranceDate', '');
+      setCustomDate('inputGreenCardDate', '');
+      setCustomDate('inputVisaDate', '');
+      setCustomDate('inputLicenseDate', '');
+      closeCalendar();
     }
   }
 
@@ -994,7 +1350,19 @@ function setupModals() {
       const insDate = document.getElementById('inputInsuranceDate').value || null;
       const greenDate = document.getElementById('inputGreenCardDate').value || null;
 
-      if (!plate || !inspDate) return;
+      if (!plate) {
+        document.getElementById('inputPlate').focus();
+        return;
+      }
+
+      if (!inspDate) {
+        const trig = document.getElementById('trigger_inputInspectionDate');
+        if (trig) {
+          trig.classList.add('is-error');
+          trig.focus();
+        }
+        return;
+      }
 
       const newRec = {
         id: 'veh_' + Date.now(),
@@ -1028,7 +1396,19 @@ function setupModals() {
       const licDate = document.getElementById('inputLicenseDate').value || null;
       const passport = document.getElementById('inputPassport').value.trim();
 
-      if (!name || !visaDate) return;
+      if (!name) {
+        document.getElementById('inputDriverName').focus();
+        return;
+      }
+
+      if (!visaDate) {
+        const trig = document.getElementById('trigger_inputVisaDate');
+        if (trig) {
+          trig.classList.add('is-error');
+          trig.focus();
+        }
+        return;
+      }
 
       const newRec = {
         id: 'drv_' + Date.now(),
@@ -1064,6 +1444,7 @@ function setupModals() {
   function closeQuickModal() {
     if (quickModal) quickModal.classList.remove('active');
     activeQuickRecordId = null;
+    closeCalendar();
   }
 
   if (closeQuickBtn) closeQuickBtn.addEventListener('click', closeQuickModal);
@@ -1086,12 +1467,10 @@ function setupModals() {
       presets.forEach(x => x.classList.remove('active'));
       p.classList.add('active');
       const months = parseInt(p.dataset.months, 10);
-      if (quickDateInput) {
-        const d = new Date();
-        d.setMonth(d.getMonth() + months);
-        quickDateInput.value = d.toISOString().split('T')[0];
-        updateQuickPreview();
-      }
+      const d = new Date();
+      d.setMonth(d.getMonth() + months);
+      setCustomDate('quickDateInput', d.toISOString().split('T')[0]);
+      updateQuickPreview();
     });
   });
 
@@ -1101,7 +1480,14 @@ function setupModals() {
       const field = document.getElementById('quickFieldSelect').value;
       const dateVal = document.getElementById('quickDateInput').value;
 
-      if (!dateVal) return;
+      if (!dateVal) {
+        const trig = document.getElementById('trigger_quickDateInput');
+        if (trig) {
+          trig.classList.add('is-error');
+          trig.focus();
+        }
+        return;
+      }
 
       const records = getStoredRecords(true);
       const rec = records.find(r => r.id === activeQuickRecordId);
@@ -1158,11 +1544,15 @@ function openQuickModal(id) {
         b.classList.toggle('active', b.dataset.field === field);
       });
     }
-    if (dateInput && rec[field]) {
-      dateInput.value = rec[field];
+    if (rec[field]) {
+      setCustomDate('quickDateInput', rec[field]);
       if (previewEl) previewEl.textContent = `Mevcut: ${formatDisplayDate(rec[field])}`;
-    } else if (dateInput && dateInput.value) {
-      if (previewEl) previewEl.textContent = `Yeni Tarih: ${formatDisplayDate(dateInput.value)}`;
+    } else {
+      const defaultDate = new Date();
+      defaultDate.setFullYear(defaultDate.getFullYear() + 1);
+      const defStr = defaultDate.toISOString().split('T')[0];
+      setCustomDate('quickDateInput', defStr);
+      if (previewEl) previewEl.textContent = `Yeni Tarih: ${formatDisplayDate(defStr)}`;
     }
   }
 
@@ -1183,16 +1573,6 @@ function openQuickModal(id) {
 
   const initialField = docOptions[0].field;
   setQuickField(initialField);
-
-  // Set default date (+1 Yıl preset)
-  const defaultDate = new Date();
-  defaultDate.setFullYear(defaultDate.getFullYear() + 1);
-  if (dateInput) {
-    dateInput.value = defaultDate.toISOString().split('T')[0];
-    if (previewEl) {
-      previewEl.textContent = `Yeni Tarih: ${formatDisplayDate(dateInput.value)}`;
-    }
-  }
 
   if (quickModal) quickModal.classList.add('active');
 }
@@ -1241,6 +1621,7 @@ document.addEventListener('DOMContentLoaded', () => {
   setupSearch();
   setupModals();
   setupQuickPresetChips();
+  initCustomDatePickers();
 
   // Initial local render
   renderCurrentView();

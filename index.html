@@ -183,34 +183,67 @@
 
         <div class="form-group">
           <div class="label-with-presets">
-            <label for="inputInspectionDate">Muayene Bitiş Tarihi *</label>
+            <label for="trigger_inputInspectionDate">Muayene Bitiş Tarihi *</label>
             <div class="chip-presets">
               <button type="button" class="preset-chip" data-target="inputInspectionDate" data-months="12">+1 Yıl</button>
               <button type="button" class="preset-chip" data-target="inputInspectionDate" data-months="6">+6 Ay</button>
               <button type="button" class="preset-chip" data-target="inputInspectionDate" data-months="24">+2 Yıl</button>
             </div>
           </div>
-          <input type="date" id="inputInspectionDate" required>
+          <div class="leb-datepicker" data-field="inputInspectionDate">
+            <button type="button" class="leb-date-trigger" id="trigger_inputInspectionDate" data-field="inputInspectionDate">
+              <svg class="date-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="16" y1="2" x2="16" y2="6"></line>
+                <line x1="8" y1="2" x2="8" y2="6"></line>
+                <line x1="3" y1="10" x2="21" y2="10"></line>
+              </svg>
+              <span class="date-display-text is-placeholder" id="display_inputInspectionDate">Tarih seçin...</span>
+            </button>
+            <input type="hidden" id="inputInspectionDate">
+          </div>
         </div>
 
         <div class="form-row">
           <div class="form-group">
             <div class="label-with-presets">
-              <label for="inputInsuranceDate">Sigorta Bitiş</label>
+              <label for="trigger_inputInsuranceDate">Sigorta Bitiş</label>
               <div class="chip-presets">
                 <button type="button" class="preset-chip" data-target="inputInsuranceDate" data-months="12">+1 Yıl</button>
               </div>
             </div>
-            <input type="date" id="inputInsuranceDate">
+            <div class="leb-datepicker" data-field="inputInsuranceDate">
+              <button type="button" class="leb-date-trigger" id="trigger_inputInsuranceDate" data-field="inputInsuranceDate">
+                <svg class="date-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                  <line x1="16" y1="2" x2="16" y2="6"></line>
+                  <line x1="8" y1="2" x2="8" y2="6"></line>
+                  <line x1="3" y1="10" x2="21" y2="10"></line>
+                </svg>
+                <span class="date-display-text is-placeholder" id="display_inputInsuranceDate">Tarih seçin...</span>
+              </button>
+              <input type="hidden" id="inputInsuranceDate">
+            </div>
           </div>
           <div class="form-group">
             <div class="label-with-presets">
-              <label for="inputGreenCardDate">Yeşil Sigorta</label>
+              <label for="trigger_inputGreenCardDate">Yeşil Sigorta</label>
               <div class="chip-presets">
                 <button type="button" class="preset-chip" data-target="inputGreenCardDate" data-months="6">+6 Ay</button>
               </div>
             </div>
-            <input type="date" id="inputGreenCardDate">
+            <div class="leb-datepicker" data-field="inputGreenCardDate">
+              <button type="button" class="leb-date-trigger" id="trigger_inputGreenCardDate" data-field="inputGreenCardDate">
+                <svg class="date-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                  <line x1="16" y1="2" x2="16" y2="6"></line>
+                  <line x1="8" y1="2" x2="8" y2="6"></line>
+                  <line x1="3" y1="10" x2="21" y2="10"></line>
+                </svg>
+                <span class="date-display-text is-placeholder" id="display_inputGreenCardDate">Tarih seçin...</span>
+              </button>
+              <input type="hidden" id="inputGreenCardDate">
+            </div>
           </div>
         </div>
 
@@ -229,24 +262,46 @@
 
         <div class="form-group">
           <div class="label-with-presets">
-            <label for="inputVisaDate">Vize Bitiş Tarihi *</label>
+            <label for="trigger_inputVisaDate">Vize Bitiş Tarihi *</label>
             <div class="chip-presets">
               <button type="button" class="preset-chip" data-target="inputVisaDate" data-months="6">+6 Ay</button>
               <button type="button" class="preset-chip" data-target="inputVisaDate" data-months="12">+1 Yıl</button>
             </div>
           </div>
-          <input type="date" id="inputVisaDate" required>
+          <div class="leb-datepicker" data-field="inputVisaDate">
+            <button type="button" class="leb-date-trigger" id="trigger_inputVisaDate" data-field="inputVisaDate">
+              <svg class="date-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="16" y1="2" x2="16" y2="6"></line>
+                <line x1="8" y1="2" x2="8" y2="6"></line>
+                <line x1="3" y1="10" x2="21" y2="10"></line>
+              </svg>
+              <span class="date-display-text is-placeholder" id="display_inputVisaDate">Tarih seçin...</span>
+            </button>
+            <input type="hidden" id="inputVisaDate">
+          </div>
         </div>
 
         <div class="form-row">
           <div class="form-group">
             <div class="label-with-presets">
-              <label for="inputLicenseDate">Ehliyet / SRC</label>
+              <label for="trigger_inputLicenseDate">Ehliyet / SRC</label>
               <div class="chip-presets">
                 <button type="button" class="preset-chip" data-target="inputLicenseDate" data-months="12">+1 Yıl</button>
               </div>
             </div>
-            <input type="date" id="inputLicenseDate">
+            <div class="leb-datepicker" data-field="inputLicenseDate">
+              <button type="button" class="leb-date-trigger" id="trigger_inputLicenseDate" data-field="inputLicenseDate">
+                <svg class="date-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                  <line x1="16" y1="2" x2="16" y2="6"></line>
+                  <line x1="8" y1="2" x2="8" y2="6"></line>
+                  <line x1="3" y1="10" x2="21" y2="10"></line>
+                </svg>
+                <span class="date-display-text is-placeholder" id="display_inputLicenseDate">Tarih seçin...</span>
+              </button>
+              <input type="hidden" id="inputLicenseDate">
+            </div>
           </div>
           <div class="form-group">
             <label for="inputPassport">Pasaport No</label>
@@ -292,9 +347,18 @@
         </div>
 
         <div class="form-group">
-          <label for="quickDateInput">Yeni Bitiş Tarihi</label>
-          <div class="date-input-wrapper">
-            <input type="date" id="quickDateInput">
+          <label for="trigger_quickDateInput">Yeni Bitiş Tarihi</label>
+          <div class="leb-datepicker" data-field="quickDateInput">
+            <button type="button" class="leb-date-trigger" id="trigger_quickDateInput" data-field="quickDateInput">
+              <svg class="date-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="16" y1="2" x2="16" y2="6"></line>
+                <line x1="8" y1="2" x2="8" y2="6"></line>
+                <line x1="3" y1="10" x2="21" y2="10"></line>
+              </svg>
+              <span class="date-display-text" id="display_quickDateInput">Tarih seçin...</span>
+            </button>
+            <input type="hidden" id="quickDateInput">
           </div>
           <div id="quickDatePreview" class="date-calculated-preview"></div>
         </div>
@@ -307,13 +371,71 @@
     </div>
   </div>
 
+  <!-- Custom Themed Calendar Popover (Replaces ugly browser datepicker completely) -->
+  <div id="calBackdrop" class="cal-backdrop" style="display: none;"></div>
+  <div id="lebCalendarPopover" class="leb-calendar-popover" role="dialog" aria-modal="true" style="display: none;">
+    <div class="cal-header">
+      <div class="cal-nav-group">
+        <button type="button" class="cal-nav-btn" id="calPrevYear" title="Önceki Yıl">&laquo;</button>
+        <button type="button" class="cal-nav-btn" id="calPrevMonth" title="Önceki Ay">&lsaquo;</button>
+      </div>
+      <div class="cal-title-container">
+        <button type="button" class="cal-title-btn" id="calMonthYearTitle">Eylül 2026</button>
+      </div>
+      <div class="cal-nav-group">
+        <button type="button" class="cal-nav-btn" id="calNextMonth" title="Sonraki Ay">&rsaquo;</button>
+        <button type="button" class="cal-nav-btn" id="calNextYear" title="Sonraki Yıl">&raquo;</button>
+      </div>
+    </div>
+
+    <!-- Quick Presets Bar Inside Calendar -->
+    <div class="cal-presets">
+      <button type="button" class="cal-preset-btn" data-preset="today">Bugün</button>
+      <button type="button" class="cal-preset-btn" data-preset="6m">+6 Ay</button>
+      <button type="button" class="cal-preset-btn" data-preset="1y">+1 Yıl</button>
+      <button type="button" class="cal-preset-btn" data-preset="2y">+2 Yıl</button>
+    </div>
+
+    <!-- Month / Year Jump View -->
+    <div class="cal-jump-view" id="calJumpView" style="display: none;">
+      <div class="jump-group">
+        <span class="jump-label">Ay</span>
+        <div class="jump-grid" id="calJumpMonths"></div>
+      </div>
+      <div class="jump-group">
+        <span class="jump-label">Yıl</span>
+        <div class="jump-grid jump-years" id="calJumpYears"></div>
+      </div>
+    </div>
+
+    <!-- Standard Days View -->
+    <div class="cal-days-view" id="calDaysView">
+      <div class="cal-weekdays">
+        <span>Pt</span>
+        <span>Sa</span>
+        <span>Ça</span>
+        <span>Pe</span>
+        <span>Cu</span>
+        <span>Ct</span>
+        <span>Pa</span>
+      </div>
+      <div class="cal-grid" id="calDaysGrid"></div>
+    </div>
+
+    <div class="cal-footer">
+      <button type="button" class="cal-footer-btn cal-btn-clear" id="calBtnClear">Temizle</button>
+      <button type="button" class="cal-footer-btn cal-btn-today" id="calBtnToday">Bugün</button>
+      <button type="button" class="cal-footer-btn cal-btn-done" id="calBtnDone">Kapat</button>
+    </div>
+  </div>
+
   <!-- Update Toast -->
   <aside id="updateToast" class="leb-toast" aria-label="Güncelleme">
     <span>Leb güncellendi!</span>
     <button id="btnUpdateApp" class="leb-btn leb-btn-sm leb-btn-primary">Yenile</button>
   </aside>
 
-  <!-- Script v3.6.0 -->
-  <script src="js/app.js?v=3.6.0"></script>
+  <!-- Script v3.7.0 -->
+  <script src="js/app.js?v=3.7.0"></script>
 </body>
 </html>
