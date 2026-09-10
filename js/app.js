@@ -1,7 +1,7 @@
 /**
- * Leb - Fleet & Driver Compliance Engine (v4.1.0)
- * Calm Palette, Zero Eye Strain, Instant Hard Delete (No Confirmation),
- * Anti-Resurrection Shield, Vehicle Roder & Tako TÜV, Driver Passport Tracking
+ * Leb - Fleet & Driver Compliance Engine (v4.2.0)
+ * Calm Palette, Zero Eye Strain, Instant Hard Delete,
+ * Realtime SSE Cloud Sync, Mobile Deletion Mirroring, Driver Passport & Vehicle Roder
  */
 
 // --- 1. Service Worker & Update Manager ---
@@ -11,7 +11,7 @@ function registerServiceWorker() {
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
       navigator.serviceWorker
-        .register('./sw.js?v=4.1.0')
+        .register('./sw.js?v=4.2.0')
         .then((registration) => {
           registration.addEventListener('updatefound', () => {
             newWorker = registration.installing;
@@ -52,16 +52,7 @@ function applyUpdate() {
 
 // --- 2. Online / Offline Monitoring ---
 function setupNetworkMonitoring() {
-  function updateStatus() {
-    const isOnline = navigator.onLine;
-    updateSyncBadge(isOnline ? 'synced' : 'offline');
-    if (isOnline) {
-      syncWithCloud({ isManual: false });
-    }
-  }
-
-  window.addEventListener('online', updateStatus);
-  window.addEventListener('offline', updateStatus);
+  // Managed by setupLifecycleSync
 }
 
 // --- 3. Strict Mobile Detection ---
@@ -145,28 +136,42 @@ function triggerNotificationCheck(force = false) {
   }
 }
 
-// --- 5. Quiet Bottom Sync Engine with Robust Deduplication ---
+// --- 5. Realtime Cloud Sync Engine (Firebase RTDB + SSE + Instant Deletion Mirror) ---
 const CLOUD_ENDPOINT = 'https://leb1919-default-rtdb.firebaseio.com/leb_store.json';
-const STORAGE_KEY = 'leb_fleet_store_v7';
+const STORAGE_KEY = 'leb_fleet_store_v8';
+const DELETED_IDS_KEY = 'leb_deleted_ids_v8';
+
+// One-time initialization for v4.2.0: clean legacy test keys
+if (!localStorage.getItem('leb_v420_init')) {
+  try {
+    localStorage.removeItem('leb_deleted_ids');
+    localStorage.removeItem('leb_deleted_ids_v7');
+    localStorage.removeItem('leb_fleet_store_v6');
+    localStorage.removeItem('leb_fleet_store_v7');
+    localStorage.setItem('leb_v420_init', 'true');
+  } catch (e) {}
+}
 
 let isSyncing = false;
 let syncQueued = false;
 let lastRenderedHash = '';
+let sseSource = null;
 
-// --- Permanent Blacklist to Prevent Deleted Record Resurrection ---
+// --- Global & Local Deleted Registry ---
 function markRecordDeletedLocally(id) {
+  if (!id) return;
   try {
-    const deletedIds = JSON.parse(localStorage.getItem('leb_deleted_ids') || '[]');
+    const deletedIds = JSON.parse(localStorage.getItem(DELETED_IDS_KEY) || '[]');
     if (!deletedIds.includes(id)) {
       deletedIds.push(id);
-      localStorage.setItem('leb_deleted_ids', JSON.stringify(deletedIds.slice(-300)));
+      localStorage.setItem(DELETED_IDS_KEY, JSON.stringify(deletedIds.slice(-300)));
     }
   } catch (e) {}
 }
 
 function getDeletedIdsSet() {
   try {
-    return new Set(JSON.parse(localStorage.getItem('leb_deleted_ids') || '[]'));
+    return new Set(JSON.parse(localStorage.getItem(DELETED_IDS_KEY) || '[]'));
   } catch (e) {
     return new Set();
   }
@@ -219,10 +224,9 @@ function updateSyncBadge(status) {
 }
 
 /**
- * Auto-clean & garbage-collect records:
- * 1. Removes corrupt entries (empty/missing titles)
- * 2. Purges old test ghost records permanently
- * 3. Immediately filters out deleted items and blacklisted IDs so they can NEVER resurrect
+ * Auto-clean records:
+ * 1. Removes corrupt entries (empty titles)
+ * 2. Filters out deleted items and blacklisted IDs
  */
 function cleanGarbageRecords(items) {
   if (!Array.isArray(items)) return [];
@@ -234,7 +238,6 @@ function cleanGarbageRecords(items) {
     if (it.deleted === true) return false;
     if (deletedIds.has(it.id)) return false;
 
-    // Hard-filter legacy test strings if any device attempts resurrection
     const tUpper = toTurkishUpper(it.title.trim());
     if (tUpper === 'MAHO' || tUpper === 'KUGGYIOGIUYB' || tUpper === 'R234234' || (tUpper === 'ENES KARATAŞ' && it.id.startsWith('drv_178'))) {
       return false;
@@ -245,7 +248,7 @@ function cleanGarbageRecords(items) {
 }
 
 /**
- * Deduplicate items by composite key (type + normalized title with Turkish locale)
+ * Deduplicate items by type and title
  */
 function deduplicateItems(items) {
   if (!Array.isArray(items)) return [];
@@ -310,6 +313,87 @@ function areItemListsEqual(listA, listB) {
   return true;
 }
 
+/**
+ * Pushes clean state to Firebase RTDB (used on PC by Admin)
+ */
+async function pushToCloud(records) {
+  if (!navigator.onLine) {
+    updateSyncBadge('offline');
+    return;
+  }
+  try {
+    const cleanList = cleanGarbageRecords(deduplicateItems(records));
+    const deletedList = Array.from(getDeletedIdsSet());
+    const payload = {
+      items: cleanList,
+      deletedIds: deletedList,
+      lastSync: Date.now(),
+      updatedBy: 'Leb v4.2.0 Realtime Engine'
+    };
+    await fetch(CLOUD_ENDPOINT, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    updateSyncBadge('synced');
+  } catch (e) {
+    console.warn('[PushToCloud] Error:', e);
+    updateSyncBadge('offline');
+  }
+}
+
+/**
+ * Processes incoming payload from Firebase RTDB (via GET or EventSource SSE)
+ */
+function handleRemoteDataPayload(remoteData) {
+  if (!remoteData || typeof remoteData !== 'object') return;
+
+  const remoteRaw = Array.isArray(remoteData.items) ? remoteData.items : [];
+  const remoteDeletedIds = Array.isArray(remoteData.deletedIds) ? remoteData.deletedIds : [];
+
+  // Ingest deleted IDs from cloud into local registry
+  if (remoteDeletedIds.length > 0) {
+    try {
+      const localDeleted = JSON.parse(localStorage.getItem(DELETED_IDS_KEY) || '[]');
+      const combined = Array.from(new Set([...localDeleted, ...remoteDeletedIds])).slice(-300);
+      localStorage.setItem(DELETED_IDS_KEY, JSON.stringify(combined));
+    } catch (e) {}
+  }
+
+  const cleanRemote = cleanGarbageRecords(remoteRaw);
+  const localRaw = getStoredRecords(true);
+
+  if (isMobileDevice()) {
+    // MOBILE: Pure consumer / viewer. ALWAYS mirror cloud state directly!
+    // No resurrecting old deleted items from local storage.
+    if (!areItemListsEqual(localRaw, cleanRemote)) {
+      saveRecordsLocally(cleanRemote);
+      renderCurrentView();
+    }
+  } else {
+    // DESKTOP (Admin): Check if there are newly created offline items
+    const remoteIdSet = new Set(cleanRemote.map(r => r.id));
+    const deletedSet = getDeletedIdsSet();
+    const locallyAdded = localRaw.filter(r => !remoteIdSet.has(r.id) && !deletedSet.has(r.id));
+
+    if (locallyAdded.length > 0) {
+      const merged = cleanGarbageRecords(deduplicateItems([...cleanRemote, ...locallyAdded]));
+      if (!areItemListsEqual(localRaw, merged)) {
+        saveRecordsLocally(merged);
+        renderCurrentView();
+      }
+      pushToCloud(merged);
+    } else {
+      if (!areItemListsEqual(localRaw, cleanRemote)) {
+        saveRecordsLocally(cleanRemote);
+        renderCurrentView();
+      }
+    }
+  }
+
+  updateSyncBadge('synced');
+}
+
 async function syncWithCloud(options = {}) {
   const { isManual = false } = options;
 
@@ -326,7 +410,7 @@ async function syncWithCloud(options = {}) {
   isSyncing = true;
 
   const manualBtn = document.getElementById('manualSyncBtn');
-  if (isManual && manualBtn) {
+  if (manualBtn) {
     manualBtn.classList.add('sync-spin-icon');
   }
 
@@ -336,40 +420,12 @@ async function syncWithCloud(options = {}) {
       headers: { 'Cache-Control': 'no-cache' }
     });
 
-    let remoteData = null;
     if (response.ok) {
-      remoteData = await response.json();
+      const remoteData = await response.json();
+      if (remoteData) {
+        handleRemoteDataPayload(remoteData);
+      }
     }
-
-    const remoteRaw = (remoteData && Array.isArray(remoteData.items)) ? remoteData.items : [];
-    const localRaw = getStoredRecords(true);
-
-    // Merge, deduplicate, and auto-clean tombstones
-    const allCombined = [...remoteRaw, ...localRaw];
-    const deduplicated = cleanGarbageRecords(deduplicateItems(allCombined));
-
-    const remoteNeedsUpdate = !areItemListsEqual(remoteRaw, deduplicated);
-
-    if (remoteNeedsUpdate && !isMobileDevice()) {
-      const payload = {
-        items: deduplicated,
-        lastSync: Date.now(),
-        updatedBy: 'Leb v4.1.0 Engine'
-      };
-
-      await fetch(CLOUD_ENDPOINT, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-    }
-
-    const localNeedsUpdate = !areItemListsEqual(localRaw, deduplicated);
-    if (localNeedsUpdate) {
-      saveRecordsLocally(deduplicated);
-      renderCurrentView();
-    }
-
     updateSyncBadge('synced');
   } catch (err) {
     console.warn('[Sync] Note:', err);
@@ -377,7 +433,7 @@ async function syncWithCloud(options = {}) {
   } finally {
     isSyncing = false;
     if (manualBtn) {
-      setTimeout(() => manualBtn.classList.remove('sync-spin-icon'), 300);
+      setTimeout(() => manualBtn.classList.remove('sync-spin-icon'), 350);
     }
     if (syncQueued) {
       syncQueued = false;
@@ -386,12 +442,74 @@ async function syncWithCloud(options = {}) {
   }
 }
 
-// Periodic Background Sync (Every 30 seconds if active)
-setInterval(() => {
-  if (document.visibilityState === 'visible' && navigator.onLine) {
-    syncWithCloud({ isManual: false });
+/**
+ * Realtime EventSource (SSE) listener:
+ * When PC updates or deletes a record, Firebase sends an instant push event
+ * to all open mobile apps in < 200ms without needing manual refresh.
+ */
+function setupRealtimeSync() {
+  if (!window.EventSource) return;
+
+  if (sseSource) {
+    try { sseSource.close(); } catch(e) {}
   }
-}, 30000);
+
+  try {
+    sseSource = new EventSource(CLOUD_ENDPOINT);
+
+    sseSource.addEventListener('put', (e) => {
+      try {
+        const msg = JSON.parse(e.data);
+        if (!msg) return;
+        if (msg.path === '/' && msg.data) {
+          handleRemoteDataPayload(msg.data);
+        } else if (msg.path === '/items' && Array.isArray(msg.data)) {
+          handleRemoteDataPayload({ items: msg.data });
+        } else {
+          syncWithCloud({ isManual: false });
+        }
+      } catch (err) {
+        console.warn('[SSE] Parse err:', err);
+      }
+    });
+
+    sseSource.addEventListener('patch', () => {
+      syncWithCloud({ isManual: false });
+    });
+
+    sseSource.onerror = () => {
+      // EventSource auto-reconnects
+    };
+  } catch (err) {
+    console.warn('[SSE] Init err:', err);
+  }
+}
+
+/**
+ * Lifecycle triggers:
+ * Screen unlock, switching back to PWA/browser, tab focus, online events
+ */
+function setupLifecycleSync() {
+  function onResume() {
+    if (document.visibilityState === 'visible' && navigator.onLine) {
+      syncWithCloud({ isManual: false });
+    }
+  }
+
+  document.addEventListener('visibilitychange', onResume);
+  window.addEventListener('focus', onResume);
+  window.addEventListener('pageshow', onResume);
+  window.addEventListener('online', () => {
+    updateSyncBadge('synced');
+    syncWithCloud({ isManual: false });
+  });
+  window.addEventListener('offline', () => {
+    updateSyncBadge('offline');
+  });
+
+  // Regular safety poll every 8 seconds when tab is active
+  setInterval(onResume, 8000);
+}
 
 // --- 6. Initial Clean Seed Data ---
 function getFutureDate(days) {
@@ -1539,7 +1657,7 @@ function setupModals() {
       saveRecordsLocally(records);
       closeAddModal();
       renderCurrentView();
-      syncWithCloud({ isManual: false });
+      pushToCloud(records);
     });
   }
 
@@ -1587,7 +1705,7 @@ function setupModals() {
       saveRecordsLocally(records);
       closeAddModal();
       renderCurrentView();
-      syncWithCloud({ isManual: false });
+      pushToCloud(records);
     });
   }
 
@@ -1655,7 +1773,7 @@ function setupModals() {
         saveRecordsLocally(records);
         closeQuickModal();
         renderCurrentView();
-        syncWithCloud({ isManual: false });
+        pushToCloud(records);
       }
     });
   }
@@ -1756,7 +1874,7 @@ function openQuickModal(id) {
 async function deleteRecord(id) {
   if (isMobileDevice()) return;
 
-  // 1. Blacklist immediately to permanently block resurrection
+  // 1. Blacklist immediately to permanently block resurrection across all devices
   markRecordDeletedLocally(id);
 
   // 2. Direct hard delete from local array - NO ALERT, NO CONFIRMATION POPUP!
@@ -1764,28 +1882,11 @@ async function deleteRecord(id) {
   records = records.filter(r => r.id !== id);
   saveRecordsLocally(records);
 
-  // 3. Immediately redraw current view
+  // 3. Immediately redraw current view on PC
   renderCurrentView();
 
   // 4. Send updated list directly to Firebase RTDB so cloud is purged immediately
-  if (navigator.onLine) {
-    try {
-      const cleanList = cleanGarbageRecords(deduplicateItems(records));
-      const payload = {
-        items: cleanList,
-        lastSync: Date.now(),
-        updatedBy: 'Leb v4.0.0 Engine (Direct Hard Delete)'
-      };
-      await fetch(CLOUD_ENDPOINT, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      updateSyncBadge('synced');
-    } catch (e) {
-      console.warn('[DeleteSync] Note:', e);
-    }
-  }
+  await pushToCloud(records);
 }
 
 // --- 13. Desktop Excel (CSV) Export Engine (Clean, Categorized, Separate Tables) ---
@@ -2193,6 +2294,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Fetch remote clean data
   syncWithCloud({ isManual: false });
+
+  // Realtime Cloud Sync via EventSource (SSE) & Lifecycle Listeners
+  setupRealtimeSync();
+  setupLifecycleSync();
 
   // Mobile notification check
   setTimeout(() => triggerNotificationCheck(false), 2000);

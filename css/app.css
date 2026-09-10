@@ -1550,3 +1550,80 @@ body {
     gap: 6px;
   }
 }
+
+/* ==========================================================================
+   QUIET BOTTOM STATUS FOOTER & REALTIME SYNC BADGE
+   ========================================================================== */
+.leb-footer {
+  width: 100%;
+  max-width: var(--container-max);
+  margin: 0 auto;
+  padding: 10px 16px max(14px, env(safe-area-inset-bottom));
+  display: flex;
+  justify-content: center;
+}
+
+.leb-footer-inner {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 20px;
+  padding: 4px 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.sync-bottom-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.sync-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #10B981;
+  transition: background 0.2s ease;
+}
+
+.sync-dot.offline {
+  background: #9CA3AF;
+}
+
+.sync-dot.error {
+  background: #EF4444;
+}
+
+.leb-btn-icon {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  border-radius: 50%;
+  transition: transform 0.2s ease, color 0.15s ease, background 0.15s ease;
+}
+
+.leb-btn-icon:hover {
+  color: var(--text-primary);
+  background: var(--bg-subtle);
+}
+
+.sync-spin-icon svg {
+  animation: leb-spin 0.7s linear infinite;
+}
+
+@keyframes leb-spin {
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
