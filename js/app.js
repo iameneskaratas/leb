@@ -11,7 +11,7 @@ function registerServiceWorker() {
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
       navigator.serviceWorker
-        .register('./sw.js?v=3.3.0')
+        .register('./sw.js?v=3.4.0')
         .then((registration) => {
           registration.addEventListener('updatefound', () => {
             newWorker = registration.installing;
@@ -1159,11 +1159,29 @@ function deleteRecord(id) {
   }
 }
 
+// Dynamic Header Scroll Blur (Only blurs when scrolled, completely clear at top)
+function setupHeaderScroll() {
+  const header = document.querySelector('.leb-header');
+  if (!header) return;
+
+  const handleScroll = () => {
+    if (window.scrollY > 8) {
+      header.classList.add('is-scrolled');
+    } else {
+      header.classList.remove('is-scrolled');
+    }
+  };
+
+  window.addEventListener('scroll', handleScroll, { passive: true });
+  handleScroll();
+}
+
 // --- 13. Initialization Lifecycle ---
 document.addEventListener('DOMContentLoaded', () => {
   registerServiceWorker();
   setupNetworkMonitoring();
   setupNotifications();
+  setupHeaderScroll();
   setupSectionTabs();
   renderSubFilterPills();
   setupStatFilters();

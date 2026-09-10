@@ -1,5 +1,5 @@
-// Leb - Service Worker v3.3.0 (Network-First & Web Notifications)
-const CACHE_VERSION = 'v3.3.0';
+// Leb - Service Worker v3.4.0 (Network-First & Web Notifications)
+const CACHE_VERSION = 'v3.4.0';
 const CACHE_NAME = `leb-app-${CACHE_VERSION}`;
 
 const PRECACHE_ASSETS = [
@@ -8,6 +8,7 @@ const PRECACHE_ASSETS = [
   './css/app.css',
   './js/app.js',
   './manifest.webmanifest',
+  './icons/header-logo.svg',
   './icons/apple-touch-icon-180.png',
   './icons/apple-touch-icon.png',
   './icons/icon-192.png',
