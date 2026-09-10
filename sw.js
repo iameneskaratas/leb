@@ -1,5 +1,5 @@
-// Leb - Service Worker v4.3.0 (Realtime Cloud Sync & Notifications)
-const CACHE_VERSION = 'v4.3.0';
+// Leb - Service Worker v4.4.0 (Realtime Cloud Sync & Notifications)
+const CACHE_VERSION = 'v4.4.0';
 const CACHE_NAME = `leb-app-${CACHE_VERSION}`;
 
 const PRECACHE_ASSETS = [

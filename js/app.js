@@ -218,6 +218,22 @@ function normalizeTurkishSearch(text) {
     .trim();
 }
 
+function showToast(message, duration = 2800) {
+  let toast = document.getElementById('lebGlobalToast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'lebGlobalToast';
+    toast.className = 'leb-toast';
+    document.body.appendChild(toast);
+  }
+  toast.textContent = message;
+  toast.classList.add('active');
+  clearTimeout(toast._timer);
+  toast._timer = setTimeout(() => {
+    toast.classList.remove('active');
+  }, duration);
+}
+
 function updateSyncBadge(status) {
   const dot = document.getElementById('syncStatusDot');
   const text = document.getElementById('syncStatusText');
@@ -251,7 +267,7 @@ function cleanGarbageRecords(items) {
     if (deletedIds.has(it.id)) return false;
 
     const tUpper = toTurkishUpper(it.title.trim());
-    if (tUpper === 'MAHO' || tUpper === 'KUGGYIOGIUYB' || tUpper === 'R234234' || (tUpper === 'ENES KARATAŞ' && it.id.startsWith('drv_178'))) {
+    if (tUpper === 'MAHO' || tUpper === 'KUGGYIOGIUYB' || tUpper === 'R234234') {
       return false;
     }
 
@@ -340,7 +356,7 @@ async function pushToCloud(records) {
       items: cleanList,
       deletedIds: deletedList,
       lastSync: Date.now(),
-      updatedBy: 'Leb v4.2.0 Realtime Engine'
+      updatedBy: 'Leb v4.4.0 Realtime Engine'
     };
     await fetch(CLOUD_ENDPOINT, {
       method: 'PUT',
@@ -360,8 +376,16 @@ async function pushToCloud(records) {
 function handleRemoteDataPayload(remoteData) {
   if (!remoteData || typeof remoteData !== 'object') return;
 
-  const remoteRaw = Array.isArray(remoteData.items) ? remoteData.items : [];
-  const remoteDeletedIds = Array.isArray(remoteData.deletedIds) ? remoteData.deletedIds : [];
+  const remoteRaw = Array.isArray(remoteData.items)
+    ? remoteData.items
+    : (remoteData.items && typeof remoteData.items === 'object')
+      ? Object.values(remoteData.items)
+      : [];
+  const remoteDeletedIds = Array.isArray(remoteData.deletedIds)
+    ? remoteData.deletedIds
+    : (remoteData.deletedIds && typeof remoteData.deletedIds === 'object')
+      ? Object.values(remoteData.deletedIds)
+      : [];
 
   // Ingest deleted IDs from cloud into local registry
   if (remoteDeletedIds.length > 0) {
@@ -374,29 +398,22 @@ function handleRemoteDataPayload(remoteData) {
 
   const cleanRemote = cleanGarbageRecords(remoteRaw);
 
-  if (isMobileDevice()) {
-    // MOBILE: Pure consumer / viewer. ALWAYS mirror cloud state directly and force redraw!
+  // Check if there are newly created local items that haven't reached cloud yet
+  const localRaw = getStoredRecords(true);
+  const remoteIdSet = new Set(cleanRemote.map(r => r.id));
+  const deletedSet = getDeletedIdsSet();
+  const locallyAdded = localRaw.filter(r => !remoteIdSet.has(r.id) && !deletedSet.has(r.id));
+
+  if (locallyAdded.length > 0) {
+    const merged = cleanGarbageRecords(deduplicateItems([...cleanRemote, ...locallyAdded]));
+    saveRecordsLocally(merged);
+    lastRenderedHash = '';
+    renderCurrentView();
+    pushToCloud(merged);
+  } else {
     saveRecordsLocally(cleanRemote);
     lastRenderedHash = '';
     renderCurrentView();
-  } else {
-    // DESKTOP (Admin): Check if there are newly created offline items
-    const localRaw = getStoredRecords(true);
-    const remoteIdSet = new Set(cleanRemote.map(r => r.id));
-    const deletedSet = getDeletedIdsSet();
-    const locallyAdded = localRaw.filter(r => !remoteIdSet.has(r.id) && !deletedSet.has(r.id));
-
-    if (locallyAdded.length > 0) {
-      const merged = cleanGarbageRecords(deduplicateItems([...cleanRemote, ...locallyAdded]));
-      saveRecordsLocally(merged);
-      lastRenderedHash = '';
-      renderCurrentView();
-      pushToCloud(merged);
-    } else {
-      saveRecordsLocally(cleanRemote);
-      lastRenderedHash = '';
-      renderCurrentView();
-    }
   }
 
   updateSyncBadge('synced');
@@ -1181,7 +1198,7 @@ function renderCurrentView() {
 
     const datesHtml = datesItems.join('<span class="date-bullet">•</span>');
 
-    const actionButtonsHtml = isMobile ? '' : `
+    const actionButtonsHtml = `
       <div class="card-actions">
         <button type="button" class="action-btn btn-quick-date" data-id="${rec.id}">
           Güncelle
@@ -1217,22 +1234,20 @@ function renderCurrentView() {
     container.appendChild(row);
   });
 
-  // Attach event listeners to desktop actions
-  if (!isMobile) {
-    container.querySelectorAll('.btn-quick-date').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        openQuickModal(btn.dataset.id);
-      });
+  // Attach event listeners to card actions
+  container.querySelectorAll('.btn-quick-date').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      openQuickModal(btn.dataset.id);
     });
+  });
 
-    container.querySelectorAll('.btn-delete').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        deleteRecord(btn.dataset.id);
-      });
+  container.querySelectorAll('.btn-delete').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      deleteRecord(btn.dataset.id);
     });
-  }
+  });
 }
 
 function escapeHtml(str) {
@@ -1641,11 +1656,6 @@ function setupModals() {
     });
   });
 
-  if (isMobileDevice()) {
-    if (openAddBtn) openAddBtn.style.display = 'none';
-    return;
-  }
-
   function openAddModal() {
     if (addModal) {
       addModal.classList.add('active');
@@ -1653,6 +1663,17 @@ function setupModals() {
         activateModalTab('vehicle');
       } else {
         activateModalTab('driver');
+      }
+
+      // Automatically prefill sensible default dates (+1 Yıl) so user is never blocked by an empty date!
+      const defaultOneYear = getFutureDate(365);
+      const currentInsp = document.getElementById('inputInspectionDate').value;
+      if (!currentInsp) {
+        setCustomDate('inputInspectionDate', defaultOneYear);
+      }
+      const currentVisa = document.getElementById('inputVisaDate').value;
+      if (!currentVisa) {
+        setCustomDate('inputVisaDate', defaultOneYear);
       }
     }
   }
@@ -1704,25 +1725,18 @@ function setupModals() {
   if (vehicleForm) {
     vehicleForm.addEventListener('submit', (e) => {
       e.preventDefault();
-      const plate = document.getElementById('inputPlate').value.trim().toUpperCase();
+      const plateInput = document.getElementById('inputPlate');
+      const plate = (plateInput ? plateInput.value : '').trim().toUpperCase();
       const vType = (selectVType && selectVType.value) || 'Çekici';
-      const inspDate = document.getElementById('inputInspectionDate').value;
+      const inspDate = document.getElementById('inputInspectionDate').value || getFutureDate(365);
       const insDate = document.getElementById('inputInsuranceDate').value || null;
       const greenDate = document.getElementById('inputGreenCardDate').value || null;
       const roderDate = (vType === 'Çekici' || vType === 'Dorse') ? (document.getElementById('inputRoderDate').value || null) : null;
       const takoTuvDate = (vType === 'Çekici') ? (document.getElementById('inputTakoTuvDate').value || null) : null;
 
       if (!plate) {
-        document.getElementById('inputPlate').focus();
-        return;
-      }
-
-      if (!inspDate) {
-        const trig = document.getElementById('trigger_inputInspectionDate');
-        if (trig) {
-          trig.classList.add('is-error');
-          trig.focus();
-        }
+        showToast('⚠️ Lütfen araç plakasını giriniz.');
+        if (plateInput) plateInput.focus();
         return;
       }
 
@@ -1746,7 +1760,41 @@ function setupModals() {
       records.unshift(newRec);
       saveRecordsLocally(records);
       closeAddModal();
+
+      // Reset view filters and switch to vehicles so newly saved record is prominently shown!
+      currentSection = 'vehicles';
+      currentStatFilter = 'all';
+      currentSubFilter = 'all';
+      currentSearchQuery = '';
+
+      const tabVehicles = document.getElementById('tabVehicles');
+      const tabDrivers = document.getElementById('tabDrivers');
+      if (tabVehicles && tabDrivers) {
+        tabVehicles.classList.add('active');
+        tabDrivers.classList.remove('active');
+        tabVehicles.setAttribute('aria-selected', 'true');
+        tabDrivers.setAttribute('aria-selected', 'false');
+      }
+
+      document.querySelectorAll('.leb-stat-card').forEach(c => {
+        c.classList.toggle('active-stat', c.dataset.filter === 'all');
+      });
+
+      renderSubFilterPills();
+      lastRenderedHash = '';
       renderCurrentView();
+
+      // Highlight new card and scroll into view smoothly
+      setTimeout(() => {
+        const newCard = document.querySelector(`.leb-row-card[data-id="${newRec.id}"]`);
+        if (newCard) {
+          newCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          newCard.classList.add('newly-saved-pulse');
+          setTimeout(() => newCard.classList.remove('newly-saved-pulse'), 1800);
+        }
+      }, 100);
+
+      showToast(`✅ ${newRec.title} aracı kaydedildi`);
       pushToCloud(records);
     });
   }
@@ -1755,23 +1803,16 @@ function setupModals() {
   if (driverForm) {
     driverForm.addEventListener('submit', (e) => {
       e.preventDefault();
-      const name = document.getElementById('inputDriverName').value.trim();
-      const visaDate = document.getElementById('inputVisaDate').value;
+      const nameInput = document.getElementById('inputDriverName');
+      const name = (nameInput ? nameInput.value : '').trim();
+      const visaDate = document.getElementById('inputVisaDate').value || getFutureDate(365);
       const licDate = document.getElementById('inputLicenseDate').value || null;
       const passport = document.getElementById('inputPassport').value.trim();
       const passportDate = document.getElementById('inputPassportDate') ? document.getElementById('inputPassportDate').value : null;
 
       if (!name) {
-        document.getElementById('inputDriverName').focus();
-        return;
-      }
-
-      if (!visaDate) {
-        const trig = document.getElementById('trigger_inputVisaDate');
-        if (trig) {
-          trig.classList.add('is-error');
-          trig.focus();
-        }
+        showToast('⚠️ Lütfen sürücü adını giriniz.');
+        if (nameInput) nameInput.focus();
         return;
       }
 
@@ -1794,7 +1835,41 @@ function setupModals() {
       records.unshift(newRec);
       saveRecordsLocally(records);
       closeAddModal();
+
+      // Reset view filters and switch to drivers
+      currentSection = 'drivers';
+      currentStatFilter = 'all';
+      currentSubFilter = 'all';
+      currentSearchQuery = '';
+
+      const tabVehicles = document.getElementById('tabVehicles');
+      const tabDrivers = document.getElementById('tabDrivers');
+      if (tabVehicles && tabDrivers) {
+        tabDrivers.classList.add('active');
+        tabVehicles.classList.remove('active');
+        tabDrivers.setAttribute('aria-selected', 'true');
+        tabVehicles.setAttribute('aria-selected', 'false');
+      }
+
+      document.querySelectorAll('.leb-stat-card').forEach(c => {
+        c.classList.toggle('active-stat', c.dataset.filter === 'all');
+      });
+
+      renderSubFilterPills();
+      lastRenderedHash = '';
       renderCurrentView();
+
+      // Highlight new card
+      setTimeout(() => {
+        const newCard = document.querySelector(`.leb-row-card[data-id="${newRec.id}"]`);
+        if (newCard) {
+          newCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          newCard.classList.add('newly-saved-pulse');
+          setTimeout(() => newCard.classList.remove('newly-saved-pulse'), 1800);
+        }
+      }, 100);
+
+      showToast(`✅ ${newRec.title} sürücüsü kaydedildi`);
       pushToCloud(records);
     });
   }
@@ -1852,6 +1927,7 @@ function setupModals() {
           trig.classList.add('is-error');
           trig.focus();
         }
+        showToast('⚠️ Lütfen geçerli bir tarih seçiniz.');
         return;
       }
 
@@ -1862,7 +1938,9 @@ function setupModals() {
         rec.updatedAt = Date.now();
         saveRecordsLocally(records);
         closeQuickModal();
+        lastRenderedHash = '';
         renderCurrentView();
+        showToast(`✅ ${rec.title} tarihi güncellendi`);
         pushToCloud(records);
       }
     });
@@ -1870,8 +1948,6 @@ function setupModals() {
 }
 
 function openQuickModal(id) {
-  if (isMobileDevice()) return;
-
   const records = getStoredRecords(false);
   const rec = records.find(r => r.id === id);
   if (!rec) return;
@@ -1962,18 +2038,19 @@ function openQuickModal(id) {
 }
 
 async function deleteRecord(id) {
-  if (isMobileDevice()) return;
-
   // 1. Blacklist immediately to permanently block resurrection across all devices
   markRecordDeletedLocally(id);
 
   // 2. Direct hard delete from local array - NO ALERT, NO CONFIRMATION POPUP!
   let records = getStoredRecords(true);
+  const deletedItem = records.find(r => r.id === id);
   records = records.filter(r => r.id !== id);
   saveRecordsLocally(records);
 
-  // 3. Immediately redraw current view on PC
+  // 3. Immediately redraw current view
+  lastRenderedHash = '';
   renderCurrentView();
+  showToast(`🗑️ ${deletedItem ? deletedItem.title : 'Kayıt'} silindi`);
 
   // 4. Send updated list directly to Firebase RTDB so cloud is purged immediately
   await pushToCloud(records);
