@@ -1,5 +1,5 @@
-// Leb - Service Worker v3.9.0 (Network-First & Web Notifications)
-const CACHE_VERSION = 'v3.9.0';
+// Leb - Service Worker v4.0.0 (Network-First & Web Notifications)
+const CACHE_VERSION = 'v4.0.0';
 const CACHE_NAME = `leb-app-${CACHE_VERSION}`;
 
 const PRECACHE_ASSETS = [

@@ -1,7 +1,7 @@
 /**
- * Leb - Fleet & Driver Compliance Engine (v3.9.0)
- * Calm Palette, Zero Eye Strain, Deduplicated Cloud Sync,
- * Smooth Filter Transitions, Turkish Diacritic Search, Categorized Excel Export
+ * Leb - Fleet & Driver Compliance Engine (v4.0.0)
+ * Calm Palette, Zero Eye Strain, Instant Hard Delete (No Confirmation),
+ * Anti-Resurrection Shield, Roder & Pasaport Tracking, Categorized Excel Export
  */
 
 // --- 1. Service Worker & Update Manager ---
@@ -11,7 +11,7 @@ function registerServiceWorker() {
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
       navigator.serviceWorker
-        .register('./sw.js?v=3.9.0')
+        .register('./sw.js?v=4.0.0')
         .then((registration) => {
           registration.addEventListener('updatefound', () => {
             newWorker = registration.installing;
@@ -147,11 +147,30 @@ function triggerNotificationCheck(force = false) {
 
 // --- 5. Quiet Bottom Sync Engine with Robust Deduplication ---
 const CLOUD_ENDPOINT = 'https://leb1919-default-rtdb.firebaseio.com/leb_store.json';
-const STORAGE_KEY = 'leb_fleet_store_v5';
+const STORAGE_KEY = 'leb_fleet_store_v6';
 
 let isSyncing = false;
 let syncQueued = false;
 let lastRenderedHash = '';
+
+// --- Permanent Blacklist to Prevent Deleted Record Resurrection ---
+function markRecordDeletedLocally(id) {
+  try {
+    const deletedIds = JSON.parse(localStorage.getItem('leb_deleted_ids') || '[]');
+    if (!deletedIds.includes(id)) {
+      deletedIds.push(id);
+      localStorage.setItem('leb_deleted_ids', JSON.stringify(deletedIds.slice(-300)));
+    }
+  } catch (e) {}
+}
+
+function getDeletedIdsSet() {
+  try {
+    return new Set(JSON.parse(localStorage.getItem('leb_deleted_ids') || '[]'));
+  } catch (e) {
+    return new Set();
+  }
+}
 
 // --- Turkish Character Normalization & Collation Helpers ---
 function toTurkishUpper(str) {
@@ -203,23 +222,21 @@ function updateSyncBadge(status) {
  * Auto-clean & garbage-collect records:
  * 1. Removes corrupt entries (empty/missing titles)
  * 2. Purges old test ghost records permanently
- * 3. Cleans tombstones (deleted records) older than 24 hours from both local and cloud
+ * 3. Immediately filters out deleted items and blacklisted IDs so they can NEVER resurrect
  */
 function cleanGarbageRecords(items) {
   if (!Array.isArray(items)) return [];
-  const oneDayAgo = Date.now() - (24 * 60 * 60 * 1000);
+  const deletedIds = getDeletedIdsSet();
+
   return items.filter(it => {
     if (!it || typeof it !== 'object') return false;
     if (!it.id || !it.title || !it.title.trim()) return false;
+    if (it.deleted === true) return false;
+    if (deletedIds.has(it.id)) return false;
 
     // Hard-filter legacy test strings if any device attempts resurrection
     const tUpper = toTurkishUpper(it.title.trim());
     if (tUpper === 'MAHO' || tUpper === 'KUGGYIOGIUYB' || tUpper === 'R234234' || (tUpper === 'ENES KARATAŞ' && it.id.startsWith('drv_178'))) {
-      return false;
-    }
-
-    // Auto-purge tombstones older than 24 hours so database stays lean & fast
-    if (it.deleted && (it.updatedAt || 0) < oneDayAgo) {
       return false;
     }
 
@@ -236,12 +253,12 @@ function deduplicateItems(items) {
 
   items.forEach(it => {
     if (!it || !it.title) return;
+    if (it.deleted === true) return;
     const cleanKey = `${it.type}_${toTurkishUpper(it.title.trim())}`;
     const existing = map.get(cleanKey);
     if (!existing) {
       map.set(cleanKey, it);
     } else {
-      // Keep the one with latest update or not deleted
       const exTime = existing.updatedAt || 0;
       const itTime = it.updatedAt || 0;
       if (itTime >= exTime) {
@@ -281,7 +298,9 @@ function areItemListsEqual(listA, listB) {
       a.visaDate !== b.visaDate ||
       a.insuranceDate !== b.insuranceDate ||
       a.licenseDate !== b.licenseDate ||
-      a.greenCardDate !== b.greenCardDate
+      a.greenCardDate !== b.greenCardDate ||
+      a.passportDate !== b.passportDate ||
+      a.passport !== b.passport
     ) {
       return false;
     }
@@ -333,7 +352,7 @@ async function syncWithCloud(options = {}) {
       const payload = {
         items: deduplicated,
         lastSync: Date.now(),
-        updatedBy: 'Leb v3.9.0 Engine'
+        updatedBy: 'Leb v4.0.0 Engine'
       };
 
       await fetch(CLOUD_ENDPOINT, {
@@ -409,6 +428,19 @@ const SEED_RECORDS = [
   {
     id: 'veh_3',
     type: 'vehicle',
+    title: '34 LEB 2024',
+    subType: 'Roder',
+    inspectionDate: getFutureDate(45),
+    insuranceDate: getFutureDate(180),
+    greenCardDate: getFutureDate(60),
+    notes: '',
+    createdAt: new Date().toISOString(),
+    updatedAt: Date.now(),
+    deleted: false
+  },
+  {
+    id: 'veh_4',
+    type: 'vehicle',
     title: '34 TR 5500',
     subType: 'Otomobil',
     inspectionDate: getFutureDate(150),
@@ -427,6 +459,7 @@ const SEED_RECORDS = [
     visaDate: getFutureDate(7),
     licenseDate: getFutureDate(260),
     passport: 'U14589210',
+    passportDate: getFutureDate(180),
     notes: '',
     createdAt: new Date().toISOString(),
     updatedAt: Date.now(),
@@ -440,6 +473,7 @@ const SEED_RECORDS = [
     visaDate: getFutureDate(-2),
     licenseDate: getFutureDate(50),
     passport: 'U88231019',
+    passportDate: getFutureDate(25),
     notes: '',
     createdAt: new Date().toISOString(),
     updatedAt: Date.now(),
@@ -453,6 +487,7 @@ const SEED_RECORDS = [
     visaDate: getFutureDate(120),
     licenseDate: getFutureDate(310),
     passport: 'U99421102',
+    passportDate: getFutureDate(400),
     notes: '',
     createdAt: new Date().toISOString(),
     updatedAt: Date.now(),
@@ -508,6 +543,7 @@ function calculateRecordUrgency(rec) {
   } else {
     if (rec.visaDate) dates.push({ label: 'Vize', date: rec.visaDate });
     if (rec.licenseDate) dates.push({ label: 'Ehliyet', date: rec.licenseDate });
+    if (rec.passportDate) dates.push({ label: 'Pasaport', date: rec.passportDate });
   }
 
   let minDays = Infinity;
@@ -652,33 +688,40 @@ function renderSubFilterPills() {
   if (!container) return;
 
   container.innerHTML = '';
+  container.style.display = 'flex';
 
+  let pills = [];
   if (currentSection === 'vehicles') {
-    container.style.display = 'flex';
-    const pills = [
+    pills = [
       { id: 'all', label: 'Tümü' },
       { id: 'Çekici', label: 'Çekici' },
       { id: 'Dorse', label: 'Dorse' },
+      { id: 'Roder', label: 'Roder' },
       { id: 'Otomobil', label: 'Otomobil' }
     ];
-
-    pills.forEach(pill => {
-      const btn = document.createElement('button');
-      btn.className = `filter-pill ${currentSubFilter === pill.id ? 'active' : ''}`;
-      btn.textContent = pill.label;
-      btn.dataset.sub = pill.id;
-      btn.addEventListener('click', () => {
-        if (currentSubFilter === pill.id) return;
-        currentSubFilter = pill.id;
-        renderSubFilterPills();
-        triggerSmoothRender();
-      });
-      container.appendChild(btn);
-    });
   } else {
-    // Sürücülerde alt kategoriye gerek yok
-    container.style.display = 'none';
+    // Sürücüler kategori filtreleri: Tümü, Pasaport, Vize, Ehliyet
+    pills = [
+      { id: 'all', label: 'Tümü' },
+      { id: 'Pasaport', label: 'Pasaport' },
+      { id: 'Vize', label: 'Vize' },
+      { id: 'Ehliyet', label: 'Ehliyet' }
+    ];
   }
+
+  pills.forEach(pill => {
+    const btn = document.createElement('button');
+    btn.className = `filter-pill ${currentSubFilter === pill.id ? 'active' : ''}`;
+    btn.textContent = pill.label;
+    btn.dataset.sub = pill.id;
+    btn.addEventListener('click', () => {
+      if (currentSubFilter === pill.id) return;
+      currentSubFilter = pill.id;
+      renderSubFilterPills();
+      triggerSmoothRender();
+    });
+    container.appendChild(btn);
+  });
 }
 
 function setupStatFilters() {
@@ -788,9 +831,19 @@ function renderCurrentView() {
   // 1. Filter by Section (Araçlar vs Sürücüler)
   let list = records.filter(r => r.type === (currentSection === 'vehicles' ? 'vehicle' : 'driver'));
 
-  // 2. Filter by SubType (Çekici, Dorse, Otomobil)
+  // 2. Filter by SubType or Document Category
   if (currentSubFilter !== 'all') {
-    list = list.filter(r => (r.subType || '') === currentSubFilter);
+    if (currentSection === 'vehicles') {
+      list = list.filter(r => (r.subType || '') === currentSubFilter);
+    } else {
+      if (currentSubFilter === 'Pasaport') {
+        list = list.filter(r => Boolean(r.passportDate || r.passport));
+      } else if (currentSubFilter === 'Vize') {
+        list = list.filter(r => Boolean(r.visaDate));
+      } else if (currentSubFilter === 'Ehliyet') {
+        list = list.filter(r => Boolean(r.licenseDate));
+      }
+    }
   }
 
   // 3. Filter by Stat (Critical, Warning, Safe)
@@ -895,11 +948,13 @@ function renderCurrentView() {
           </span>
         `);
       }
-      if (rec.passport) {
+      if (rec.passportDate || rec.passport) {
+        const passDateStr = rec.passportDate ? formatDisplayDate(rec.passportDate) : '';
+        const passNoStr = rec.passport ? ` (${escapeHtml(rec.passport)})` : '';
         datesItems.push(`
           <span class="date-item">
             <span class="date-name">Pasaport:</span>
-            <span class="date-val">${escapeHtml(rec.passport)}</span>
+            <span class="date-val">${passDateStr || 'Kayıtlı'}${passNoStr}</span>
           </span>
         `);
       }
@@ -1373,6 +1428,7 @@ function setupModals() {
       setCustomDate('inputGreenCardDate', '');
       setCustomDate('inputVisaDate', '');
       setCustomDate('inputLicenseDate', '');
+      setCustomDate('inputPassportDate', '');
       closeCalendar();
     }
   }
@@ -1454,6 +1510,7 @@ function setupModals() {
       const visaDate = document.getElementById('inputVisaDate').value;
       const licDate = document.getElementById('inputLicenseDate').value || null;
       const passport = document.getElementById('inputPassport').value.trim();
+      const passportDate = document.getElementById('inputPassportDate') ? document.getElementById('inputPassportDate').value : null;
 
       if (!name) {
         document.getElementById('inputDriverName').focus();
@@ -1473,10 +1530,11 @@ function setupModals() {
         id: 'drv_' + Date.now(),
         type: 'driver',
         title: name,
-        subType: 'Kaptan Şoför',
+        subType: 'Sürücü',
         visaDate: visaDate,
         licenseDate: licDate,
         passport: passport || '',
+        passportDate: passportDate || null,
         notes: '',
         createdAt: new Date().toISOString(),
         updatedAt: Date.now(),
@@ -1592,7 +1650,8 @@ function openQuickModal(id) {
   } else {
     docOptions = [
       { field: 'visaDate', label: 'Vize' },
-      { field: 'licenseDate', label: 'Ehliyet / SRC' }
+      { field: 'licenseDate', label: 'Ehliyet / SRC' },
+      { field: 'passportDate', label: 'Pasaport' }
     ];
   }
 
@@ -1636,18 +1695,38 @@ function openQuickModal(id) {
   if (quickModal) quickModal.classList.add('active');
 }
 
-function deleteRecord(id) {
+async function deleteRecord(id) {
   if (isMobileDevice()) return;
-  const records = getStoredRecords(true);
-  const rec = records.find(r => r.id === id);
-  if (!rec) return;
 
-  if (confirm(`"${rec.title}" kaydını silmek istediğinize emin misiniz?`)) {
-    rec.deleted = true;
-    rec.updatedAt = Date.now();
-    saveRecordsLocally(records);
-    renderCurrentView();
-    syncWithCloud({ isManual: false });
+  // 1. Blacklist immediately to permanently block resurrection
+  markRecordDeletedLocally(id);
+
+  // 2. Direct hard delete from local array - NO ALERT, NO CONFIRMATION POPUP!
+  let records = getStoredRecords(true);
+  records = records.filter(r => r.id !== id);
+  saveRecordsLocally(records);
+
+  // 3. Immediately redraw current view
+  renderCurrentView();
+
+  // 4. Send updated list directly to Firebase RTDB so cloud is purged immediately
+  if (navigator.onLine) {
+    try {
+      const cleanList = cleanGarbageRecords(deduplicateItems(records));
+      const payload = {
+        items: cleanList,
+        lastSync: Date.now(),
+        updatedBy: 'Leb v4.0.0 Engine (Direct Hard Delete)'
+      };
+      await fetch(CLOUD_ENDPOINT, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      updateSyncBadge('synced');
+    } catch (e) {
+      console.warn('[DeleteSync] Note:', e);
+    }
   }
 }
 
@@ -1704,10 +1783,10 @@ function exportVehiclesCsv() {
   const vehicles = records
     .filter(r => r.type === 'vehicle')
     .sort((a, b) => {
-      // 1. Sort by subType: Çekici, Dorse, Otomobil
-      const order = { 'Çekici': 1, 'Dorse': 2, 'Otomobil': 3 };
-      const rankA = order[a.subType] || 4;
-      const rankB = order[b.subType] || 4;
+      // 1. Sort by subType: Çekici, Dorse, Roder, Otomobil
+      const order = { 'Çekici': 1, 'Dorse': 2, 'Roder': 3, 'Otomobil': 4 };
+      const rankA = order[a.subType] || 5;
+      const rankB = order[b.subType] || 5;
       if (rankA !== rankB) return rankA - rankB;
       // 2. Sort by plate
       return compareTurkish(a.title, b.title);
@@ -1782,6 +1861,7 @@ function exportDriversCsv() {
     escapeCsvCell('Alt Kategori'),
     escapeCsvCell('Ad Soyad'),
     escapeCsvCell('Pasaport No'),
+    escapeCsvCell('Pasaport Bitiş ve Durumu'),
     escapeCsvCell('Genel Durum'),
     escapeCsvCell('En Acil Durum'),
     escapeCsvCell('Vize Bitiş ve Durumu'),
@@ -1792,9 +1872,11 @@ function exportDriversCsv() {
   drivers.forEach(d => {
     const vize = getSingleDateStatus(d.visaDate);
     const ehliyet = getSingleDateStatus(d.licenseDate);
+    const pasaport = getSingleDateStatus(d.passportDate);
     const urgency = calculateRecordUrgency(d);
     const statusText = urgency.status === 'critical' ? 'KRİTİK' : urgency.status === 'warning' ? 'YAKLAŞAN' : 'SORUNSUZ';
 
+    const pasaportCell = d.passportDate ? `${formatExcelDate(d.passportDate)} (${pasaport.text})` : (d.passport ? 'Tarih Belirtilmedi' : '—');
     const vizeCell = d.visaDate ? `${formatExcelDate(d.visaDate)} (${vize.text})` : '—';
     const ehliyetCell = d.licenseDate ? `${formatExcelDate(d.licenseDate)} (${ehliyet.text})` : '—';
 
@@ -1803,6 +1885,7 @@ function exportDriversCsv() {
       escapeCsvCell(d.subType || 'Şoför'),
       escapeCsvCell(d.title || ''),
       escapeCsvCell(d.passport || '—'),
+      escapeCsvCell(pasaportCell),
       escapeCsvCell(statusText),
       escapeCsvCell(urgency.text),
       escapeCsvCell(vizeCell),
@@ -1825,9 +1908,9 @@ function exportAllUnifiedCsv() {
   const vehicles = records
     .filter(r => r.type === 'vehicle')
     .sort((a, b) => {
-      const order = { 'Çekici': 1, 'Dorse': 2, 'Otomobil': 3 };
-      const rankA = order[a.subType] || 4;
-      const rankB = order[b.subType] || 4;
+      const order = { 'Çekici': 1, 'Dorse': 2, 'Roder': 3, 'Otomobil': 4 };
+      const rankA = order[a.subType] || 5;
+      const rankB = order[b.subType] || 5;
       if (rankA !== rankB) return rankA - rankB;
       return compareTurkish(a.title, b.title);
     });
@@ -1848,7 +1931,7 @@ function exportAllUnifiedCsv() {
     escapeCsvCell('En Acil Durum'),
     escapeCsvCell('Muayene / Vize Durumu'),
     escapeCsvCell('Sigorta / Ehliyet Durumu'),
-    escapeCsvCell('Yeşil Kart Durumu'),
+    escapeCsvCell('Yeşil Kart / Pasaport Durumu'),
     escapeCsvCell('Notlar')
   ]);
 
@@ -1884,11 +1967,13 @@ function exportAllUnifiedCsv() {
   drivers.forEach(d => {
     const vize = getSingleDateStatus(d.visaDate);
     const ehliyet = getSingleDateStatus(d.licenseDate);
+    const pasaport = getSingleDateStatus(d.passportDate);
     const urgency = calculateRecordUrgency(d);
     const statusText = urgency.status === 'critical' ? 'KRİTİK' : urgency.status === 'warning' ? 'YAKLAŞAN' : 'SORUNSUZ';
 
     const vizeCell = d.visaDate ? `Vize: ${formatExcelDate(d.visaDate)} (${vize.text})` : '—';
     const ehliyetCell = d.licenseDate ? `Ehliyet: ${formatExcelDate(d.licenseDate)} (${ehliyet.text})` : '—';
+    const pasaportCell = d.passportDate ? `Pasaport: ${formatExcelDate(d.passportDate)} (${pasaport.text})` : (d.passport ? 'Pasaport: Kayıtlı' : '—');
 
     rows.push([
       escapeCsvCell('Sürücü'),
@@ -1899,7 +1984,7 @@ function exportAllUnifiedCsv() {
       escapeCsvCell(urgency.text),
       escapeCsvCell(vizeCell),
       escapeCsvCell(ehliyetCell),
-      escapeCsvCell('—'),
+      escapeCsvCell(pasaportCell),
       escapeCsvCell(d.notes || '')
     ]);
   });
