@@ -1,7 +1,7 @@
 /**
- * Leb - Fleet & Driver Compliance Engine (v3.2.0)
- * High Legibility, Vertical Mobile-Style List on All Devices,
- * Strict Mobile Read-Only Gate, Quiet Bottom Sync
+ * Leb - Fleet & Driver Compliance Engine (v3.3.0)
+ * Calm Palette, Zero Eye Strain, Deduplicated Cloud Sync,
+ * Clean Inline Dates, Quick 1-Click Date Presets
  */
 
 // --- 1. Service Worker & Update Manager ---
@@ -11,7 +11,7 @@ function registerServiceWorker() {
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
       navigator.serviceWorker
-        .register('./sw.js?v=3.2.0')
+        .register('./sw.js?v=3.3.0')
         .then((registration) => {
           registration.addEventListener('updatefound', () => {
             newWorker = registration.installing;
@@ -64,7 +64,7 @@ function setupNetworkMonitoring() {
   window.addEventListener('offline', updateStatus);
 }
 
-// --- 3. Strict Mobile Detection (Mobilde Yönetim Erişimi Engellenir) ---
+// --- 3. Strict Mobile Detection ---
 function isMobileDevice() {
   const ua = navigator.userAgent.toLowerCase();
   return /iphone|ipad|ipod|android/i.test(ua) || window.innerWidth <= 768;
@@ -137,15 +137,15 @@ function triggerNotificationCheck(force = false) {
       } else {
         new Notification(notifTitle, {
           body: notifBody,
-          icon: 'icons/apple-touch-icon-180.png?v=3.2.0',
-          badge: 'icons/favicon.png?v=3.2.0'
+          icon: 'icons/apple-touch-icon-180.png?v=3.3.0',
+          badge: 'icons/favicon.png?v=3.3.0'
         });
       }
     } catch (e) {}
   }
 }
 
-// --- 5. Quiet Bottom Sync Engine (Firebase Realtime DB) ---
+// --- 5. Quiet Bottom Sync Engine with Robust Deduplication ---
 const CLOUD_ENDPOINT = 'https://leb1919-default-rtdb.firebaseio.com/leb_store.json';
 const STORAGE_KEY = 'leb_fleet_store_v3';
 
@@ -168,6 +168,32 @@ function updateSyncBadge(status) {
     dot.classList.add('error');
     text.textContent = 'Bağlantı Uyarısı';
   }
+}
+
+/**
+ * Deduplicate items by composite key (type + normalized title)
+ */
+function deduplicateItems(items) {
+  if (!Array.isArray(items)) return [];
+  const map = new Map();
+
+  items.forEach(it => {
+    if (!it || !it.title) return;
+    const cleanKey = `${it.type}_${it.title.trim().toUpperCase()}`;
+    const existing = map.get(cleanKey);
+    if (!existing) {
+      map.set(cleanKey, it);
+    } else {
+      // Keep the one with latest update or not deleted
+      const exTime = existing.updatedAt || 0;
+      const itTime = it.updatedAt || 0;
+      if (itTime >= exTime) {
+        map.set(cleanKey, it);
+      }
+    }
+  });
+
+  return Array.from(map.values());
 }
 
 function areItemListsEqual(listA, listB) {
@@ -237,39 +263,20 @@ async function syncWithCloud(options = {}) {
       remoteData = await response.json();
     }
 
-    const remoteItems = (remoteData && Array.isArray(remoteData.items)) ? remoteData.items : [];
-    const localItems = getStoredRecords(true);
+    const remoteRaw = (remoteData && Array.isArray(remoteData.items)) ? remoteData.items : [];
+    const localRaw = getStoredRecords(true);
 
-    const mergedMap = new Map();
+    // Merge and deduplicate by type + title
+    const allCombined = [...remoteRaw, ...localRaw];
+    const deduplicated = deduplicateItems(allCombined);
 
-    // Remote items
-    remoteItems.forEach(it => {
-      if (it && it.id) mergedMap.set(it.id, it);
-    });
-
-    // Local items with Last-Write-Wins
-    localItems.forEach(localIt => {
-      if (!localIt || !localIt.id) return;
-      if (!mergedMap.has(localIt.id)) {
-        mergedMap.set(localIt.id, localIt);
-      } else {
-        const remoteIt = mergedMap.get(localIt.id);
-        const lTime = localIt.updatedAt || 0;
-        const rTime = remoteIt.updatedAt || 0;
-        if (lTime >= rTime) {
-          mergedMap.set(localIt.id, localIt);
-        }
-      }
-    });
-
-    const mergedItems = Array.from(mergedMap.values());
-    const remoteNeedsUpdate = !areItemListsEqual(remoteItems, mergedItems);
+    const remoteNeedsUpdate = !areItemListsEqual(remoteRaw, deduplicated);
 
     if (remoteNeedsUpdate && !isMobileDevice()) {
       const payload = {
-        items: mergedItems,
+        items: deduplicated,
         lastSync: Date.now(),
-        updatedBy: 'Leb v3.2.0'
+        updatedBy: 'Leb v3.3.0 Clean'
       };
 
       await fetch(CLOUD_ENDPOINT, {
@@ -279,15 +286,15 @@ async function syncWithCloud(options = {}) {
       });
     }
 
-    const localNeedsUpdate = !areItemListsEqual(localItems, mergedItems);
+    const localNeedsUpdate = !areItemListsEqual(localRaw, deduplicated);
     if (localNeedsUpdate) {
-      saveRecordsLocally(mergedItems);
+      saveRecordsLocally(deduplicated);
       renderCurrentView();
     }
 
     updateSyncBadge('synced');
   } catch (err) {
-    console.warn('[Sync] Network note:', err);
+    console.warn('[Sync] Note:', err);
     updateSyncBadge('offline');
   } finally {
     isSyncing = false;
@@ -301,14 +308,14 @@ async function syncWithCloud(options = {}) {
   }
 }
 
-// Periodic Background Sync (Every 25 seconds if active tab)
+// Periodic Background Sync (Every 30 seconds if active)
 setInterval(() => {
   if (document.visibilityState === 'visible' && navigator.onLine) {
     syncWithCloud({ isManual: false });
   }
-}, 25000);
+}, 30000);
 
-// --- 6. Initial Seed Data (If Local Storage is Clean) ---
+// --- 6. Initial Clean Seed Data ---
 function getFutureDate(days) {
   const d = new Date();
   d.setDate(d.getDate() + days);
@@ -401,17 +408,11 @@ function getStoredRecords(includeDeleted = false) {
   try {
     const data = localStorage.getItem(STORAGE_KEY);
     if (!data) {
-      // Check legacy storage key
-      const oldData = localStorage.getItem('leb_logistics_fleet_v2');
-      if (oldData) {
-        localStorage.setItem(STORAGE_KEY, oldData);
-        const parsed = JSON.parse(oldData);
-        return includeDeleted ? parsed : parsed.filter(r => !r.deleted);
-      }
       localStorage.setItem(STORAGE_KEY, JSON.stringify(SEED_RECORDS));
       return includeDeleted ? SEED_RECORDS : SEED_RECORDS.filter(r => !r.deleted);
     }
-    const parsed = JSON.parse(data);
+    let parsed = JSON.parse(data);
+    parsed = deduplicateItems(parsed);
     if (includeDeleted) return parsed;
     return parsed.filter(r => !r.deleted);
   } catch (e) {
@@ -422,7 +423,8 @@ function getStoredRecords(includeDeleted = false) {
 
 function saveRecordsLocally(records) {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+    const deduped = deduplicateItems(records);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(deduped));
     updateStats();
   } catch (e) {
     console.error('[Storage] Save error:', e);
@@ -443,12 +445,12 @@ function getDaysRemaining(dateStr) {
 function calculateRecordUrgency(rec) {
   const dates = [];
   if (rec.type === 'vehicle') {
-    if (rec.inspectionDate) dates.push({ label: 'TÜVTÜRK Muayene', date: rec.inspectionDate });
+    if (rec.inspectionDate) dates.push({ label: 'Muayene', date: rec.inspectionDate });
     if (rec.insuranceDate) dates.push({ label: 'Sigorta', date: rec.insuranceDate });
     if (rec.greenCardDate) dates.push({ label: 'Yeşil Kart', date: rec.greenCardDate });
   } else {
-    if (rec.visaDate) dates.push({ label: 'Vize Bitiş', date: rec.visaDate });
-    if (rec.licenseDate) dates.push({ label: 'Ehliyet / SRC', date: rec.licenseDate });
+    if (rec.visaDate) dates.push({ label: 'Vize', date: rec.visaDate });
+    if (rec.licenseDate) dates.push({ label: 'Ehliyet', date: rec.licenseDate });
   }
 
   let minDays = Infinity;
@@ -463,13 +465,13 @@ function calculateRecordUrgency(rec) {
   });
 
   if (minDays === Infinity) {
-    return { status: 'safe', text: 'Tarih Girilmedi', minDays: 999, label: '' };
+    return { status: 'safe', text: 'Tarih Yok', minDays: 999, label: '' };
   }
 
   if (minDays < 0) {
     return {
       status: 'critical',
-      text: `${Math.abs(minDays)} gün önce doldu! ⚠️`,
+      text: `${Math.abs(minDays)}G önce doldu`,
       minDays,
       label: mostUrgentLabel
     };
@@ -477,7 +479,7 @@ function calculateRecordUrgency(rec) {
   if (minDays === 0) {
     return {
       status: 'critical',
-      text: 'Bugün Son Gün! 🚨',
+      text: 'Bugün Son Gün',
       minDays: 0,
       label: mostUrgentLabel
     };
@@ -485,7 +487,7 @@ function calculateRecordUrgency(rec) {
   if (minDays <= 7) {
     return {
       status: 'critical',
-      text: `${minDays} gün kaldı! 🔴`,
+      text: `${minDays} gün kaldı`,
       minDays,
       label: mostUrgentLabel
     };
@@ -493,14 +495,14 @@ function calculateRecordUrgency(rec) {
   if (minDays <= 30) {
     return {
       status: 'warning',
-      text: `${minDays} gün kaldı 🟡`,
+      text: `${minDays} gün kaldı`,
       minDays,
       label: mostUrgentLabel
     };
   }
   return {
     status: 'safe',
-    text: `${minDays} gün var 🟢`,
+    text: `${minDays} gün var`,
     minDays,
     label: mostUrgentLabel
   };
@@ -568,13 +570,13 @@ function renderSubFilterPills() {
   if (currentSection === 'vehicles') {
     pills = [
       { id: 'all', label: 'Tümü' },
-      { id: 'Çekici', label: '🚛 Çekici' },
-      { id: 'Dorse', label: '📦 Dorse' },
-      { id: 'Otomobil', label: '🚗 Otomobil' }
+      { id: 'Çekici', label: 'Çekici' },
+      { id: 'Dorse', label: 'Dorse' },
+      { id: 'Otomobil', label: 'Otomobil' }
     ];
   } else {
     pills = [
-      { id: 'all', label: 'Tümü (Kaptan Şoförler)' }
+      { id: 'all', label: 'Tüm Kaptanlar' }
     ];
   }
 
@@ -686,7 +688,7 @@ function updateStats() {
   if (elSafe) elSafe.textContent = String(safe);
 }
 
-// --- 11. Render Vertical Stacked List (Alt Alta Sıralı Liste) ---
+// --- 11. Render Clean Vertical Stacked List ---
 function renderCurrentView() {
   updateStats();
 
@@ -730,7 +732,7 @@ function renderCurrentView() {
     return uA - uB;
   });
 
-  // Check if DOM render is identical to avoid layout shifts
+  // Layout hash to prevent unnecessary DOM redraws
   const renderSignature = JSON.stringify(list.map(r => ({
     id: r.id,
     title: r.title,
@@ -761,58 +763,68 @@ function renderCurrentView() {
     row.className = 'leb-row-card';
     row.dataset.id = rec.id;
 
-    const icon = rec.type === 'vehicle'
-      ? (rec.subType === 'Dorse' ? '📦' : rec.subType === 'Otomobil' ? '🚗' : '🚛')
-      : '👤';
-
-    let datesHtml = '';
+    let datesItems = [];
     if (rec.type === 'vehicle') {
-      const inspDays = getDaysRemaining(rec.inspectionDate);
-      const inspStatus = inspDays !== null ? (inspDays <= 7 ? 'critical' : inspDays <= 30 ? 'warning' : 'safe') : 'safe';
-
-      datesHtml = `
-        <span class="date-tag highlight-tag ${inspStatus}-tag">
-          <strong>🛠️ Muayene:</strong> ${formatDisplayDate(rec.inspectionDate)}
-        </span>
-        ${rec.insuranceDate ? `
-          <span class="date-tag">
-            <strong>📄 Sigorta:</strong> ${formatDisplayDate(rec.insuranceDate)}
+      if (rec.inspectionDate) {
+        datesItems.push(`
+          <span class="date-item">
+            <span class="date-name">Muayene:</span>
+            <span class="date-val">${formatDisplayDate(rec.inspectionDate)}</span>
           </span>
-        ` : ''}
-        ${rec.greenCardDate ? `
-          <span class="date-tag">
-            <strong>🌐 Yeşil Kart:</strong> ${formatDisplayDate(rec.greenCardDate)}
+        `);
+      }
+      if (rec.insuranceDate) {
+        datesItems.push(`
+          <span class="date-item">
+            <span class="date-name">Sigorta:</span>
+            <span class="date-val">${formatDisplayDate(rec.insuranceDate)}</span>
           </span>
-        ` : ''}
-      `;
+        `);
+      }
+      if (rec.greenCardDate) {
+        datesItems.push(`
+          <span class="date-item">
+            <span class="date-name">Yeşil Kart:</span>
+            <span class="date-val">${formatDisplayDate(rec.greenCardDate)}</span>
+          </span>
+        `);
+      }
     } else {
-      const visaDays = getDaysRemaining(rec.visaDate);
-      const visaStatus = visaDays !== null ? (visaDays <= 7 ? 'critical' : visaDays <= 30 ? 'warning' : 'safe') : 'safe';
-
-      datesHtml = `
-        <span class="date-tag highlight-tag ${visaStatus}-tag">
-          <strong>🛂 Vize:</strong> ${formatDisplayDate(rec.visaDate)}
-        </span>
-        ${rec.licenseDate ? `
-          <span class="date-tag">
-            <strong>🪪 Ehliyet:</strong> ${formatDisplayDate(rec.licenseDate)}
+      if (rec.visaDate) {
+        datesItems.push(`
+          <span class="date-item">
+            <span class="date-name">Vize:</span>
+            <span class="date-val">${formatDisplayDate(rec.visaDate)}</span>
           </span>
-        ` : ''}
-        ${rec.passport ? `
-          <span class="date-tag">
-            <strong>📘 Pasaport:</strong> ${escapeHtml(rec.passport)}
+        `);
+      }
+      if (rec.licenseDate) {
+        datesItems.push(`
+          <span class="date-item">
+            <span class="date-name">Ehliyet:</span>
+            <span class="date-val">${formatDisplayDate(rec.licenseDate)}</span>
           </span>
-        ` : ''}
-      `;
+        `);
+      }
+      if (rec.passport) {
+        datesItems.push(`
+          <span class="date-item">
+            <span class="date-name">Pasaport:</span>
+            <span class="date-val">${escapeHtml(rec.passport)}</span>
+          </span>
+        `);
+      }
     }
+
+    const datesHtml = datesItems.join('<span class="date-bullet">•</span>');
 
     const actionButtonsHtml = isMobile ? '' : `
       <div class="card-actions">
         <button type="button" class="action-btn btn-quick-date" data-id="${rec.id}">
-          📅 Güncelle
+          Güncelle
         </button>
-        <button type="button" class="action-btn action-btn-del btn-delete" data-id="${rec.id}" title="Kaydı Sil">
-          🗑️
+        <button type="button" class="action-btn action-btn-del btn-delete" data-id="${rec.id}" title="Sil">
+          Sil
         </button>
       </div>
     `;
@@ -820,14 +832,9 @@ function renderCurrentView() {
     row.innerHTML = `
       <div class="row-top-mobile">
         <div class="row-identity">
-          <div class="row-icon-badge">${icon}</div>
-          <div class="row-texts">
-            <span class="row-title">${escapeHtml(rec.title)}</span>
-            <div class="row-meta-line">
-              <span class="row-type-pill">${escapeHtml(rec.subType || (rec.type === 'vehicle' ? 'Çekici' : 'Kaptan Şoför'))}</span>
-              ${rec.notes ? `<span class="row-note-inline" title="${escapeHtml(rec.notes)}">${escapeHtml(rec.notes)}</span>` : ''}
-            </div>
-          </div>
+          <span class="row-title">${escapeHtml(rec.title)}</span>
+          <span class="row-type-pill">${escapeHtml(rec.subType || (rec.type === 'vehicle' ? 'Çekici' : 'Kaptan Şoför'))}</span>
+          ${rec.notes ? `<span class="row-note-inline" title="${escapeHtml(rec.notes)}">${escapeHtml(rec.notes)}</span>` : ''}
         </div>
         <div class="row-right">
           <span class="urgency-badge badge-${urgency.status}">
@@ -844,7 +851,7 @@ function renderCurrentView() {
     container.appendChild(row);
   });
 
-  // Attach event listeners to desktop action buttons
+  // Attach event listeners to desktop actions
   if (!isMobile) {
     container.querySelectorAll('.btn-quick-date').forEach(btn => {
       btn.addEventListener('click', (e) => {
@@ -872,8 +879,24 @@ function escapeHtml(str) {
     .replace(/'/g, '&#039;');
 }
 
-// --- 12. Desktop-Only Modals: Add & Quick Update ---
+// --- 12. Desktop Modals & Quick Date Handlers ---
 let activeQuickRecordId = null;
+
+function setupQuickPresetChips() {
+  // Preset chips in Add Modal
+  document.querySelectorAll('.preset-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      const targetId = chip.dataset.target;
+      const months = parseInt(chip.dataset.months, 10);
+      const input = document.getElementById(targetId);
+      if (input && months) {
+        const d = new Date();
+        d.setMonth(d.getMonth() + months);
+        input.value = d.toISOString().split('T')[0];
+      }
+    });
+  });
+}
 
 function setupModals() {
   const openAddBtn = document.getElementById('openAddModalBtn');
@@ -937,7 +960,7 @@ function setupModals() {
   if (vehicleForm) {
     vehicleForm.addEventListener('submit', (e) => {
       e.preventDefault();
-      const plate = document.getElementById('inputPlate').value.trim();
+      const plate = document.getElementById('inputPlate').value.trim().toUpperCase();
       const vType = document.getElementById('selectVehicleType').value;
       const inspDate = document.getElementById('inputInspectionDate').value;
       const insDate = document.getElementById('inputInsuranceDate').value || null;
@@ -947,9 +970,9 @@ function setupModals() {
       if (!plate || !inspDate) return;
 
       const newRec = {
-        id: 'rec_veh_' + Date.now(),
+        id: 'veh_' + Date.now(),
         type: 'vehicle',
-        title: plate.toUpperCase(),
+        title: plate,
         subType: vType,
         inspectionDate: inspDate,
         insuranceDate: insDate,
@@ -982,7 +1005,7 @@ function setupModals() {
       if (!name || !visaDate) return;
 
       const newRec = {
-        id: 'rec_drv_' + Date.now(),
+        id: 'drv_' + Date.now(),
         type: 'driver',
         title: name,
         subType: 'Kaptan Şoför',
@@ -1009,6 +1032,8 @@ function setupModals() {
   const closeQuickBtn = document.getElementById('closeQuickModalBtn');
   const cancelQuickBtn = document.getElementById('cancelQuickBtn');
   const saveQuickBtn = document.getElementById('saveQuickBtn');
+  const quickDateInput = document.getElementById('quickDateInput');
+  const quickDatePreview = document.getElementById('quickDatePreview');
 
   function closeQuickModal() {
     if (quickModal) quickModal.classList.remove('active');
@@ -1018,18 +1043,28 @@ function setupModals() {
   if (closeQuickBtn) closeQuickBtn.addEventListener('click', closeQuickModal);
   if (cancelQuickBtn) cancelQuickBtn.addEventListener('click', closeQuickModal);
 
-  // Preset buttons (+6 Ay, +1 Yıl, +2 Yıl)
+  function updateQuickPreview() {
+    if (quickDatePreview && quickDateInput && quickDateInput.value) {
+      quickDatePreview.textContent = `Yeni Tarih: ${formatDisplayDate(quickDateInput.value)}`;
+    }
+  }
+
+  if (quickDateInput) {
+    quickDateInput.addEventListener('input', updateQuickPreview);
+  }
+
+  // Quick Modal Preset buttons
   const presets = document.querySelectorAll('.preset-pill');
   presets.forEach(p => {
     p.addEventListener('click', () => {
       presets.forEach(x => x.classList.remove('active'));
       p.classList.add('active');
       const months = parseInt(p.dataset.months, 10);
-      const dateInput = document.getElementById('quickDateInput');
-      if (dateInput) {
+      if (quickDateInput) {
         const d = new Date();
         d.setMonth(d.getMonth() + months);
-        dateInput.value = d.toISOString().split('T')[0];
+        quickDateInput.value = d.toISOString().split('T')[0];
+        updateQuickPreview();
       }
     });
   });
@@ -1068,21 +1103,22 @@ function openQuickModal(id) {
   const titleEl = document.getElementById('quickRecordTitle');
   const selectEl = document.getElementById('quickFieldSelect');
   const dateInput = document.getElementById('quickDateInput');
+  const previewEl = document.getElementById('quickDatePreview');
 
-  if (titleEl) titleEl.textContent = `${rec.title} (${rec.subType || ''})`;
+  if (titleEl) titleEl.textContent = `${rec.title} • ${rec.subType || ''}`;
 
   if (selectEl) {
     selectEl.innerHTML = '';
     if (rec.type === 'vehicle') {
       selectEl.innerHTML = `
-        <option value="inspectionDate">🛠️ TÜVTÜRK Muayene Bitiş</option>
-        <option value="insuranceDate">📄 Sigorta / Kasko Bitiş</option>
-        <option value="greenCardDate">🌐 Yeşil Kart (Yurtdışı)</option>
+        <option value="inspectionDate">Muayene Bitiş Tarihi</option>
+        <option value="insuranceDate">Sigorta Bitiş Tarihi</option>
+        <option value="greenCardDate">Yeşil Sigorta Tarihi</option>
       `;
     } else {
       selectEl.innerHTML = `
-        <option value="visaDate">🛂 Vize Bitiş Tarihi</option>
-        <option value="licenseDate">🪪 Ehliyet / SRC Bitiş</option>
+        <option value="visaDate">Vize Bitiş Tarihi</option>
+        <option value="licenseDate">Ehliyet / SRC Bitiş</option>
       `;
     }
 
@@ -1090,6 +1126,7 @@ function openQuickModal(id) {
       const field = selectEl.value;
       if (dateInput && rec[field]) {
         dateInput.value = rec[field];
+        if (previewEl) previewEl.textContent = `Mevcut: ${formatDisplayDate(rec[field])}`;
       }
     });
   }
@@ -1099,6 +1136,9 @@ function openQuickModal(id) {
   defaultDate.setFullYear(defaultDate.getFullYear() + 1);
   if (dateInput) {
     dateInput.value = defaultDate.toISOString().split('T')[0];
+    if (previewEl) {
+      previewEl.textContent = `Yeni Tarih: ${formatDisplayDate(dateInput.value)}`;
+    }
   }
 
   if (quickModal) quickModal.classList.add('active');
@@ -1129,6 +1169,7 @@ document.addEventListener('DOMContentLoaded', () => {
   setupStatFilters();
   setupSearch();
   setupModals();
+  setupQuickPresetChips();
 
   // Initial local render
   renderCurrentView();
@@ -1145,9 +1186,9 @@ document.addEventListener('DOMContentLoaded', () => {
     updateBtn.addEventListener('click', applyUpdate);
   }
 
-  // Fetch remote data on startup
+  // Fetch remote clean data
   syncWithCloud({ isManual: false });
 
-  // Mobile alert notification check
+  // Mobile notification check
   setTimeout(() => triggerNotificationCheck(false), 2000);
 });

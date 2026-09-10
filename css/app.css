@@ -1,62 +1,61 @@
 /**
- * Leb - Minimalist White Design System (v3.2.0)
- * Clean Slate, High Legibility, Vertical Mobile-Style List on All Devices,
- * Strict Mobile Read-Only Gate, Quiet Bottom Sync
+ * Leb - Minimalist Design System (v3.3.0)
+ * Calm Palette, Zero Eye Strain, iOS PWA Safe Area Support,
+ * Clean Vertical List Layout, Strict Mobile Read-Only Gate
  */
 
 :root {
-  /* Surface & Base Colors */
+  /* Canvas & Neutral Surfaces */
   --bg-app: #F8F9FA;
   --bg-surface: #FFFFFF;
-  --bg-subtle: #F1F3F5;
-  --bg-hover: #F8F9FB;
+  --bg-subtle: #F3F4F6;
+  --bg-hover: #F9FAFB;
 
-  /* Borders & Dividers */
+  /* Clean Neutral Borders */
   --border-subtle: #E5E7EB;
   --border-strong: #D1D5DB;
-  --border-focus: #0F172A;
+  --border-focus: #111827;
 
   /* Typography */
-  --text-primary: #0F172A;
-  --text-secondary: #475569;
-  --text-muted: #94A3B8;
+  --text-primary: #111827;
+  --text-secondary: #4B5563;
+  --text-muted: #9CA3AF;
   --text-inverse: #FFFFFF;
 
-  /* Primary Accent & Brand */
-  --accent-primary: #0F172A;
-  --accent-hover: #1E293B;
-  --accent-brand-gold: #F59E0B;
+  /* Primary Black Accent */
+  --accent-primary: #111827;
+  --accent-hover: #1F2937;
 
-  /* Status Colors (Soft Light Badges) */
-  --status-red-bg: #FEF2F2;
-  --status-red-border: #FEE2E2;
-  --status-red-text: #DC2626;
+  /* Calm, Soft Status Tones */
+  --status-critical-bg: #FEF2F2;
+  --status-critical-border: #FEE2E2;
+  --status-critical-text: #991B1B;
 
-  --status-amber-bg: #FFFBEB;
-  --status-amber-border: #FEF3C7;
-  --status-amber-text: #D97706;
+  --status-warning-bg: #FFFBEB;
+  --status-warning-border: #FEF3C7;
+  --status-warning-text: #92400E;
 
-  --status-green-bg: #F0FDF4;
-  --status-green-border: #DCFCE7;
-  --status-green-text: #16A34A;
+  --status-safe-bg: #F3F4F6;
+  --status-safe-border: #E5E7EB;
+  --status-safe-text: #4B5563;
 
-  /* Shadows */
+  /* Subtle Shadows */
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
-  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.04), 0 2px 8px rgba(0, 0, 0, 0.02);
-  --shadow-card-hover: 0 4px 14px rgba(0, 0, 0, 0.06);
-  --shadow-modal: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.06);
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.03), 0 2px 8px rgba(0, 0, 0, 0.02);
+  --shadow-card-hover: 0 3px 10px rgba(0, 0, 0, 0.05);
+  --shadow-modal: 0 20px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
 
   /* Radii */
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
   --radius-full: 9999px;
 
-  /* Font */
+  /* System Font Stack */
   --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 
-/* Reset & Box Sizing */
+/* Reset */
 *, *::before, *::after {
   box-sizing: border-box;
   margin: 0;
@@ -82,16 +81,19 @@ body {
   overflow-x: hidden;
 }
 
-/* --- Header --- */
+/* --- Header with iOS Safe Area Support --- */
 .leb-header {
   position: sticky;
   top: 0;
-  z-index: 40;
-  background: rgba(255, 255, 255, 0.88);
+  z-index: 50;
+  background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
   border-bottom: 1px solid var(--border-subtle);
-  padding: 12px 20px;
+  padding-top: max(12px, env(safe-area-inset-top));
+  padding-bottom: 12px;
+  padding-left: max(18px, env(safe-area-inset-left));
+  padding-right: max(18px, env(safe-area-inset-right));
 }
 
 .leb-header-inner {
@@ -105,16 +107,15 @@ body {
 .brand-box {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
 }
 
 .brand-avatar-img {
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
   object-fit: cover;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-  border: 1px solid rgba(0, 0, 0, 0.06);
+  border: 1px solid var(--border-subtle);
 }
 
 .brand-titles {
@@ -123,15 +124,15 @@ body {
 }
 
 .brand-main {
-  font-size: 1.25rem;
+  font-size: 1.15rem;
   font-weight: 700;
   color: var(--text-primary);
   letter-spacing: -0.02em;
-  line-height: 1.15;
+  line-height: 1.1;
 }
 
 .brand-sub {
-  font-size: 0.75rem;
+  font-size: 0.725rem;
   color: var(--text-secondary);
   font-weight: 500;
 }
@@ -146,9 +147,9 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: 8px 16px;
-  font-size: 0.875rem;
+  gap: 6px;
+  padding: 7px 14px;
+  font-size: 0.8125rem;
   font-weight: 600;
   border-radius: var(--radius-md);
   border: 1px solid transparent;
@@ -165,78 +166,66 @@ body {
 
 .leb-btn-primary:hover {
   background-color: var(--accent-hover);
-  transform: translateY(-1px);
-}
-
-.leb-btn-primary:active {
-  transform: translateY(0);
 }
 
 .leb-btn-secondary {
-  background-color: var(--bg-subtle);
+  background-color: var(--bg-surface);
   color: var(--text-secondary);
   border-color: var(--border-subtle);
 }
 
 .leb-btn-secondary:hover {
-  background-color: #E9ECEF;
+  background-color: var(--bg-subtle);
   color: var(--text-primary);
 }
 
 .leb-btn-sm {
-  padding: 6px 12px;
-  font-size: 0.8125rem;
+  padding: 5px 10px;
+  font-size: 0.75rem;
 }
 
-/* --- Main Layout --- */
+/* --- Main Layout with Safe Area --- */
 .leb-main {
   width: 100%;
   max-width: 860px;
   margin: 0 auto;
-  padding: 18px 20px 80px 20px;
+  padding-top: 16px;
+  padding-bottom: max(32px, env(safe-area-inset-bottom));
+  padding-left: max(16px, env(safe-area-inset-left));
+  padding-right: max(16px, env(safe-area-inset-right));
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 14px;
 }
 
-/* Mobile Notification Banner */
+/* Mobile Banner */
 .leb-banner {
   background: var(--bg-surface);
-  border: 1px solid #BFDBFE;
-  border-left: 4px solid #3B82F6;
+  border: 1px solid var(--border-subtle);
+  border-left: 3px solid var(--text-primary);
   border-radius: var(--radius-md);
-  padding: 12px 16px;
+  padding: 10px 14px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: 10px;
   box-shadow: var(--shadow-sm);
 }
 
-.banner-info {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.banner-icon {
-  font-size: 1.3rem;
-}
-
 .banner-texts strong {
-  font-size: 0.875rem;
+  font-size: 0.8125rem;
   color: var(--text-primary);
   display: block;
 }
 
 .banner-texts p {
-  font-size: 0.775rem;
+  font-size: 0.75rem;
   color: var(--text-secondary);
-  margin-top: 2px;
+  margin-top: 1px;
 }
 
-/* --- Primary Segmented Control (Araçlar vs Sürücüler) --- */
+/* --- Primary Segmented Control --- */
 .leb-segmented-wrapper {
   display: flex;
   justify-content: center;
@@ -244,13 +233,12 @@ body {
 }
 
 .leb-segmented-track {
-  background-color: #ECEFF1;
-  border-radius: var(--radius-lg);
-  padding: 4px;
+  background-color: #EAECEF;
+  border-radius: var(--radius-md);
+  padding: 3px;
   display: flex;
   width: 100%;
-  max-width: 480px;
-  border: 1px solid var(--border-subtle);
+  max-width: 420px;
 }
 
 .leb-seg-btn {
@@ -259,13 +247,13 @@ body {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 9px 16px;
-  font-size: 0.9375rem;
+  padding: 7px 14px;
+  font-size: 0.875rem;
   font-weight: 600;
   color: var(--text-secondary);
   background: transparent;
   border: none;
-  border-radius: 12px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   transition: all 0.15s ease;
   font-family: inherit;
@@ -274,15 +262,15 @@ body {
 .leb-seg-btn.active {
   background-color: var(--bg-surface);
   color: var(--text-primary);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
 .leb-counter-pill {
-  background: #E2E8F0;
-  color: var(--text-secondary);
-  font-size: 0.75rem;
+  background: #D1D5DB;
+  color: var(--text-primary);
+  font-size: 0.6875rem;
   font-weight: 700;
-  padding: 2px 7px;
+  padding: 1px 6px;
   border-radius: var(--radius-full);
 }
 
@@ -291,18 +279,18 @@ body {
   color: var(--text-inverse);
 }
 
-/* --- Stat Metric Strip --- */
+/* --- Stat Metric Strip (Calm, Clean) --- */
 .leb-stats-strip {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 10px;
+  gap: 8px;
 }
 
 .leb-stat-card {
   background: var(--bg-surface);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
-  padding: 10px 12px;
+  padding: 8px 10px;
   text-align: center;
   cursor: pointer;
   transition: all 0.15s ease;
@@ -311,39 +299,51 @@ body {
 
 .leb-stat-card:hover {
   border-color: var(--border-strong);
-  transform: translateY(-1px);
 }
 
 .leb-stat-card.active-stat {
   border-color: var(--text-primary);
-  box-shadow: 0 0 0 1px var(--text-primary);
 }
 
 .stat-num {
   display: block;
-  font-size: 1.25rem;
+  font-size: 1.15rem;
   font-weight: 700;
   color: var(--text-primary);
-  line-height: 1.2;
+  line-height: 1.15;
 }
 
 .stat-title {
-  font-size: 0.725rem;
+  font-size: 0.6875rem;
   color: var(--text-secondary);
-  font-weight: 600;
+  font-weight: 500;
   margin-top: 2px;
-  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
 }
 
-.color-red { color: var(--status-red-text) !important; }
-.color-amber { color: var(--status-amber-text) !important; }
-.color-green { color: var(--status-green-text) !important; }
+.dot-indicator {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.dot-critical { background-color: #EF4444; }
+.dot-warning { background-color: #F59E0B; }
+.dot-safe { background-color: #10B981; }
+
+.stat-num-critical { color: var(--status-critical-text); }
+.stat-num-warning { color: var(--status-warning-text); }
+.stat-num-safe { color: var(--status-safe-text); }
 
 /* --- Search & Sub-Filter Bar --- */
 .leb-controls-row {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }
 
 .leb-search-container {
@@ -355,7 +355,7 @@ body {
 
 .leb-search-icon {
   position: absolute;
-  left: 14px;
+  left: 12px;
   color: var(--text-muted);
   pointer-events: none;
 }
@@ -365,18 +365,17 @@ body {
   background: var(--bg-surface);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
-  padding: 10px 38px 10px 40px;
-  font-size: 0.875rem;
+  padding: 8px 34px 8px 36px;
+  font-size: 0.8125rem;
   color: var(--text-primary);
   outline: none;
   font-family: inherit;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  transition: border-color 0.15s ease;
   box-shadow: var(--shadow-sm);
 }
 
 .leb-search-container input:focus {
   border-color: var(--border-focus);
-  box-shadow: 0 0 0 2px rgba(15, 23, 42, 0.08);
 }
 
 .leb-search-container input::placeholder {
@@ -385,18 +384,17 @@ body {
 
 .leb-clear-btn {
   position: absolute;
-  right: 12px;
+  right: 10px;
   background: none;
   border: none;
-  font-size: 1.15rem;
+  font-size: 1.1rem;
   color: var(--text-muted);
   cursor: pointer;
-  padding: 0 4px;
 }
 
 .leb-filter-pills {
   display: flex;
-  gap: 8px;
+  gap: 6px;
   overflow-x: auto;
   padding-bottom: 2px;
   scrollbar-width: none;
@@ -407,8 +405,8 @@ body {
 }
 
 .filter-pill {
-  padding: 6px 14px;
-  font-size: 0.8125rem;
+  padding: 5px 12px;
+  font-size: 0.775rem;
   font-weight: 500;
   border-radius: var(--radius-full);
   background: var(--bg-surface);
@@ -432,7 +430,7 @@ body {
   font-weight: 600;
 }
 
-/* --- Records Container & Stacked List Layout (Alt Alta Sıralı Liste) --- */
+/* --- Records List: Clean Stacked Rows --- */
 .leb-records-container {
   width: 100%;
 }
@@ -440,22 +438,21 @@ body {
 .leb-list {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
   width: 100%;
 }
 
-/* List Item Row Card */
+/* Single List Item Card */
 .leb-row-card {
   background: var(--bg-surface);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
-  padding: 14px 18px;
+  padding: 12px 16px;
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
+  flex-direction: column;
+  gap: 8px;
   box-shadow: var(--shadow-card);
-  transition: all 0.15s ease;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .leb-row-card:hover {
@@ -463,48 +460,30 @@ body {
   box-shadow: var(--shadow-card-hover);
 }
 
-/* Left: Identity Info */
+/* Row Top Section: Identity + Status Badge + Actions */
+.row-top-mobile {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
 .row-identity {
   display: flex;
   align-items: center;
-  gap: 12px;
-  min-width: 190px;
-}
-
-.row-icon-badge {
-  width: 38px;
-  height: 38px;
-  border-radius: 10px;
-  background: var(--bg-subtle);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.15rem;
-  flex-shrink: 0;
-  border: 1px solid var(--border-subtle);
-}
-
-.row-texts {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 .row-title {
-  font-size: 0.975rem;
+  font-size: 0.95rem;
   font-weight: 700;
   color: var(--text-primary);
   letter-spacing: -0.01em;
 }
 
-.row-meta-line {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
 .row-type-pill {
-  font-size: 0.725rem;
+  font-size: 0.6875rem;
   font-weight: 600;
   color: var(--text-secondary);
   background: var(--bg-subtle);
@@ -514,113 +493,65 @@ body {
 }
 
 .row-note-inline {
-  font-size: 0.725rem;
+  font-size: 0.75rem;
   color: var(--text-muted);
-  max-width: 180px;
+  max-width: 220px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-/* Middle: Vital Compliance Dates */
-.row-dates {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
-  flex: 1;
-}
-
-.date-tag {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 0.8125rem;
-  color: var(--text-secondary);
-  background: #F8FAFC;
-  padding: 4px 10px;
-  border-radius: 6px;
-  border: 1px solid var(--border-subtle);
-}
-
-.date-tag strong {
-  color: var(--text-primary);
-}
-
-.date-tag.highlight-tag {
-  font-weight: 600;
-}
-
-.date-tag.critical-tag {
-  background: var(--status-red-bg);
-  border-color: var(--status-red-border);
-  color: var(--status-red-text);
-}
-
-.date-tag.warning-tag {
-  background: var(--status-amber-bg);
-  border-color: var(--status-amber-border);
-  color: var(--status-amber-text);
-}
-
-.date-tag.safe-tag {
-  background: var(--status-green-bg);
-  border-color: var(--status-green-border);
-  color: var(--status-green-text);
-}
-
-/* Right: Status Pill & Actions */
 .row-right {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   flex-shrink: 0;
 }
 
+/* Single Calm Urgency Badge */
 .urgency-badge {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 4px 10px;
+  gap: 4px;
+  padding: 3px 8px;
   border-radius: var(--radius-full);
-  font-size: 0.775rem;
-  font-weight: 700;
-  letter-spacing: -0.01em;
+  font-size: 0.725rem;
+  font-weight: 600;
   white-space: nowrap;
 }
 
 .urgency-badge.badge-critical {
-  background: var(--status-red-bg);
-  border: 1px solid var(--status-red-border);
-  color: var(--status-red-text);
+  background: var(--status-critical-bg);
+  border: 1px solid var(--status-critical-border);
+  color: var(--status-critical-text);
 }
 
 .urgency-badge.badge-warning {
-  background: var(--status-amber-bg);
-  border: 1px solid var(--status-amber-border);
-  color: var(--status-amber-text);
+  background: var(--status-warning-bg);
+  border: 1px solid var(--status-warning-border);
+  color: var(--status-warning-text);
 }
 
 .urgency-badge.badge-safe {
-  background: var(--status-green-bg);
-  border: 1px solid var(--status-green-border);
-  color: var(--status-green-text);
+  background: var(--status-safe-bg);
+  border: 1px solid var(--status-safe-border);
+  color: var(--status-safe-text);
 }
 
 /* Row Action Buttons (Desktop Only) */
 .card-actions {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
 }
 
 .action-btn {
   background: var(--bg-surface);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
-  padding: 6px 10px;
-  font-size: 0.775rem;
-  font-weight: 600;
+  padding: 4px 8px;
+  font-size: 0.75rem;
+  font-weight: 500;
   color: var(--text-secondary);
   cursor: pointer;
   transition: all 0.15s ease;
@@ -634,9 +565,41 @@ body {
 }
 
 .action-btn-del:hover {
-  background: var(--status-red-bg);
-  color: var(--status-red-text);
-  border-color: var(--status-red-border);
+  background: var(--status-critical-bg);
+  color: var(--status-critical-text);
+  border-color: var(--status-critical-border);
+}
+
+/* Row Dates Section: Calm Inline Typography (No Emoji Salad!) */
+.row-dates {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding-top: 4px;
+  border-top: 1px solid #F1F3F5;
+  font-size: 0.785rem;
+  color: var(--text-secondary);
+}
+
+.date-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.date-name {
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.date-val {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.date-bullet {
+  color: #D1D5DB;
 }
 
 /* Empty State */
@@ -644,27 +607,21 @@ body {
   background: var(--bg-surface);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
-  padding: 48px 24px;
+  padding: 40px 20px;
   text-align: center;
-  box-shadow: var(--shadow-sm);
-}
-
-.leb-empty-icon {
-  font-size: 2.25rem;
-  margin-bottom: 8px;
 }
 
 .leb-empty-title {
-  font-size: 1.05rem;
+  font-size: 0.95rem;
   font-weight: 700;
   color: var(--text-primary);
 }
 
 .leb-empty-desc {
-  font-size: 0.825rem;
+  font-size: 0.8rem;
   color: var(--text-secondary);
-  margin-top: 4px;
-  margin-bottom: 16px;
+  margin-top: 2px;
+  margin-bottom: 12px;
 }
 
 /* --- Quiet Bottom Footer --- */
@@ -672,7 +629,10 @@ body {
   margin-top: auto;
   background: var(--bg-surface);
   border-top: 1px solid var(--border-subtle);
-  padding: 10px 20px;
+  padding-top: 10px;
+  padding-bottom: max(10px, env(safe-area-inset-bottom));
+  padding-left: max(16px, env(safe-area-inset-left));
+  padding-right: max(16px, env(safe-area-inset-right));
 }
 
 .leb-footer-inner {
@@ -686,32 +646,27 @@ body {
 .sync-bottom-badge {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  font-size: 0.775rem;
-  color: var(--text-secondary);
+  gap: 6px;
+  font-size: 0.75rem;
+  color: var(--text-muted);
   font-weight: 500;
 }
 
 .sync-dot {
-  width: 7px;
-  height: 7px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
   background-color: #10B981;
 }
 
-.sync-dot.offline {
-  background-color: #F59E0B;
-}
-
-.sync-dot.error {
-  background-color: #EF4444;
-}
+.sync-dot.offline { background-color: #F59E0B; }
+.sync-dot.error { background-color: #EF4444; }
 
 .leb-btn-icon {
   background: none;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
-  padding: 5px;
+  padding: 4px;
   color: var(--text-secondary);
   cursor: pointer;
   display: flex;
@@ -734,18 +689,18 @@ body {
   to { transform: rotate(360deg); }
 }
 
-/* --- Modals (Desktop Only) --- */
+/* --- Modals (Desktop Only, Clean & Minimalist) --- */
 .leb-modal-overlay {
   position: fixed;
   inset: 0;
   z-index: 100;
-  background: rgba(15, 23, 42, 0.4);
+  background: rgba(17, 24, 39, 0.35);
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
   display: none;
   align-items: center;
   justify-content: center;
-  padding: 20px;
+  padding: 16px;
 }
 
 .leb-modal-overlay.active {
@@ -757,18 +712,18 @@ body {
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-lg);
   width: 100%;
-  max-width: 520px;
-  padding: 24px;
+  max-width: 480px;
+  padding: 20px;
   box-shadow: var(--shadow-modal);
   animation: modalPop 0.15s ease-out;
 }
 
 .leb-modal-box.sm-box {
-  max-width: 420px;
+  max-width: 400px;
 }
 
 @keyframes modalPop {
-  from { opacity: 0; transform: scale(0.96); }
+  from { opacity: 0; transform: scale(0.97); }
   to { opacity: 1; transform: scale(1); }
 }
 
@@ -776,11 +731,11 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 18px;
+  margin-bottom: 14px;
 }
 
 .leb-modal-title {
-  font-size: 1.15rem;
+  font-size: 1.05rem;
   font-weight: 700;
   color: var(--text-primary);
 }
@@ -788,10 +743,9 @@ body {
 .leb-close-btn {
   background: none;
   border: none;
-  font-size: 1.5rem;
+  font-size: 1.4rem;
   color: var(--text-muted);
   cursor: pointer;
-  padding: 0 4px;
   line-height: 1;
 }
 
@@ -799,116 +753,132 @@ body {
   color: var(--text-primary);
 }
 
-.modal-switcher {
+/* Modal Tab Track (Simplified) */
+.modal-tab-track {
   display: flex;
   background: var(--bg-subtle);
-  border-radius: var(--radius-md);
-  padding: 4px;
-  margin-bottom: 20px;
+  border-radius: var(--radius-sm);
+  padding: 3px;
+  margin-bottom: 16px;
 }
 
-.modal-switch-btn {
+.modal-tab-btn {
   flex: 1;
   border: none;
   background: transparent;
-  padding: 8px 12px;
+  padding: 7px 12px;
   font-size: 0.8125rem;
   font-weight: 600;
   color: var(--text-secondary);
-  border-radius: var(--radius-sm);
+  border-radius: 5px;
   cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
   transition: all 0.15s ease;
   font-family: inherit;
 }
 
-.modal-switch-btn.active {
+.modal-tab-btn.active {
   background: var(--bg-surface);
   color: var(--text-primary);
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
 /* Forms */
 .leb-form {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 12px;
 }
 
 .form-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 12px;
+  gap: 10px;
 }
 
 .form-group {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 4px;
+}
+
+.label-with-presets {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .form-group label {
-  font-size: 0.775rem;
+  font-size: 0.75rem;
   font-weight: 600;
   color: var(--text-secondary);
 }
 
+/* Quick Date Preset Chips */
+.chip-presets {
+  display: flex;
+  gap: 4px;
+}
+
+.preset-chip {
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-subtle);
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: inherit;
+}
+
+.preset-chip:hover {
+  background: #E5E7EB;
+  color: var(--text-primary);
+}
+
+/* Inputs & Date Pickers */
 .form-group input,
 .form-group select {
   width: 100%;
   background: var(--bg-surface);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
-  padding: 8px 12px;
-  font-size: 0.875rem;
+  padding: 7px 10px;
+  font-size: 0.8125rem;
   color: var(--text-primary);
   outline: none;
   font-family: inherit;
   transition: border-color 0.15s ease;
+  color-scheme: light;
 }
 
 .form-group input:focus,
 .form-group select:focus {
   border-color: var(--border-focus);
-  box-shadow: 0 0 0 2px rgba(15, 23, 42, 0.08);
-}
-
-.highlight-group {
-  background: #F0FDF4;
-  border: 1px solid #BBF7D0;
-  border-radius: var(--radius-sm);
-  padding: 10px;
-}
-
-.highlight-group label {
-  color: #166534;
-  font-weight: 700;
 }
 
 .modal-buttons {
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 10px;
-  margin-top: 10px;
+  gap: 8px;
+  margin-top: 8px;
 }
 
 /* Quick Update Modal Presets */
 .quick-body {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 12px;
 }
 
 .quick-title-badge {
   background: var(--bg-subtle);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
-  padding: 8px 12px;
-  font-size: 0.925rem;
+  padding: 7px 10px;
+  font-size: 0.875rem;
   font-weight: 700;
   color: var(--text-primary);
   text-align: center;
@@ -916,7 +886,7 @@ body {
 
 .presets-row {
   display: flex;
-  gap: 8px;
+  gap: 6px;
 }
 
 .preset-pill {
@@ -924,13 +894,14 @@ body {
   background: var(--bg-surface);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
-  padding: 6px 10px;
-  font-size: 0.8125rem;
+  padding: 6px 8px;
+  font-size: 0.75rem;
   font-weight: 600;
   color: var(--text-secondary);
   cursor: pointer;
   transition: all 0.15s ease;
   font-family: inherit;
+  text-align: center;
 }
 
 .preset-pill:hover {
@@ -944,39 +915,44 @@ body {
   border-color: var(--accent-primary);
 }
 
+.date-calculated-preview {
+  margin-top: 4px;
+  font-size: 0.775rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  background: var(--bg-subtle);
+  border-radius: 4px;
+  padding: 4px 8px;
+  text-align: center;
+}
+
 /* Toast */
 .leb-toast {
   position: fixed;
-  bottom: 24px;
-  right: 24px;
+  bottom: max(20px, env(safe-area-inset-bottom));
+  right: 20px;
   z-index: 90;
   background: var(--text-primary);
   color: var(--text-inverse);
-  padding: 12px 18px;
+  padding: 10px 14px;
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-modal);
   display: none;
   align-items: center;
-  gap: 12px;
-  font-size: 0.875rem;
+  gap: 10px;
+  font-size: 0.8125rem;
   font-weight: 500;
 }
 
 .leb-toast.active {
   display: flex;
-  animation: slideUp 0.2s ease-out;
-}
-
-@keyframes slideUp {
-  from { transform: translateY(20px); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
 }
 
 /* ==========================================================================
    STRICT MOBILE READ-ONLY GATE & RESPONSIVE RULES (max-width: 768px)
    ========================================================================== */
 @media (max-width: 768px) {
-  /* Hide Admin button, Edit actions & Modals strictly on Mobile */
+  /* Hide Admin bar and Modals strictly on Mobile */
   .desktop-admin-bar,
   .card-actions,
   .leb-modal-overlay {
@@ -984,60 +960,40 @@ body {
   }
 
   .leb-main {
-    padding: 14px 14px 70px 14px;
-    gap: 14px;
+    padding-top: 12px;
+    padding-bottom: max(30px, env(safe-area-inset-bottom));
+    gap: 12px;
   }
 
-  /* Compact Stats on Mobile */
+  /* Compact Stats */
   .leb-stats-strip {
-    gap: 6px;
+    gap: 4px;
   }
 
   .leb-stat-card {
-    padding: 8px 6px;
+    padding: 6px 4px;
   }
 
   .stat-num {
-    font-size: 1.1rem;
+    font-size: 1rem;
   }
 
   .stat-title {
-    font-size: 0.65rem;
+    font-size: 0.625rem;
   }
 
-  /* List Row Mobile Layout: Stacks cleanly without horizontal scrolling */
+  /* List Row Mobile */
   .leb-row-card {
-    flex-direction: column;
-    align-items: stretch;
-    padding: 12px 14px;
-    gap: 10px;
+    padding: 10px 12px;
+    gap: 6px;
   }
 
-  .row-top-mobile {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    width: 100%;
-  }
-
-  .row-identity {
-    min-width: auto;
-    gap: 10px;
+  .row-title {
+    font-size: 0.9rem;
   }
 
   .row-dates {
-    width: 100%;
-    gap: 8px;
-    padding-top: 4px;
-    border-top: 1px dashed var(--border-subtle);
-  }
-
-  .date-tag {
     font-size: 0.75rem;
-    padding: 3px 8px;
-  }
-
-  .row-right {
-    justify-content: flex-end;
+    gap: 6px;
   }
 }

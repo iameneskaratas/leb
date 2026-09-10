@@ -1,5 +1,5 @@
-// Leb - Service Worker v3.2.0 (Network-First & Web Notifications)
-const CACHE_VERSION = 'v3.2.0';
+// Leb - Service Worker v3.3.0 (Network-First & Web Notifications)
+const CACHE_VERSION = 'v3.3.0';
 const CACHE_NAME = `leb-app-${CACHE_VERSION}`;
 
 const PRECACHE_ASSETS = [
@@ -25,7 +25,7 @@ self.addEventListener('install', (event) => {
   );
 });
 
-// 2. Activate - Clear old caches and take control
+// 2. Activate - Clear all old caches
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) => {
@@ -48,13 +48,14 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Network-First for Navigation, App Code and Manifest
+  // Network-First for Navigation, App Code, Manifest and Icons
   const isCodeOrDoc = event.request.mode === 'navigate' ||
                       event.request.destination === 'document' ||
                       url.pathname.endsWith('.html') ||
                       url.pathname.endsWith('.js') ||
                       url.pathname.endsWith('.css') ||
-                      url.pathname.endsWith('.webmanifest');
+                      url.pathname.endsWith('.webmanifest') ||
+                      url.pathname.includes('/icons/');
 
   if (isCodeOrDoc) {
     event.respondWith(
@@ -70,24 +71,6 @@ self.addEventListener('fetch', (event) => {
           const cached = await caches.match(event.request);
           if (cached) return cached;
           return caches.match('./index.html') || caches.match('./');
-        })
-    );
-    return;
-  }
-
-  // For icons and media: Network-first with cache fallback to prevent stale icon issues
-  if (url.pathname.includes('/icons/')) {
-    event.respondWith(
-      fetch(event.request)
-        .then((networkResponse) => {
-          if (networkResponse && networkResponse.status === 200) {
-            const copy = networkResponse.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
-          }
-          return networkResponse;
-        })
-        .catch(async () => {
-          return caches.match(event.request);
         })
     );
     return;
@@ -118,8 +101,8 @@ self.addEventListener('message', (event) => {
     const { title, body } = event.data;
     self.registration.showNotification(title || 'Leb Bildirimi', {
       body: body || 'Süresi yaklaşan muayene veya vize kaydı bulunuyor.',
-      icon: 'icons/icon-192.png?v=3.2.0',
-      badge: 'icons/favicon.png?v=3.2.0',
+      icon: 'icons/icon-192.png?v=3.3.0',
+      badge: 'icons/favicon.png?v=3.3.0',
       vibrate: [100, 50, 100],
       data: { url: './' }
     });

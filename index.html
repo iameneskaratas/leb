@@ -2,44 +2,43 @@
 <html lang="tr">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   
   <title>Leb - Filo & Sürücü Takip</title>
-  <meta name="description" content="Filo ve sürücüleriniz için muayene, vize ve ehliyet bitiş süreleri takip merkezi.">
+  <meta name="description" content="Filo ve sürücüleriniz için muayene, vize ve ehliyet süreleri takip sistemi.">
 
   <!-- iOS PWA Meta Tags -->
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Leb">
-  <link rel="apple-touch-icon" href="icons/apple-touch-icon-180.png?v=3.2.0">
-  <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon-180.png?v=3.2.0">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon-180.png?v=3.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon-180.png?v=3.3.0">
 
   <!-- Web App Manifest -->
-  <link rel="manifest" href="manifest.webmanifest?v=3.2.0">
+  <link rel="manifest" href="manifest.webmanifest?v=3.3.0">
 
   <!-- Favicon & Theme Color -->
-  <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon.png?v=3.2.0">
-  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png?v=3.2.0">
-  <link rel="icon" type="image/svg+xml" href="icons/icon.svg?v=3.2.0">
+  <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon.png?v=3.3.0">
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png?v=3.3.0">
   <meta name="theme-color" content="#F8F9FA">
 
-  <!-- Stylesheet (Leb Minimalist White v3.2.0) -->
-  <link rel="stylesheet" href="css/app.css?v=3.2.0">
+  <!-- Stylesheet (Leb v3.3.0 Clean Minimalist) -->
+  <link rel="stylesheet" href="css/app.css?v=3.3.0">
 </head>
 <body>
 
-  <!-- Top Minimal Header -->
+  <!-- Top Minimal Header with iOS Safe Area -->
   <header class="leb-header">
     <div class="leb-header-inner">
       <div class="brand-box">
-        <img src="icons/icon-192.png?v=3.2.0" alt="Leb Logo" class="brand-avatar-img">
+        <img src="icons/icon-192.png?v=3.3.0" alt="Leb Logo" class="brand-avatar-img">
         <div class="brand-titles">
           <h1 class="brand-main">Leb</h1>
           <span class="brand-sub">Filo & Sürücü Takip</span>
         </div>
       </div>
 
-      <!-- Desktop Management Action (Strictly Hidden on Mobile) -->
+      <!-- Desktop Admin Action (Hidden on Mobile) -->
       <div class="desktop-admin-bar">
         <button id="openAddModalBtn" class="leb-btn leb-btn-primary add-btn">
           <span class="plus-icon">+</span>
@@ -49,54 +48,51 @@
     </div>
   </header>
 
-  <!-- Main Viewport (Centered, Max-Width Container) -->
+  <!-- Main Viewport -->
   <main class="leb-main">
 
-    <!-- Mobile Notification Banner -->
+    <!-- Mobile Notification Banner (If notification supported and not granted) -->
     <div id="mobileNotifBanner" class="leb-banner" style="display: none;">
       <div class="banner-info">
-        <span class="banner-icon">🔔</span>
         <div class="banner-texts">
-          <strong>Bildirimleri Aç</strong>
+          <strong>Mobil Bildirimleri Aç</strong>
           <p>Süresi yaklaşan muayene ve vizeler telefonunuza bildirilsin.</p>
         </div>
       </div>
       <button id="btnEnableNotif" class="leb-btn leb-btn-sm">Etkinleştir</button>
     </div>
 
-    <!-- PRIMARY SEGMENTED CONTROL: Separate Araçlar & Sürücüler -->
+    <!-- PRIMARY SEGMENTED TABS: Araçlar vs Sürücüler -->
     <section class="leb-segmented-wrapper">
       <div class="leb-segmented-track" role="tablist">
         <button id="tabVehicles" class="leb-seg-btn active" role="tab" aria-selected="true" data-section="vehicles">
-          <span class="seg-icon">🚚</span>
           <span class="seg-text">Araçlar</span>
           <span id="badgeVehiclesCount" class="leb-counter-pill">0</span>
         </button>
         <button id="tabDrivers" class="leb-seg-btn" role="tab" aria-selected="false" data-section="drivers">
-          <span class="seg-icon">👤</span>
           <span class="seg-text">Sürücüler</span>
           <span id="badgeDriversCount" class="leb-counter-pill">0</span>
         </button>
       </div>
     </section>
 
-    <!-- Stat Metric Strip (Minimalist Clean Summary) -->
+    <!-- Stat Metric Strip (Calm, Minimalist Indicators) -->
     <section class="leb-stats-strip">
       <div class="leb-stat-card stat-total active-stat" data-filter="all">
         <span class="stat-num" id="statTotal">0</span>
         <span class="stat-title">Toplam</span>
       </div>
       <div class="leb-stat-card stat-critical" data-filter="critical">
-        <span class="stat-num color-red" id="statCritical">0</span>
-        <span class="stat-title">🔴 Kritik (&lt;7G)</span>
+        <span class="stat-num stat-num-critical" id="statCritical">0</span>
+        <span class="stat-title"><span class="dot-indicator dot-critical"></span> Kritik (&lt;7G)</span>
       </div>
       <div class="leb-stat-card stat-warning" data-filter="warning">
-        <span class="stat-num color-amber" id="statWarning">0</span>
-        <span class="stat-title">🟡 Yaklaşan (&lt;30G)</span>
+        <span class="stat-num stat-num-warning" id="statWarning">0</span>
+        <span class="stat-title"><span class="dot-indicator dot-warning"></span> Yaklaşan (&lt;30G)</span>
       </div>
       <div class="leb-stat-card stat-safe" data-filter="safe">
-        <span class="stat-num color-green" id="statSafe">0</span>
-        <span class="stat-title">🟢 Sorunsuz</span>
+        <span class="stat-num stat-num-safe" id="statSafe">0</span>
+        <span class="stat-title"><span class="dot-indicator dot-safe"></span> Sorunsuz</span>
       </div>
     </section>
 
@@ -104,32 +100,31 @@
     <section class="leb-controls-row">
       <!-- Search Input -->
       <div class="leb-search-container">
-        <svg class="leb-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+        <svg class="leb-search-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <circle cx="11" cy="11" r="8"></circle>
           <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
         </svg>
-        <input type="text" id="searchInput" placeholder="Plaka, İsim veya Not Ara..." autocomplete="off">
+        <input type="text" id="searchInput" placeholder="Plaka, isim veya not ara..." autocomplete="off">
         <button id="clearSearchBtn" class="leb-clear-btn" aria-label="Temizle" style="display: none;">&times;</button>
       </div>
 
-      <!-- Sub-Filter Pills (Dynamically populated based on active section) -->
+      <!-- Sub-Filter Pills -->
       <div id="subFiltersTrack" class="leb-filter-pills" role="tablist">
-        <!-- Rendered by JS based on Vehicles vs Drivers -->
+        <!-- Rendered by JS based on Active Section -->
       </div>
     </section>
 
     <!-- Records Vertical List Container (Alt Alta Sıralı Liste) -->
     <section class="leb-records-container">
       <div id="recordsList" class="leb-list" role="list">
-        <!-- Dynamically rendered by app.js as stacked vertical rows -->
+        <!-- Rendered dynamically by app.js as clean stacked rows -->
       </div>
 
       <!-- Empty State -->
       <div id="emptyState" class="leb-empty-card" style="display: none;">
-        <div class="leb-empty-icon">📋</div>
         <h3 class="leb-empty-title">Kayıt Bulunamadı</h3>
-        <p class="leb-empty-desc">Bu kriterde listelenecek kayıt bulunmuyor.</p>
-        <button id="btnResetFilters" class="leb-btn leb-btn-sm">Filtreleri Sıfırla</button>
+        <p class="leb-empty-desc">Bu kriterde görüntülenecek herhangi bir kayıt bulunmuyor.</p>
+        <button id="btnResetFilters" class="leb-btn leb-btn-sm leb-btn-secondary">Filtreleri Temizle</button>
       </div>
     </section>
 
@@ -143,7 +138,7 @@
         <span id="syncStatusText">Bulutla Eşitlendi</span>
       </div>
       <button id="manualSyncBtn" class="leb-btn-icon" title="Şimdi Eşitle" aria-label="Eşitle">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <polyline points="23 4 23 10 17 10"></polyline>
           <polyline points="1 20 1 14 7 14"></polyline>
           <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
@@ -152,29 +147,29 @@
     </div>
   </footer>
 
-  <!-- DESKTOP-ONLY MODAL: Yeni Kayıt Ekle (Hidden on Mobile) -->
+  <!-- DESKTOP-ONLY MODAL: Sade Yeni Kayıt Ekle (Hidden on Mobile) -->
   <div id="addModal" class="leb-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="addModalHeading">
     <div class="leb-modal-box">
       <div class="leb-modal-head">
-        <h2 id="addModalHeading" class="leb-modal-title">Yeni Kayıt Ekle</h2>
+        <h2 id="addModalHeading" class="leb-modal-title">Yeni Kayıt</h2>
         <button id="closeAddModalBtn" class="leb-close-btn" aria-label="Kapat">&times;</button>
       </div>
 
-      <!-- Modal Type Switcher -->
-      <div class="modal-switcher">
-        <button type="button" id="modalSwitchVehicle" class="modal-switch-btn active" data-type="vehicle">
-          <span>🚚</span> Araç (Çekici / Dorse / Otomobil)
+      <!-- Simplified Modal Tab Switcher -->
+      <div class="modal-tab-track">
+        <button type="button" id="modalSwitchVehicle" class="modal-tab-btn active" data-type="vehicle">
+          Araç
         </button>
-        <button type="button" id="modalSwitchDriver" class="modal-switch-btn" data-type="driver">
-          <span>👤</span> Sürücü (Vize / Ehliyet)
+        <button type="button" id="modalSwitchDriver" class="modal-tab-btn" data-type="driver">
+          Sürücü
         </button>
       </div>
 
-      <!-- Vehicle Form -->
+      <!-- Vehicle Form (Clean & Minimalist) -->
       <form id="vehicleForm" class="leb-form">
         <div class="form-row">
           <div class="form-group">
-            <label for="inputPlate">Araç Plakası *</label>
+            <label for="inputPlate">Plaka *</label>
             <input type="text" id="inputPlate" placeholder="Örn: 34 LEB 1919" required>
           </div>
           <div class="form-group">
@@ -187,70 +182,98 @@
           </div>
         </div>
 
-        <div class="form-group highlight-group">
-          <label for="inputInspectionDate">🛠️ TÜVTÜRK Muayene Bitiş Tarihi *</label>
+        <div class="form-group">
+          <div class="label-with-presets">
+            <label for="inputInspectionDate">Muayene Bitiş Tarihi *</label>
+            <div class="chip-presets">
+              <button type="button" class="preset-chip" data-target="inputInspectionDate" data-months="12">+1 Yıl</button>
+              <button type="button" class="preset-chip" data-target="inputInspectionDate" data-months="6">+6 Ay</button>
+              <button type="button" class="preset-chip" data-target="inputInspectionDate" data-months="24">+2 Yıl</button>
+            </div>
+          </div>
           <input type="date" id="inputInspectionDate" required>
         </div>
 
         <div class="form-row">
           <div class="form-group">
-            <label for="inputInsuranceDate">📄 Sigorta / Kasko Bitiş</label>
+            <div class="label-with-presets">
+              <label for="inputInsuranceDate">Sigorta Bitiş</label>
+              <div class="chip-presets">
+                <button type="button" class="preset-chip" data-target="inputInsuranceDate" data-months="12">+1 Yıl</button>
+              </div>
+            </div>
             <input type="date" id="inputInsuranceDate">
           </div>
           <div class="form-group">
-            <label for="inputGreenCardDate">🌐 Yeşil Sigorta (Yurtdışı)</label>
+            <div class="label-with-presets">
+              <label for="inputGreenCardDate">Yeşil Sigorta</label>
+              <div class="chip-presets">
+                <button type="button" class="preset-chip" data-target="inputGreenCardDate" data-months="6">+6 Ay</button>
+              </div>
+            </div>
             <input type="date" id="inputGreenCardDate">
           </div>
         </div>
 
         <div class="form-group">
-          <label for="inputVehicleNotes">Notlar / Açıklama</label>
-          <input type="text" id="inputVehicleNotes" placeholder="Şasi no, hat veya not...">
+          <label for="inputVehicleNotes">Notlar (Opsiyonel)</label>
+          <input type="text" id="inputVehicleNotes" placeholder="Şasi no, güzergah veya not...">
         </div>
 
         <div class="modal-buttons">
           <button type="button" id="cancelVehicleBtn" class="leb-btn leb-btn-secondary">İptal</button>
-          <button type="submit" class="leb-btn leb-btn-primary">Araç Kaydet</button>
+          <button type="submit" class="leb-btn leb-btn-primary">Kaydet</button>
         </div>
       </form>
 
-      <!-- Driver Form -->
+      <!-- Driver Form (Clean & Minimalist) -->
       <form id="driverForm" class="leb-form" style="display: none;">
         <div class="form-group">
-          <label for="inputDriverName">Sürücü Adı Soyadı *</label>
+          <label for="inputDriverName">Adı Soyadı *</label>
           <input type="text" id="inputDriverName" placeholder="Örn: Ahmet Yılmaz" required>
         </div>
 
-        <div class="form-group highlight-group">
-          <label for="inputVisaDate">🛂 Vize Bitiş Tarihi (Schengen vb.) *</label>
+        <div class="form-group">
+          <div class="label-with-presets">
+            <label for="inputVisaDate">Vize Bitiş Tarihi *</label>
+            <div class="chip-presets">
+              <button type="button" class="preset-chip" data-target="inputVisaDate" data-months="6">+6 Ay</button>
+              <button type="button" class="preset-chip" data-target="inputVisaDate" data-months="12">+1 Yıl</button>
+            </div>
+          </div>
           <input type="date" id="inputVisaDate" required>
         </div>
 
         <div class="form-row">
           <div class="form-group">
-            <label for="inputLicenseDate">🪪 Ehliyet / SRC / Psikoteknik</label>
+            <div class="label-with-presets">
+              <label for="inputLicenseDate">Ehliyet / SRC</label>
+              <div class="chip-presets">
+                <button type="button" class="preset-chip" data-target="inputLicenseDate" data-months="12">+1 Yıl</button>
+              </div>
+            </div>
             <input type="date" id="inputLicenseDate">
           </div>
           <div class="form-group">
-            <label for="inputPassport">📘 Pasaport No / Not</label>
+            <label for="inputPassport">Pasaport No</label>
             <input type="text" id="inputPassport" placeholder="Örn: U12345678">
           </div>
         </div>
 
         <div class="form-group">
-          <label for="inputDriverNotes">Notlar</label>
-          <input type="text" id="inputDriverNotes" placeholder="Telefon, aktif hat...">
+          <label for="inputDriverNotes">Notlar (Opsiyonel)</label>
+          <input type="text" id="inputDriverNotes" placeholder="Telefon, vize randevusu...">
         </div>
 
         <div class="modal-buttons">
           <button type="button" id="cancelDriverBtn" class="leb-btn leb-btn-secondary">İptal</button>
-          <button type="submit" class="leb-btn leb-btn-primary">Sürücü Kaydet</button>
+          <button type="submit" class="leb-btn leb-btn-primary">Kaydet</button>
         </div>
       </form>
     </div>
   </div>
 
-  <!-- DESKTOP-ONLY MODAL: Hızlı Tarih Güncelle (Hidden on Mobile) -->
+  <!-- DESKTOP-ONLY MODAL: Tarih Güncelle (Clean & Themed) -->
   <div id="quickModal" class="leb-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="quickModalHeading">
     <div class="leb-modal-box sm-box">
       <div class="leb-modal-head">
@@ -264,20 +287,23 @@
         <div class="form-group">
           <label for="quickFieldSelect">Güncellenecek Belge</label>
           <select id="quickFieldSelect">
-            <!-- Dynamic -->
+            <!-- Populated dynamically -->
           </select>
         </div>
 
-        <div class="form-group highlight-group">
-          <label for="quickDateInput">Yeni Bitiş Tarihi</label>
-          <input type="date" id="quickDateInput">
+        <div class="form-group">
+          <label>Hızlı Yenileme</label>
+          <div class="presets-row">
+            <button type="button" class="preset-pill" data-months="6">+6 Ay</button>
+            <button type="button" class="preset-pill active" data-months="12">+1 Yıl</button>
+            <button type="button" class="preset-pill" data-months="24">+2 Yıl</button>
+          </div>
         </div>
 
-        <!-- Shortcut Presets -->
-        <div class="presets-row">
-          <button type="button" class="preset-pill" data-months="6">+6 Ay</button>
-          <button type="button" class="preset-pill active" data-months="12">+1 Yıl</button>
-          <button type="button" class="preset-pill" data-months="24">+2 Yıl</button>
+        <div class="form-group">
+          <label for="quickDateInput">Seçilen Tarih</label>
+          <input type="date" id="quickDateInput">
+          <div id="quickDatePreview" class="date-calculated-preview"></div>
         </div>
 
         <div class="modal-buttons">
@@ -290,11 +316,11 @@
 
   <!-- Update Toast -->
   <aside id="updateToast" class="leb-toast" aria-label="Güncelleme">
-    <span>✨ Leb güncellendi!</span>
+    <span>Leb güncellendi!</span>
     <button id="btnUpdateApp" class="leb-btn leb-btn-sm leb-btn-primary">Yenile</button>
   </aside>
 
-  <!-- Script v3.2.0 -->
-  <script src="js/app.js?v=3.2.0"></script>
+  <!-- Script v3.3.0 -->
+  <script src="js/app.js?v=3.3.0"></script>
 </body>
 </html>
