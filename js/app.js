@@ -11,19 +11,9 @@ function registerServiceWorker() {
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
       navigator.serviceWorker
-        .register('./sw.js?v=4.3.0')
-        .then((registration) => {
-          registration.addEventListener('updatefound', () => {
-            newWorker = registration.installing;
-            newWorker.addEventListener('statechange', () => {
-              if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                showUpdateToast();
-              }
-            });
-          });
-        })
+        .register('./sw.js?v=4.7.0')
         .catch((err) => {
-          console.error('[Leb] ServiceWorker error:', err);
+          console.warn('[Leb] ServiceWorker register note:', err);
         });
 
       let refreshing = false;
@@ -38,30 +28,6 @@ function registerServiceWorker() {
   }
 }
 
-function showUpdateToast() {
-  const toast = document.getElementById('updateToast');
-  if (toast) toast.classList.add('active');
-}
-
-async function applyUpdate() {
-  try {
-    if ('serviceWorker' in navigator) {
-      const registrations = await navigator.serviceWorker.getRegistrations();
-      for (const reg of registrations) {
-        if (reg.waiting) {
-          reg.waiting.postMessage({ type: 'SKIP_WAITING' });
-        }
-        if (reg.installing) {
-          reg.installing.postMessage({ type: 'SKIP_WAITING' });
-        }
-      }
-    }
-  } catch (e) {}
-
-  const baseUrl = window.location.href.split('?')[0].split('#')[0];
-  window.location.replace(`${baseUrl}?v=${Date.now()}`);
-}
-
 // --- 2. Online / Offline Monitoring ---
 function setupNetworkMonitoring() {
   // Managed by setupLifecycleSync
@@ -71,81 +37,6 @@ function setupNetworkMonitoring() {
 function isMobileDevice() {
   const ua = navigator.userAgent.toLowerCase();
   return /iphone|ipad|ipod|android/i.test(ua) || window.innerWidth <= 768;
-}
-
-// --- 4. Push & Local Notifications ---
-function setupNotifications() {
-  const banner = document.getElementById('mobileNotifBanner');
-  const enableBtn = document.getElementById('btnEnableNotif');
-
-  if (!('Notification' in window) || !isMobileDevice()) {
-    if (banner) banner.style.display = 'none';
-    return;
-  }
-
-  if (Notification.permission === 'default' && banner) {
-    banner.style.display = 'flex';
-  }
-
-  if (enableBtn) {
-    enableBtn.addEventListener('click', async () => {
-      try {
-        const perm = await Notification.requestPermission();
-        if (perm === 'granted') {
-          if (banner) banner.style.display = 'none';
-          triggerNotificationCheck(true);
-        }
-      } catch (e) {
-        console.warn('[Notification] Error:', e);
-      }
-    });
-  }
-}
-
-function triggerNotificationCheck(force = false) {
-  if (!('Notification' in window) || Notification.permission !== 'granted') return;
-
-  const lastNotif = parseInt(localStorage.getItem('leb_last_notif_ts') || '0', 10);
-  const now = Date.now();
-  if (!force && (now - lastNotif < 6 * 3600 * 1000)) return;
-
-  const records = getStoredRecords(false);
-  const urgent = [];
-
-  records.forEach(rec => {
-    const urgency = calculateRecordUrgency(rec);
-    if (urgency.minDays <= 15) {
-      urgent.push({
-        title: rec.title,
-        label: urgency.label,
-        text: urgency.text
-      });
-    }
-  });
-
-  if (urgent.length > 0) {
-    localStorage.setItem('leb_last_notif_ts', String(now));
-    const first = urgent[0];
-    const notifTitle = `Leb: ${urgent.length} Kayıt Uyarı Veriyor!`;
-    const notifBody = `${first.title} (${first.label}): ${first.text}` +
-      (urgent.length > 1 ? ` ve ${urgent.length - 1} kayıt daha.` : '');
-
-    try {
-      if (navigator.serviceWorker && navigator.serviceWorker.controller) {
-        navigator.serviceWorker.controller.postMessage({
-          type: 'SHOW_NOTIFICATION',
-          title: notifTitle,
-          body: notifBody
-        });
-      } else {
-        new Notification(notifTitle, {
-          body: notifBody,
-          icon: 'icons/apple-touch-icon-180.png?v=3.3.0',
-          badge: 'icons/favicon.png?v=3.3.0'
-        });
-      }
-    } catch (e) {}
-  }
 }
 
 // --- 5. Realtime Cloud Sync Engine (Firebase RTDB + SSE + Instant Deletion Mirror) ---
@@ -222,20 +113,8 @@ function normalizeTurkishSearch(text) {
     .trim();
 }
 
-function showToast(message, duration = 2800) {
-  let toast = document.getElementById('lebGlobalToast');
-  if (!toast) {
-    toast = document.createElement('div');
-    toast.id = 'lebGlobalToast';
-    toast.className = 'leb-toast';
-    document.body.appendChild(toast);
-  }
-  toast.textContent = message;
-  toast.classList.add('active');
-  clearTimeout(toast._timer);
-  toast._timer = setTimeout(() => {
-    toast.classList.remove('active');
-  }, duration);
+function showToast() {
+  // Silent - all toast popups completely suppressed for calm clean UX
 }
 
 function updateSyncBadge(status) {
@@ -269,12 +148,6 @@ function cleanGarbageRecords(items) {
     if (!it.id || !it.title || !it.title.trim()) return false;
     if (it.deleted === true) return false;
     if (deletedIds.has(it.id)) return false;
-
-    const tUpper = toTurkishUpper(it.title.trim());
-    if (tUpper === 'MAHO' || tUpper === 'KUGGYIOGIUYB' || tUpper === 'R234234') {
-      return false;
-    }
-
     return true;
   });
 }
@@ -565,13 +438,24 @@ function setupPullToRefresh() {
   pullIndicator.className = 'leb-pull-refresh';
   pullIndicator.setAttribute('aria-hidden', 'true');
   pullIndicator.innerHTML = `
-    <svg class="pull-spinner" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.19"/>
+    <svg class="ios-spinner" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+      <line x1="12" y1="2" x2="12" y2="6" stroke-width="2.2" stroke-linecap="round" opacity="1"/>
+      <line x1="17" y1="3.34" x2="15" y2="6.8" stroke-width="2.2" stroke-linecap="round" opacity="0.91"/>
+      <line x1="20.66" y1="7" x2="17.2" y2="9" stroke-width="2.2" stroke-linecap="round" opacity="0.82"/>
+      <line x1="22" y1="12" x2="18" y2="12" stroke-width="2.2" stroke-linecap="round" opacity="0.73"/>
+      <line x1="20.66" y1="17" x2="17.2" y2="15" stroke-width="2.2" stroke-linecap="round" opacity="0.64"/>
+      <line x1="17" y1="20.66" x2="15" y2="17.2" stroke-width="2.2" stroke-linecap="round" opacity="0.55"/>
+      <line x1="12" y1="22" x2="12" y2="18" stroke-width="2.2" stroke-linecap="round" opacity="0.46"/>
+      <line x1="7" y1="20.66" x2="9" y2="17.2" stroke-width="2.2" stroke-linecap="round" opacity="0.37"/>
+      <line x1="3.34" y1="17" x2="6.8" y2="15" stroke-width="2.2" stroke-linecap="round" opacity="0.28"/>
+      <line x1="2" y1="12" x2="6" y2="12" stroke-width="2.2" stroke-linecap="round" opacity="0.19"/>
+      <line x1="3.34" y1="7" x2="6.8" y2="9" stroke-width="2.2" stroke-linecap="round" opacity="0.14"/>
+      <line x1="7" y1="3.34" x2="9" y2="6.8" stroke-width="2.2" stroke-linecap="round" opacity="0.1"/>
     </svg>
   `;
   document.body.prepend(pullIndicator);
 
-  const spinnerIcon = pullIndicator.querySelector('.pull-spinner');
+  const spinnerIcon = pullIndicator.querySelector('.ios-spinner');
   let startY = 0;
   let currentPull = 0;
   let isTracking = false;
@@ -585,9 +469,6 @@ function setupPullToRefresh() {
     pullIndicator.style.transform = 'translate(-50%, -65px) scale(0.6)';
     pullIndicator.style.opacity = '0';
     pullIndicator.classList.remove('syncing');
-    if (spinnerIcon) {
-      spinnerIcon.style.transform = 'rotate(0deg)';
-    }
   }
 
   window.addEventListener('touchstart', (e) => {
@@ -614,10 +495,6 @@ function setupPullToRefresh() {
 
       pullIndicator.style.transform = `translate(-50%, ${currentPull}px) scale(${scale})`;
       pullIndicator.style.opacity = String(progress);
-
-      if (spinnerIcon) {
-        spinnerIcon.style.transform = `rotate(${progress * 280}deg)`;
-      }
     } else if (diff < 0) {
       resetIndicator();
     }
@@ -1155,14 +1032,10 @@ function renderCurrentView() {
     return compareTurkish(a.title, b.title);
   });
 
-  // Layout hash to prevent unnecessary DOM redraws
-  const renderSignature = JSON.stringify(list.map(r => ({
-    id: r.id,
-    title: r.title,
-    subType: r.subType,
-    updatedAt: r.updatedAt,
-    u: calculateRecordUrgency(r).text
-  })));
+  // Layout signature to prevent unnecessary DOM redraws while guaranteeing updates on any state change
+  const renderSignature = `${currentSection}_${currentStatFilter}_${currentSubFilter}_${currentSearchQuery}_${list.length}_${list.map(r => 
+    `${r.id}_${r.title}_${r.subType}_${r.updatedAt}_${r.inspectionDate}_${r.insuranceDate}_${r.greenCardDate}_${r.roderDate}_${r.takoTuvDate}_${r.visaDate}_${r.licenseDate}_${r.passportDate}`
+  ).join('|')}`;
 
   if (renderSignature === lastRenderedHash && container.children.length === list.length) {
     return;
@@ -1259,7 +1132,7 @@ function renderCurrentView() {
 
     const datesHtml = datesItems.join('<span class="date-bullet">•</span>');
 
-    const actionButtonsHtml = `
+    const actionButtonsHtml = isMobile ? '' : `
       <div class="card-actions">
         <button type="button" class="action-btn btn-quick-date" data-id="${rec.id}">
           Güncelle
@@ -1656,6 +1529,16 @@ function initCustomDatePickers() {
 // --- 13. Desktop Modals & Quick Date Handlers ---
 let activeQuickRecordId = null;
 
+function addMonthsSafely(date, months) {
+  const d = new Date(date);
+  const day = d.getDate();
+  d.setMonth(d.getMonth() + months);
+  if (d.getDate() !== day) {
+    d.setDate(0);
+  }
+  return d;
+}
+
 function setupQuickPresetChips() {
   // Preset chips in Add Modal
   document.querySelectorAll('.preset-chip').forEach(chip => {
@@ -1663,8 +1546,7 @@ function setupQuickPresetChips() {
       const targetId = chip.dataset.target;
       const months = parseInt(chip.dataset.months, 10);
       if (targetId && months) {
-        const d = new Date();
-        d.setMonth(d.getMonth() + months);
+        const d = addMonthsSafely(new Date(), months);
         setCustomDate(targetId, d.toISOString().split('T')[0]);
       }
     });
@@ -1789,15 +1671,26 @@ function setupModals() {
       const plateInput = document.getElementById('inputPlate');
       const plate = (plateInput ? plateInput.value : '').trim().toUpperCase();
       const vType = (selectVType && selectVType.value) || 'Çekici';
-      const inspDate = document.getElementById('inputInspectionDate').value || getFutureDate(365);
+      const inspDate = document.getElementById('inputInspectionDate').value;
       const insDate = document.getElementById('inputInsuranceDate').value || null;
       const greenDate = document.getElementById('inputGreenCardDate').value || null;
       const roderDate = (vType === 'Çekici' || vType === 'Dorse') ? (document.getElementById('inputRoderDate').value || null) : null;
       const takoTuvDate = (vType === 'Çekici') ? (document.getElementById('inputTakoTuvDate').value || null) : null;
 
       if (!plate) {
-        showToast('⚠️ Lütfen araç plakasını giriniz.');
-        if (plateInput) plateInput.focus();
+        if (plateInput) {
+          plateInput.classList.add('is-error');
+          plateInput.focus();
+        }
+        return;
+      }
+
+      if (!inspDate) {
+        const trig = document.getElementById('trigger_inputInspectionDate');
+        if (trig) {
+          trig.classList.add('is-error');
+          trig.focus();
+        }
         return;
       }
 
@@ -1845,7 +1738,6 @@ function setupModals() {
       lastRenderedHash = '';
       renderCurrentView();
 
-      showToast(`✅ ${newRec.title} aracı kaydedildi`);
       pushToCloud(records);
     });
   }
@@ -1856,14 +1748,25 @@ function setupModals() {
       e.preventDefault();
       const nameInput = document.getElementById('inputDriverName');
       const name = (nameInput ? nameInput.value : '').trim();
-      const visaDate = document.getElementById('inputVisaDate').value || getFutureDate(365);
+      const visaDate = document.getElementById('inputVisaDate').value;
       const licDate = document.getElementById('inputLicenseDate').value || null;
       const passport = document.getElementById('inputPassport').value.trim();
       const passportDate = document.getElementById('inputPassportDate') ? document.getElementById('inputPassportDate').value : null;
 
       if (!name) {
-        showToast('⚠️ Lütfen sürücü adını giriniz.');
-        if (nameInput) nameInput.focus();
+        if (nameInput) {
+          nameInput.classList.add('is-error');
+          nameInput.focus();
+        }
+        return;
+      }
+
+      if (!visaDate) {
+        const trig = document.getElementById('trigger_inputVisaDate');
+        if (trig) {
+          trig.classList.add('is-error');
+          trig.focus();
+        }
         return;
       }
 
@@ -1910,7 +1813,6 @@ function setupModals() {
       lastRenderedHash = '';
       renderCurrentView();
 
-      showToast(`✅ ${newRec.title} sürücüsü kaydedildi`);
       pushToCloud(records);
     });
   }
@@ -1949,8 +1851,7 @@ function setupModals() {
       presets.forEach(x => x.classList.remove('active'));
       p.classList.add('active');
       const months = parseInt(p.dataset.months, 10);
-      const d = new Date();
-      d.setMonth(d.getMonth() + months);
+      const d = addMonthsSafely(new Date(), months);
       setCustomDate('quickDateInput', d.toISOString().split('T')[0]);
       updateQuickPreview();
     });
@@ -1968,7 +1869,6 @@ function setupModals() {
           trig.classList.add('is-error');
           trig.focus();
         }
-        showToast('⚠️ Lütfen geçerli bir tarih seçiniz.');
         return;
       }
 
@@ -1981,7 +1881,6 @@ function setupModals() {
         closeQuickModal();
         lastRenderedHash = '';
         renderCurrentView();
-        showToast(`✅ ${rec.title} tarihi güncellendi`);
         pushToCloud(records);
       }
     });
@@ -2470,7 +2369,6 @@ function setupHeaderScroll() {
 document.addEventListener('DOMContentLoaded', () => {
   registerServiceWorker();
   setupNetworkMonitoring();
-  setupNotifications();
   setupHeaderScroll();
   setupSectionTabs();
   renderSubFilterPills();
@@ -2495,12 +2393,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Update app toast button
-  const updateBtn = document.getElementById('btnUpdateApp');
-  if (updateBtn) {
-    updateBtn.addEventListener('click', applyUpdate);
-  }
-
   // Fetch remote clean data
   syncWithCloud({ isManual: false });
 
@@ -2508,7 +2400,4 @@ document.addEventListener('DOMContentLoaded', () => {
   setupRealtimeSync();
   setupLifecycleSync();
   setupPullToRefresh();
-
-  // Mobile notification check
-  setTimeout(() => triggerNotificationCheck(false), 2000);
 });
