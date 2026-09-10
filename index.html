@@ -18,12 +18,12 @@
   <link rel="manifest" href="manifest.webmanifest?v=3.6.0">
 
   <!-- Favicon & Theme Color -->
-  <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon.png?v=3.6.0">
-  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png?v=3.6.0">
+  <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon.png?v=3.8.0">
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png?v=3.8.0">
   <meta name="theme-color" content="#F8F9FA">
 
-  <!-- Stylesheet (Leb v3.6.0) -->
-  <link rel="stylesheet" href="css/app.css?v=3.6.0">
+  <!-- Stylesheet (Leb v3.8.0) -->
+  <link rel="stylesheet" href="css/app.css?v=3.8.0">
 </head>
 <body>
 
@@ -32,12 +32,20 @@
     <div class="leb-header-inner">
       <!-- Perfectly Centered: Large Logo & Bold Leb Title -->
       <div class="brand-centered">
-        <img src="icons/header-logo.svg?v=3.6.0" alt="Leb Logo" class="brand-avatar-img">
+        <img src="icons/header-logo.svg?v=3.8.0" alt="Leb Logo" class="brand-avatar-img">
         <h1 class="brand-main">Leb</h1>
       </div>
 
       <!-- Desktop Admin Action (Hidden on Mobile) -->
       <div class="desktop-admin-bar">
+        <button id="btnExportExcel" class="leb-btn leb-btn-secondary export-btn" title="Excel formatında (CSV) tüm kayıtları indir">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+          </svg>
+          <span>Excel'e Aktar</span>
+        </button>
         <button id="openAddModalBtn" class="leb-btn leb-btn-primary add-btn">
           <span class="plus-icon">+</span>
           <span id="addBtnLabel">Yeni Ekle</span>
@@ -435,7 +443,7 @@
     <button id="btnUpdateApp" class="leb-btn leb-btn-sm leb-btn-primary">Yenile</button>
   </aside>
 
-  <!-- Script v3.7.1 -->
-  <script src="js/app.js?v=3.7.1"></script>
+  <!-- Script v3.8.0 -->
+  <script src="js/app.js?v=3.8.0"></script>
 </body>
 </html>
