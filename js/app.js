@@ -200,6 +200,34 @@ function updateSyncBadge(status) {
 }
 
 /**
+ * Auto-clean & garbage-collect records:
+ * 1. Removes corrupt entries (empty/missing titles)
+ * 2. Purges old test ghost records permanently
+ * 3. Cleans tombstones (deleted records) older than 24 hours from both local and cloud
+ */
+function cleanGarbageRecords(items) {
+  if (!Array.isArray(items)) return [];
+  const oneDayAgo = Date.now() - (24 * 60 * 60 * 1000);
+  return items.filter(it => {
+    if (!it || typeof it !== 'object') return false;
+    if (!it.id || !it.title || !it.title.trim()) return false;
+
+    // Hard-filter legacy test strings if any device attempts resurrection
+    const tUpper = toTurkishUpper(it.title.trim());
+    if (tUpper === 'MAHO' || tUpper === 'KUGGYIOGIUYB' || tUpper === 'R234234' || (tUpper === 'ENES KARATAŞ' && it.id.startsWith('drv_178'))) {
+      return false;
+    }
+
+    // Auto-purge tombstones older than 24 hours so database stays lean & fast
+    if (it.deleted && (it.updatedAt || 0) < oneDayAgo) {
+      return false;
+    }
+
+    return true;
+  });
+}
+
+/**
  * Deduplicate items by composite key (type + normalized title with Turkish locale)
  */
 function deduplicateItems(items) {
@@ -295,9 +323,9 @@ async function syncWithCloud(options = {}) {
     const remoteRaw = (remoteData && Array.isArray(remoteData.items)) ? remoteData.items : [];
     const localRaw = getStoredRecords(true);
 
-    // Merge and deduplicate by type + title
+    // Merge, deduplicate, and auto-clean tombstones
     const allCombined = [...remoteRaw, ...localRaw];
-    const deduplicated = deduplicateItems(allCombined);
+    const deduplicated = cleanGarbageRecords(deduplicateItems(allCombined));
 
     const remoteNeedsUpdate = !areItemListsEqual(remoteRaw, deduplicated);
 
@@ -305,7 +333,7 @@ async function syncWithCloud(options = {}) {
       const payload = {
         items: deduplicated,
         lastSync: Date.now(),
-        updatedBy: 'Leb v3.7.1 Clean'
+        updatedBy: 'Leb v3.9.0 Engine'
       };
 
       await fetch(CLOUD_ENDPOINT, {
@@ -441,7 +469,7 @@ function getStoredRecords(includeDeleted = false) {
       return includeDeleted ? SEED_RECORDS : SEED_RECORDS.filter(r => !r.deleted);
     }
     let parsed = JSON.parse(data);
-    parsed = deduplicateItems(parsed);
+    parsed = cleanGarbageRecords(deduplicateItems(parsed));
     if (includeDeleted) return parsed;
     return parsed.filter(r => !r.deleted);
   } catch (e) {
@@ -452,7 +480,7 @@ function getStoredRecords(includeDeleted = false) {
 
 function saveRecordsLocally(records) {
   try {
-    const deduped = deduplicateItems(records);
+    const deduped = cleanGarbageRecords(deduplicateItems(records));
     localStorage.setItem(STORAGE_KEY, JSON.stringify(deduped));
     updateStats();
   } catch (e) {
