@@ -1,7 +1,7 @@
 /**
- * Leb - Fleet & Driver Compliance Engine (v4.2.0)
+ * Leb - Fleet & Driver Compliance Engine (v4.3.0)
  * Calm Palette, Zero Eye Strain, Instant Hard Delete,
- * Realtime SSE Cloud Sync, Mobile Deletion Mirroring, Driver Passport & Vehicle Roder
+ * Realtime SSE Cloud Sync, Mobile Deletion Mirroring, Mobile Pull-to-Refresh
  */
 
 // --- 1. Service Worker & Update Manager ---
@@ -11,7 +11,7 @@ function registerServiceWorker() {
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
       navigator.serviceWorker
-        .register('./sw.js?v=4.2.0')
+        .register('./sw.js?v=4.3.0')
         .then((registration) => {
           registration.addEventListener('updatefound', () => {
             newWorker = registration.installing;
@@ -30,7 +30,8 @@ function registerServiceWorker() {
       navigator.serviceWorker.addEventListener('controllerchange', () => {
         if (!refreshing) {
           refreshing = true;
-          window.location.reload();
+          const baseUrl = window.location.href.split('?')[0].split('#')[0];
+          window.location.replace(`${baseUrl}?v=${Date.now()}`);
         }
       });
     });
@@ -42,12 +43,23 @@ function showUpdateToast() {
   if (toast) toast.classList.add('active');
 }
 
-function applyUpdate() {
-  if (newWorker) {
-    newWorker.postMessage({ type: 'SKIP_WAITING' });
-  } else {
-    window.location.reload();
-  }
+async function applyUpdate() {
+  try {
+    if ('serviceWorker' in navigator) {
+      const registrations = await navigator.serviceWorker.getRegistrations();
+      for (const reg of registrations) {
+        if (reg.waiting) {
+          reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+        }
+        if (reg.installing) {
+          reg.installing.postMessage({ type: 'SKIP_WAITING' });
+        }
+      }
+    }
+  } catch (e) {}
+
+  const baseUrl = window.location.href.split('?')[0].split('#')[0];
+  window.location.replace(`${baseUrl}?v=${Date.now()}`);
 }
 
 // --- 2. Online / Offline Monitoring ---
@@ -361,33 +373,29 @@ function handleRemoteDataPayload(remoteData) {
   }
 
   const cleanRemote = cleanGarbageRecords(remoteRaw);
-  const localRaw = getStoredRecords(true);
 
   if (isMobileDevice()) {
-    // MOBILE: Pure consumer / viewer. ALWAYS mirror cloud state directly!
-    // No resurrecting old deleted items from local storage.
-    if (!areItemListsEqual(localRaw, cleanRemote)) {
-      saveRecordsLocally(cleanRemote);
-      renderCurrentView();
-    }
+    // MOBILE: Pure consumer / viewer. ALWAYS mirror cloud state directly and force redraw!
+    saveRecordsLocally(cleanRemote);
+    lastRenderedHash = '';
+    renderCurrentView();
   } else {
     // DESKTOP (Admin): Check if there are newly created offline items
+    const localRaw = getStoredRecords(true);
     const remoteIdSet = new Set(cleanRemote.map(r => r.id));
     const deletedSet = getDeletedIdsSet();
     const locallyAdded = localRaw.filter(r => !remoteIdSet.has(r.id) && !deletedSet.has(r.id));
 
     if (locallyAdded.length > 0) {
       const merged = cleanGarbageRecords(deduplicateItems([...cleanRemote, ...locallyAdded]));
-      if (!areItemListsEqual(localRaw, merged)) {
-        saveRecordsLocally(merged);
-        renderCurrentView();
-      }
+      saveRecordsLocally(merged);
+      lastRenderedHash = '';
+      renderCurrentView();
       pushToCloud(merged);
     } else {
-      if (!areItemListsEqual(localRaw, cleanRemote)) {
-        saveRecordsLocally(cleanRemote);
-        renderCurrentView();
-      }
+      saveRecordsLocally(cleanRemote);
+      lastRenderedHash = '';
+      renderCurrentView();
     }
   }
 
@@ -417,7 +425,7 @@ async function syncWithCloud(options = {}) {
   try {
     const response = await fetch(CLOUD_ENDPOINT, {
       cache: 'no-store',
-      headers: { 'Cache-Control': 'no-cache' }
+      headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate' }
     });
 
     if (response.ok) {
@@ -452,6 +460,7 @@ function setupRealtimeSync() {
 
   if (sseSource) {
     try { sseSource.close(); } catch(e) {}
+    sseSource = null;
   }
 
   try {
@@ -492,6 +501,10 @@ function setupRealtimeSync() {
 function setupLifecycleSync() {
   function onResume() {
     if (document.visibilityState === 'visible' && navigator.onLine) {
+      if (!sseSource || sseSource.readyState === 2) {
+        setupRealtimeSync();
+      }
+      lastRenderedHash = '';
       syncWithCloud({ isManual: false });
     }
   }
@@ -501,14 +514,91 @@ function setupLifecycleSync() {
   window.addEventListener('pageshow', onResume);
   window.addEventListener('online', () => {
     updateSyncBadge('synced');
+    setupRealtimeSync();
+    lastRenderedHash = '';
     syncWithCloud({ isManual: false });
   });
   window.addEventListener('offline', () => {
     updateSyncBadge('offline');
   });
 
-  // Regular safety poll every 8 seconds when tab is active
-  setInterval(onResume, 8000);
+  // Regular safety poll every 5 seconds when tab is active
+  setInterval(onResume, 5000);
+}
+
+/**
+ * Native-style mobile Pull-to-Refresh
+ */
+function setupPullToRefresh() {
+  if (!isMobileDevice()) return;
+
+  let touchStartY = 0;
+  let touchDiff = 0;
+  let isPulling = false;
+
+  const pullIndicator = document.createElement('div');
+  pullIndicator.id = 'lebPullToRefresh';
+  pullIndicator.className = 'leb-pull-refresh';
+  pullIndicator.innerHTML = `
+    <svg class="pull-spinner" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+      <polyline points="23 4 23 10 17 10"></polyline>
+      <polyline points="1 20 1 14 7 14"></polyline>
+      <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+    </svg>
+    <span class="pull-text">Yenilemek için çekin</span>
+  `;
+  document.body.prepend(pullIndicator);
+
+  window.addEventListener('touchstart', (e) => {
+    if (window.scrollY <= 2) {
+      touchStartY = e.touches[0].clientY;
+      isPulling = true;
+    } else {
+      isPulling = false;
+    }
+  }, { passive: true });
+
+  window.addEventListener('touchmove', (e) => {
+    if (!isPulling) return;
+    const currentY = e.touches[0].clientY;
+    touchDiff = currentY - touchStartY;
+
+    if (touchDiff > 10 && window.scrollY <= 2) {
+      const pullDist = Math.min(touchDiff * 0.45, 60);
+      pullIndicator.style.transform = `translate(-50%, ${pullDist}px)`;
+      pullIndicator.style.opacity = String(Math.min(pullDist / 40, 1));
+      if (pullDist > 45) {
+        pullIndicator.querySelector('.pull-text').textContent = 'Bırakın ve güncellensin';
+        pullIndicator.classList.add('ready');
+      } else {
+        pullIndicator.querySelector('.pull-text').textContent = 'Yenilemek için çekin';
+        pullIndicator.classList.remove('ready');
+      }
+    }
+  }, { passive: true });
+
+  window.addEventListener('touchend', () => {
+    if (!isPulling) return;
+    isPulling = false;
+
+    if (touchDiff * 0.45 > 45) {
+      pullIndicator.querySelector('.pull-text').textContent = 'Eşitleniyor...';
+      pullIndicator.classList.add('syncing');
+      pullIndicator.style.transform = 'translate(-50%, 48px)';
+      lastRenderedHash = '';
+      syncWithCloud({ isManual: true }).finally(() => {
+        setTimeout(() => {
+          pullIndicator.style.transform = 'translate(-50%, -100%)';
+          pullIndicator.style.opacity = '0';
+          pullIndicator.classList.remove('syncing', 'ready');
+        }, 350);
+      });
+    } else {
+      pullIndicator.style.transform = 'translate(-50%, -100%)';
+      pullIndicator.style.opacity = '0';
+    }
+    touchDiff = 0;
+  });
 }
 
 // --- 6. Initial Clean Seed Data ---
@@ -2283,7 +2373,10 @@ document.addEventListener('DOMContentLoaded', () => {
   // Manual sync button
   const manualBtn = document.getElementById('manualSyncBtn');
   if (manualBtn) {
-    manualBtn.addEventListener('click', () => syncWithCloud({ isManual: true }));
+    manualBtn.addEventListener('click', () => {
+      lastRenderedHash = '';
+      syncWithCloud({ isManual: true });
+    });
   }
 
   // Update app toast button
@@ -2298,6 +2391,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Realtime Cloud Sync via EventSource (SSE) & Lifecycle Listeners
   setupRealtimeSync();
   setupLifecycleSync();
+  setupPullToRefresh();
 
   // Mobile notification check
   setTimeout(() => triggerNotificationCheck(false), 2000);
