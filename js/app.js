@@ -1,7 +1,7 @@
 /**
- * Leb - Fleet & Driver Compliance Engine (v3.7.0)
+ * Leb - Fleet & Driver Compliance Engine (v3.7.1)
  * Calm Palette, Zero Eye Strain, Deduplicated Cloud Sync,
- * Custom Themed Calendar, Zero Native Browser Datepickers
+ * Centered Custom Themed Calendar Modal
  */
 
 // --- 1. Service Worker & Update Manager ---
@@ -11,7 +11,7 @@ function registerServiceWorker() {
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
       navigator.serviceWorker
-        .register('./sw.js?v=3.7.0')
+        .register('./sw.js?v=3.7.1')
         .then((registration) => {
           registration.addEventListener('updatefound', () => {
             newWorker = registration.installing;
@@ -276,7 +276,7 @@ async function syncWithCloud(options = {}) {
       const payload = {
         items: deduplicated,
         lastSync: Date.now(),
-        updatedBy: 'Leb v3.7.0 Clean'
+        updatedBy: 'Leb v3.7.1 Clean'
       };
 
       await fetch(CLOUD_ENDPOINT, {
@@ -968,29 +968,11 @@ function openCalendarFor(fieldId, triggerEl) {
   const backdrop = document.getElementById('calBackdrop');
   if (!popover || !backdrop) return;
 
+  popover.style.left = '';
+  popover.style.top = '';
   backdrop.style.display = 'block';
   popover.style.display = 'block';
   if (triggerEl) triggerEl.classList.add('is-open');
-
-  // Position popover relative to trigger on desktop
-  if (window.innerWidth > 600 && triggerEl) {
-    const rect = triggerEl.getBoundingClientRect();
-    const popoverWidth = 324;
-    const popoverHeight = 360;
-
-    let left = rect.left;
-    if (left + popoverWidth > window.innerWidth - 16) {
-      left = Math.max(16, window.innerWidth - popoverWidth - 16);
-    }
-
-    let top = rect.bottom + 6;
-    if (top + popoverHeight > window.innerHeight - 16) {
-      top = Math.max(16, rect.top - popoverHeight - 6);
-    }
-
-    popover.style.left = `${left}px`;
-    popover.style.top = `${top}px`;
-  }
 }
 
 function closeCalendar() {
