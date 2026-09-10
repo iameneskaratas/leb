@@ -560,72 +560,124 @@ function setupLifecycleSync() {
 function setupPullToRefresh() {
   if (!isMobileDevice()) return;
 
-  let touchStartY = 0;
-  let touchDiff = 0;
-  let isPulling = false;
-
   const pullIndicator = document.createElement('div');
   pullIndicator.id = 'lebPullToRefresh';
   pullIndicator.className = 'leb-pull-refresh';
+  pullIndicator.setAttribute('aria-hidden', 'true');
   pullIndicator.innerHTML = `
-    <svg class="pull-spinner" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-      <polyline points="23 4 23 10 17 10"></polyline>
-      <polyline points="1 20 1 14 7 14"></polyline>
-      <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+    <svg class="pull-spinner" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.19"/>
     </svg>
-    <span class="pull-text">Yenilemek için çekin</span>
   `;
   document.body.prepend(pullIndicator);
 
+  const spinnerIcon = pullIndicator.querySelector('.pull-spinner');
+  let startY = 0;
+  let currentPull = 0;
+  let isTracking = false;
+  let isRefreshing = false;
+  const PULL_THRESHOLD = 50;
+
+  function resetIndicator() {
+    isTracking = false;
+    currentPull = 0;
+    pullIndicator.style.transition = 'transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease';
+    pullIndicator.style.transform = 'translate(-50%, -65px) scale(0.6)';
+    pullIndicator.style.opacity = '0';
+    pullIndicator.classList.remove('syncing');
+    if (spinnerIcon) {
+      spinnerIcon.style.transform = 'rotate(0deg)';
+    }
+  }
+
   window.addEventListener('touchstart', (e) => {
-    if (window.scrollY <= 2) {
-      touchStartY = e.touches[0].clientY;
-      isPulling = true;
+    if (isRefreshing) return;
+    if (window.scrollY <= 1) {
+      startY = e.touches[0].clientY;
+      isTracking = true;
+      currentPull = 0;
+      pullIndicator.style.transition = 'none';
     } else {
-      isPulling = false;
+      isTracking = false;
     }
   }, { passive: true });
 
   window.addEventListener('touchmove', (e) => {
-    if (!isPulling) return;
-    const currentY = e.touches[0].clientY;
-    touchDiff = currentY - touchStartY;
+    if (!isTracking || isRefreshing) return;
+    const y = e.touches[0].clientY;
+    const diff = y - startY;
 
-    if (touchDiff > 10 && window.scrollY <= 2) {
-      const pullDist = Math.min(touchDiff * 0.45, 60);
-      pullIndicator.style.transform = `translate(-50%, ${pullDist}px)`;
-      pullIndicator.style.opacity = String(Math.min(pullDist / 40, 1));
-      if (pullDist > 45) {
-        pullIndicator.querySelector('.pull-text').textContent = 'Bırakın ve güncellensin';
-        pullIndicator.classList.add('ready');
-      } else {
-        pullIndicator.querySelector('.pull-text').textContent = 'Yenilemek için çekin';
-        pullIndicator.classList.remove('ready');
+    if (diff > 8 && window.scrollY <= 1) {
+      currentPull = Math.min(diff * 0.4, 75);
+      const progress = Math.min(currentPull / PULL_THRESHOLD, 1);
+      const scale = 0.65 + (progress * 0.35);
+
+      pullIndicator.style.transform = `translate(-50%, ${currentPull}px) scale(${scale})`;
+      pullIndicator.style.opacity = String(progress);
+
+      if (spinnerIcon) {
+        spinnerIcon.style.transform = `rotate(${progress * 280}deg)`;
       }
+    } else if (diff < 0) {
+      resetIndicator();
     }
   }, { passive: true });
 
-  window.addEventListener('touchend', () => {
-    if (!isPulling) return;
-    isPulling = false;
+  async function triggerRefresh() {
+    isRefreshing = true;
+    isTracking = false;
+    pullIndicator.classList.add('syncing');
+    pullIndicator.style.transition = 'transform 0.2s ease, opacity 0.2s ease';
+    pullIndicator.style.transform = 'translate(-50%, 40px) scale(1)';
+    pullIndicator.style.opacity = '1';
 
-    if (touchDiff * 0.45 > 45) {
-      pullIndicator.querySelector('.pull-text').textContent = 'Eşitleniyor...';
-      pullIndicator.classList.add('syncing');
-      pullIndicator.style.transform = 'translate(-50%, 48px)';
-      lastRenderedHash = '';
-      syncWithCloud({ isManual: true }).finally(() => {
-        setTimeout(() => {
-          pullIndicator.style.transform = 'translate(-50%, -100%)';
-          pullIndicator.style.opacity = '0';
-          pullIndicator.classList.remove('syncing', 'ready');
-        }, 350);
-      });
-    } else {
-      pullIndicator.style.transform = 'translate(-50%, -100%)';
-      pullIndicator.style.opacity = '0';
+    if (navigator.vibrate) {
+      try { navigator.vibrate(10); } catch (e) {}
     }
-    touchDiff = 0;
+
+    try {
+      lastRenderedHash = '';
+      await Promise.race([
+        syncWithCloud({ isManual: true }),
+        new Promise(resolve => setTimeout(resolve, 2000))
+      ]);
+    } catch (e) {
+      console.warn('[PullRefresh] sync note:', e);
+    } finally {
+      setTimeout(() => {
+        isRefreshing = false;
+        resetIndicator();
+      }, 250);
+    }
+  }
+
+  window.addEventListener('touchend', () => {
+    if (!isTracking || isRefreshing) return;
+    if (currentPull >= PULL_THRESHOLD) {
+      triggerRefresh();
+    } else {
+      resetIndicator();
+    }
+  }, { passive: true });
+
+  window.addEventListener('touchcancel', () => {
+    if (!isRefreshing) resetIndicator();
+  }, { passive: true });
+
+  window.addEventListener('scroll', () => {
+    if (isTracking && !isRefreshing && window.scrollY > 5) {
+      resetIndicator();
+    }
+  }, { passive: true });
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden && !isRefreshing) {
+      resetIndicator();
+    }
+  });
+
+  window.addEventListener('blur', () => {
+    if (!isRefreshing) resetIndicator();
   });
 }
 
@@ -2030,16 +2082,14 @@ async function deleteRecord(id) {
   // 1. Blacklist immediately to permanently block resurrection across all devices
   markRecordDeletedLocally(id);
 
-  // 2. Direct hard delete from local array - NO ALERT, NO CONFIRMATION POPUP!
+  // 2. Direct hard delete from local array - NO ALERT, NO CONFIRMATION POPUP, NO TOAST!
   let records = getStoredRecords(true);
-  const deletedItem = records.find(r => r.id === id);
   records = records.filter(r => r.id !== id);
   saveRecordsLocally(records);
 
   // 3. Immediately redraw current view
   lastRenderedHash = '';
   renderCurrentView();
-  showToast(`🗑️ ${deletedItem ? deletedItem.title : 'Kayıt'} silindi`);
 
   // 4. Send updated list directly to Firebase RTDB so cloud is purged immediately
   await pushToCloud(records);

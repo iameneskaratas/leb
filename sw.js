@@ -1,5 +1,5 @@
-// Leb - Service Worker v4.5.0 (Strict Mobile Viewer, Conflict-Free Sync & Safe Deletions)
-const CACHE_VERSION = 'v4.5.0';
+// Leb - Service Worker v4.6.0 (Silent Deletions & Native-Feel iOS Pull-to-Refresh)
+const CACHE_VERSION = 'v4.6.0';
 const CACHE_NAME = `leb-app-${CACHE_VERSION}`;
 
 const PRECACHE_ASSETS = [
