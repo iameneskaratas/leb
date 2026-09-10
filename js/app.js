@@ -1,7 +1,7 @@
 /**
- * Leb Lojistik - Neumorphism (Soft UI) Fleet & Driver Compliance Engine (v3.1.0)
- * High Performance Web App, Strict Mobile Read-Only Gate,
- * Separated Vehicles & Drivers, Quiet Bottom Sync
+ * Leb - Fleet & Driver Compliance Engine (v3.2.0)
+ * High Legibility, Vertical Mobile-Style List on All Devices,
+ * Strict Mobile Read-Only Gate, Quiet Bottom Sync
  */
 
 // --- 1. Service Worker & Update Manager ---
@@ -11,7 +11,7 @@ function registerServiceWorker() {
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
       navigator.serviceWorker
-        .register('./sw.js')
+        .register('./sw.js?v=3.2.0')
         .then((registration) => {
           registration.addEventListener('updatefound', () => {
             newWorker = registration.installing;
@@ -64,13 +64,13 @@ function setupNetworkMonitoring() {
   window.addEventListener('offline', updateStatus);
 }
 
-// --- 3. Strict Mobile Detection (Mobilden Asla Yönetim Paneline Ulaşılmasın!) ---
+// --- 3. Strict Mobile Detection (Mobilde Yönetim Erişimi Engellenir) ---
 function isMobileDevice() {
   const ua = navigator.userAgent.toLowerCase();
   return /iphone|ipad|ipod|android/i.test(ua) || window.innerWidth <= 768;
 }
 
-// --- 4. Push & Local Notifications (Mobile Alerts) ---
+// --- 4. Push & Local Notifications ---
 function setupNotifications() {
   const banner = document.getElementById('mobileNotifBanner');
   const enableBtn = document.getElementById('btnEnableNotif');
@@ -123,7 +123,7 @@ function triggerNotificationCheck(force = false) {
   if (urgent.length > 0) {
     localStorage.setItem('leb_last_notif_ts', String(now));
     const first = urgent[0];
-    const notifTitle = `Leb Lojistik: ${urgent.length} Kayıt Uyarı Veriyor!`;
+    const notifTitle = `Leb: ${urgent.length} Kayıt Uyarı Veriyor!`;
     const notifBody = `${first.title} (${first.label}): ${first.text}` +
       (urgent.length > 1 ? ` ve ${urgent.length - 1} kayıt daha.` : '');
 
@@ -137,8 +137,8 @@ function triggerNotificationCheck(force = false) {
       } else {
         new Notification(notifTitle, {
           body: notifBody,
-          icon: 'icons/apple-touch-icon-180.png',
-          badge: 'icons/favicon.png'
+          icon: 'icons/apple-touch-icon-180.png?v=3.2.0',
+          badge: 'icons/favicon.png?v=3.2.0'
         });
       }
     } catch (e) {}
@@ -147,7 +147,7 @@ function triggerNotificationCheck(force = false) {
 
 // --- 5. Quiet Bottom Sync Engine (Firebase Realtime DB) ---
 const CLOUD_ENDPOINT = 'https://leb1919-default-rtdb.firebaseio.com/leb_store.json';
-const STORAGE_KEY = 'leb_logistics_fleet_v2';
+const STORAGE_KEY = 'leb_fleet_store_v3';
 
 let isSyncing = false;
 let syncQueued = false;
@@ -242,12 +242,12 @@ async function syncWithCloud(options = {}) {
 
     const mergedMap = new Map();
 
-    // Ingest remote
+    // Remote items
     remoteItems.forEach(it => {
       if (it && it.id) mergedMap.set(it.id, it);
     });
 
-    // Overlay local with Last-Write-Wins
+    // Local items with Last-Write-Wins
     localItems.forEach(localIt => {
       if (!localIt || !localIt.id) return;
       if (!mergedMap.has(localIt.id)) {
@@ -263,50 +263,52 @@ async function syncWithCloud(options = {}) {
     });
 
     const mergedItems = Array.from(mergedMap.values());
-    mergedItems.sort((a, b) => calculateRecordUrgency(a).minDays - calculateRecordUrgency(b).minDays);
-
-    // Update local storage
-    const localNeedsUpdate = !areItemListsEqual(localItems, mergedItems);
-    if (localNeedsUpdate) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(mergedItems));
-      renderRecords();
-      updateStats();
-      triggerNotificationCheck();
-    }
-
-    // Push remote
     const remoteNeedsUpdate = !areItemListsEqual(remoteItems, mergedItems);
-    if (remoteNeedsUpdate) {
-      const payload = JSON.stringify({
+
+    if (remoteNeedsUpdate && !isMobileDevice()) {
+      const payload = {
         items: mergedItems,
         lastSync: Date.now(),
-        updatedBy: navigator.userAgent
-      });
+        updatedBy: 'Leb v3.2.0'
+      };
 
       await fetch(CLOUD_ENDPOINT, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: payload
+        body: JSON.stringify(payload)
       });
+    }
+
+    const localNeedsUpdate = !areItemListsEqual(localItems, mergedItems);
+    if (localNeedsUpdate) {
+      saveRecordsLocally(mergedItems);
+      renderCurrentView();
     }
 
     updateSyncBadge('synced');
   } catch (err) {
-    console.warn('[Leb Sync] Warning:', err);
-    updateSyncBadge('error');
+    console.warn('[Sync] Network note:', err);
+    updateSyncBadge('offline');
   } finally {
     isSyncing = false;
-    if (isManual && manualBtn) {
-      setTimeout(() => manualBtn.classList.remove('sync-spin-icon'), 400);
+    if (manualBtn) {
+      setTimeout(() => manualBtn.classList.remove('sync-spin-icon'), 300);
     }
     if (syncQueued) {
       syncQueued = false;
-      setTimeout(() => syncWithCloud(), 300);
+      syncWithCloud({ isManual: false });
     }
   }
 }
 
-// --- 6. Initial Fleet Data (Araçlar: Çekici, Dorse, Otomobil) ---
+// Periodic Background Sync (Every 25 seconds if active tab)
+setInterval(() => {
+  if (document.visibilityState === 'visible' && navigator.onLine) {
+    syncWithCloud({ isManual: false });
+  }
+}, 25000);
+
+// --- 6. Initial Seed Data (If Local Storage is Clean) ---
 function getFutureDate(days) {
   const d = new Date();
   d.setDate(d.getDate() + days);
@@ -314,21 +316,19 @@ function getFutureDate(days) {
 }
 
 const SEED_RECORDS = [
-  // Araç 1: Çekici (Kritik - 4 gün)
   {
     id: 'veh_1',
     type: 'vehicle',
     title: '34 LEB 1919',
     subType: 'Çekici',
     inspectionDate: getFutureDate(4),
-    insuranceDate: getFutureDate(110),
-    greenCardDate: getFutureDate(24),
-    notes: 'Avrupa hattı ana çekici',
+    insuranceDate: getFutureDate(120),
+    greenCardDate: getFutureDate(30),
+    notes: 'Avrupa hattı aktif çekici',
     createdAt: new Date().toISOString(),
     updatedAt: Date.now(),
     deleted: false
   },
-  // Araç 2: Dorse (Yaklaşan - 18 gün)
   {
     id: 'veh_2',
     type: 'vehicle',
@@ -342,7 +342,6 @@ const SEED_RECORDS = [
     updatedAt: Date.now(),
     deleted: false
   },
-  // Araç 3: Otomobil (Güvenli - 150 gün)
   {
     id: 'veh_3',
     type: 'vehicle',
@@ -356,7 +355,6 @@ const SEED_RECORDS = [
     updatedAt: Date.now(),
     deleted: false
   },
-  // Sürücü 1: Vize Yaklaşan (7 gün)
   {
     id: 'drv_1',
     type: 'driver',
@@ -370,7 +368,6 @@ const SEED_RECORDS = [
     updatedAt: Date.now(),
     deleted: false
   },
-  // Sürücü 2: Vize Süresi Dolmuş (-2 gün)
   {
     id: 'drv_2',
     type: 'driver',
@@ -384,7 +381,6 @@ const SEED_RECORDS = [
     updatedAt: Date.now(),
     deleted: false
   },
-  // Sürücü 3: Güvenli
   {
     id: 'drv_3',
     type: 'driver',
@@ -405,6 +401,13 @@ function getStoredRecords(includeDeleted = false) {
   try {
     const data = localStorage.getItem(STORAGE_KEY);
     if (!data) {
+      // Check legacy storage key
+      const oldData = localStorage.getItem('leb_logistics_fleet_v2');
+      if (oldData) {
+        localStorage.setItem(STORAGE_KEY, oldData);
+        const parsed = JSON.parse(oldData);
+        return includeDeleted ? parsed : parsed.filter(r => !r.deleted);
+      }
       localStorage.setItem(STORAGE_KEY, JSON.stringify(SEED_RECORDS));
       return includeDeleted ? SEED_RECORDS : SEED_RECORDS.filter(r => !r.deleted);
     }
@@ -503,304 +506,172 @@ function calculateRecordUrgency(rec) {
   };
 }
 
-function formatDateTurkish(dateStr) {
-  if (!dateStr) return '-';
-  const d = new Date(dateStr + 'T00:00:00');
-  return d.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short', year: 'numeric' });
+function formatDisplayDate(dateStr) {
+  if (!dateStr) return '—';
+  try {
+    const [year, month, day] = dateStr.split('-');
+    const months = ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara'];
+    const mIdx = parseInt(month, 10) - 1;
+    return `${parseInt(day, 10)} ${months[mIdx] || month} ${year}`;
+  } catch (e) {
+    return dateStr;
+  }
 }
 
-function escapeHtml(text) {
-  const div = document.createElement('div');
-  div.textContent = text || '';
-  return div.innerHTML;
-}
-
-// --- 9. Section Management (Araçlar vs Sürücüler) ---
-let activeSection = 'vehicles'; // 'vehicles' or 'drivers'
-let activeFilter = 'all';
-let currentSearch = '';
+// --- 9. App State & Filter Management ---
+let currentSection = 'vehicles'; // 'vehicles' | 'drivers'
+let currentStatFilter = 'all';    // 'all' | 'critical' | 'warning' | 'safe'
+let currentSubFilter = 'all';     // 'all' | 'Çekici' | 'Dorse' | 'Otomobil'
+let currentSearchQuery = '';
 
 function setupSectionTabs() {
-  const btnVehicles = document.getElementById('tabVehicles');
-  const btnDrivers = document.getElementById('tabDrivers');
+  const tabVehicles = document.getElementById('tabVehicles');
+  const tabDrivers = document.getElementById('tabDrivers');
   const addBtnLabel = document.getElementById('addBtnLabel');
 
-  function switchSection(section) {
-    activeSection = section;
-    activeFilter = 'all';
+  if (tabVehicles && tabDrivers) {
+    tabVehicles.addEventListener('click', () => {
+      if (currentSection === 'vehicles') return;
+      currentSection = 'vehicles';
+      tabVehicles.classList.add('active');
+      tabVehicles.setAttribute('aria-selected', 'true');
+      tabDrivers.classList.remove('active');
+      tabDrivers.setAttribute('aria-selected', 'false');
+      if (addBtnLabel) addBtnLabel.textContent = 'Yeni Araç Ekle';
+      currentSubFilter = 'all';
+      renderSubFilterPills();
+      renderCurrentView();
+    });
 
-    if (btnVehicles && btnDrivers) {
-      if (section === 'vehicles') {
-        btnVehicles.classList.add('active');
-        btnVehicles.setAttribute('aria-selected', 'true');
-        btnDrivers.classList.remove('active');
-        btnDrivers.setAttribute('aria-selected', 'false');
-        if (addBtnLabel) addBtnLabel.textContent = 'Yeni Araç Ekle';
-      } else {
-        btnDrivers.classList.add('active');
-        btnDrivers.setAttribute('aria-selected', 'true');
-        btnVehicles.classList.remove('active');
-        btnVehicles.setAttribute('aria-selected', 'false');
-        if (addBtnLabel) addBtnLabel.textContent = 'Yeni Sürücü Ekle';
-      }
-    }
-
-    renderSubFilters();
-    renderRecords(true);
-    updateStats();
+    tabDrivers.addEventListener('click', () => {
+      if (currentSection === 'drivers') return;
+      currentSection = 'drivers';
+      tabDrivers.classList.add('active');
+      tabDrivers.setAttribute('aria-selected', 'true');
+      tabVehicles.classList.remove('active');
+      tabVehicles.setAttribute('aria-selected', 'false');
+      if (addBtnLabel) addBtnLabel.textContent = 'Yeni Sürücü Ekle';
+      currentSubFilter = 'all';
+      renderSubFilterPills();
+      renderCurrentView();
+    });
   }
-
-  if (btnVehicles) btnVehicles.addEventListener('click', () => switchSection('vehicles'));
-  if (btnDrivers) btnDrivers.addEventListener('click', () => switchSection('drivers'));
 }
 
-function renderSubFilters() {
-  const track = document.getElementById('subFiltersTrack');
-  if (!track) return;
+function renderSubFilterPills() {
+  const container = document.getElementById('subFiltersTrack');
+  if (!container) return;
 
-  track.innerHTML = '';
+  container.innerHTML = '';
 
   let pills = [];
-  if (activeSection === 'vehicles') {
+  if (currentSection === 'vehicles') {
     pills = [
       { id: 'all', label: 'Tümü' },
-      { id: 'Çekici', label: '🚚 Çekici' },
-      { id: 'Dorse', label: '🚛 Dorse' },
-      { id: 'Otomobil', label: '🚗 Otomobil' },
-      { id: 'critical', label: '🔴 Kritik Muayene' },
-      { id: 'warning', label: '🟡 Yaklaşan' }
+      { id: 'Çekici', label: '🚛 Çekici' },
+      { id: 'Dorse', label: '📦 Dorse' },
+      { id: 'Otomobil', label: '🚗 Otomobil' }
     ];
   } else {
     pills = [
-      { id: 'all', label: 'Tümü' },
-      { id: 'critical', label: '🔴 Kritik Vize' },
-      { id: 'warning', label: '🟡 Yaklaşan' },
-      { id: 'safe', label: '🟢 Sorunsuz' }
+      { id: 'all', label: 'Tümü (Kaptan Şoförler)' }
     ];
   }
 
-  pills.forEach(p => {
+  pills.forEach(pill => {
     const btn = document.createElement('button');
-    btn.className = `neu-pill ${activeFilter === p.id ? 'active' : ''}`;
-    btn.textContent = p.label;
+    btn.className = `filter-pill ${currentSubFilter === pill.id ? 'active' : ''}`;
+    btn.textContent = pill.label;
+    btn.dataset.sub = pill.id;
     btn.addEventListener('click', () => {
-      document.querySelectorAll('.neu-pill').forEach(el => el.classList.remove('active'));
-      btn.classList.add('active');
-      activeFilter = p.id;
-      renderRecords();
+      currentSubFilter = pill.id;
+      renderSubFilterPills();
+      renderCurrentView();
     });
-    track.appendChild(btn);
+    container.appendChild(btn);
   });
 }
 
-// --- 10. DOM Rendering (Strictly No Edit on Mobile) ---
-function renderRecords(force = false) {
-  const grid = document.getElementById('recordsGrid');
-  const emptyState = document.getElementById('emptyState');
-  if (!grid) return;
-
-  const allRecords = getStoredRecords(false);
-  const isMobile = isMobileDevice();
-
-  // 1. Filter by Active Section (Strict Separation!)
-  const targetType = activeSection === 'vehicles' ? 'vehicle' : 'driver';
-  let sectionRecords = allRecords.filter(r => r.type === targetType);
-
-  // 2. Filter by Search Query
-  if (currentSearch) {
-    const q = currentSearch.toLowerCase();
-    sectionRecords = sectionRecords.filter(r => {
-      const matchTitle = (r.title || '').toLowerCase().includes(q);
-      const matchSub = (r.subType || '').toLowerCase().includes(q);
-      const matchNotes = (r.notes || '').toLowerCase().includes(q);
-      return matchTitle || matchSub || matchNotes;
+function setupStatFilters() {
+  const statCards = document.querySelectorAll('.leb-stat-card');
+  statCards.forEach(card => {
+    card.addEventListener('click', () => {
+      const filter = card.dataset.filter;
+      if (currentStatFilter === filter) {
+        currentStatFilter = 'all';
+      } else {
+        currentStatFilter = filter;
+      }
+      statCards.forEach(c => {
+        c.classList.toggle('active-stat', c.dataset.filter === currentStatFilter);
+      });
+      renderCurrentView();
     });
-  }
-
-  // 3. Filter by Sub-filter Pill
-  if (activeFilter !== 'all') {
-    sectionRecords = sectionRecords.filter(r => {
-      const urgency = calculateRecordUrgency(r);
-      if (activeFilter === 'critical') return urgency.status === 'critical';
-      if (activeFilter === 'warning') return urgency.status === 'warning';
-      if (activeFilter === 'safe') return urgency.status === 'safe';
-      // Specific vehicle type filters (Çekici, Dorse, Otomobil)
-      return r.subType === activeFilter;
-    });
-  }
-
-  // 4. Sort by Urgency (Most urgent first)
-  sectionRecords.sort((a, b) => calculateRecordUrgency(a).minDays - calculateRecordUrgency(b).minDays);
-
-  // Smart Hash Check for Zero Jitter
-  const stateHash = JSON.stringify({
-    sec: activeSection,
-    flt: activeFilter,
-    q: currentSearch,
-    mob: isMobile,
-    data: sectionRecords
-  });
-
-  if (!force && stateHash === lastRenderedHash) {
-    return;
-  }
-  lastRenderedHash = stateHash;
-
-  grid.innerHTML = '';
-
-  if (sectionRecords.length === 0) {
-    if (emptyState) emptyState.style.display = 'flex';
-    return;
-  }
-  if (emptyState) emptyState.style.display = 'none';
-
-  sectionRecords.forEach(rec => {
-    const urgency = calculateRecordUrgency(rec);
-    const card = document.createElement('article');
-    card.className = 'neu-card';
-
-    const isVeh = rec.type === 'vehicle';
-    let avatar = '🚗';
-    if (isVeh) {
-      if (rec.subType === 'Çekici') avatar = '🚚';
-      else if (rec.subType === 'Dorse') avatar = '🚛';
-      else avatar = '🚗';
-    } else {
-      avatar = '👤';
-    }
-
-    // Build Compliance Rows
-    let rowsHtml = '';
-    if (isVeh) {
-      rowsHtml += buildRowHtml('🛠️', 'TÜVTÜRK Muayene', rec.inspectionDate);
-      if (rec.insuranceDate) rowsHtml += buildRowHtml('📄', 'Sigorta / Kasko', rec.insuranceDate);
-      if (rec.greenCardDate) rowsHtml += buildRowHtml('🌐', 'Yeşil Sigorta', rec.greenCardDate);
-    } else {
-      rowsHtml += buildRowHtml('🛂', 'Vize Bitiş (Schengen)', rec.visaDate);
-      if (rec.licenseDate) rowsHtml += buildRowHtml('🪪', 'Ehliyet / SRC', rec.licenseDate);
-      if (rec.passport) {
-        rowsHtml += `
-          <div class="neu-row">
-            <div class="row-left"><span>📘</span><span>Pasaport</span></div>
-            <div class="row-right"><span class="row-date">${escapeHtml(rec.passport)}</span></div>
-          </div>
-        `;
-      }
-    }
-
-    // DESKTOP-ONLY ACTIONS: On Mobile, NEVER render edit/delete buttons!
-    let actionsHtml = '';
-    if (!isMobile) {
-      actionsHtml = `
-        <div class="card-actions">
-          <button class="neu-action-btn btn-renew" data-id="${rec.id}">
-            <span>📅 Tarih Güncelle</span>
-          </button>
-          <button class="neu-action-btn btn-danger btn-delete" data-id="${rec.id}" title="Kaydı Sil">
-            <span>🗑️ Sil</span>
-          </button>
-        </div>
-      `;
-    }
-
-    card.innerHTML = `
-      <div class="card-head">
-        <div class="head-identity">
-          <div class="avatar-badge">${avatar}</div>
-          <div class="head-texts">
-            <span class="${isVeh ? 'plate-text' : 'driver-text'}">${escapeHtml(rec.title)}</span>
-            <span class="type-tag">${escapeHtml(rec.subType || '')}</span>
-          </div>
-        </div>
-        <div class="card-urgency-badge ${urgency.status}">
-          <span>${urgency.text}</span>
-        </div>
-      </div>
-
-      <div class="card-rows">
-        ${rowsHtml}
-      </div>
-
-      ${rec.notes ? `<div class="card-notes">📝 ${escapeHtml(rec.notes)}</div>` : ''}
-
-      ${actionsHtml}
-    `;
-
-    // Wire desktop actions
-    if (!isMobile) {
-      const renewBtn = card.querySelector('.btn-renew');
-      if (renewBtn) {
-        renewBtn.addEventListener('click', () => openQuickModal(rec.id));
-      }
-
-      const deleteBtn = card.querySelector('.btn-delete');
-      if (deleteBtn) {
-        deleteBtn.addEventListener('click', () => deleteRecord(rec.id));
-      }
-    }
-
-    grid.appendChild(card);
   });
 }
 
-function buildRowHtml(icon, label, dateStr) {
-  if (!dateStr) return '';
-  const days = getDaysRemaining(dateStr);
-  let statusClass = 'safe';
-  let tagText = `${days} gün`;
+function setupSearch() {
+  const searchInput = document.getElementById('searchInput');
+  const clearBtn = document.getElementById('clearSearchBtn');
 
-  if (days < 0) {
-    statusClass = 'critical';
-    tagText = `${Math.abs(days)}g geçti!`;
-  } else if (days === 0) {
-    statusClass = 'critical';
-    tagText = 'Bugün!';
-  } else if (days <= 7) {
-    statusClass = 'critical';
-    tagText = `${days} gün!`;
-  } else if (days <= 30) {
-    statusClass = 'warning';
-    tagText = `${days} gün`;
+  if (searchInput) {
+    searchInput.addEventListener('input', (e) => {
+      currentSearchQuery = e.target.value.trim().toLowerCase();
+      if (clearBtn) clearBtn.style.display = currentSearchQuery ? 'block' : 'none';
+      renderCurrentView();
+    });
   }
 
-  return `
-    <div class="neu-row">
-      <div class="row-left">
-        <span>${icon}</span>
-        <span>${label}</span>
-      </div>
-      <div class="row-right">
-        <span class="row-date">${formatDateTurkish(dateStr)}</span>
-        <span class="row-tag ${statusClass}">${tagText}</span>
-      </div>
-    </div>
-  `;
+  if (clearBtn && searchInput) {
+    clearBtn.addEventListener('click', () => {
+      searchInput.value = '';
+      currentSearchQuery = '';
+      clearBtn.style.display = 'none';
+      searchInput.focus();
+      renderCurrentView();
+    });
+  }
+
+  const resetBtn = document.getElementById('btnResetFilters');
+  if (resetBtn) {
+    resetBtn.addEventListener('click', () => {
+      currentStatFilter = 'all';
+      currentSubFilter = 'all';
+      currentSearchQuery = '';
+      if (searchInput) searchInput.value = '';
+      if (clearBtn) clearBtn.style.display = 'none';
+      document.querySelectorAll('.leb-stat-card').forEach(c => {
+        c.classList.toggle('active-stat', c.dataset.filter === 'all');
+      });
+      renderSubFilterPills();
+      renderCurrentView();
+    });
+  }
 }
 
+// --- 10. Update Stats Summary Counters ---
 function updateStats() {
-  const allRecords = getStoredRecords(false);
+  const records = getStoredRecords(false);
 
-  // 1. Badge counters on the main segmented buttons
-  const vehCount = allRecords.filter(r => r.type === 'vehicle').length;
-  const drvCount = allRecords.filter(r => r.type === 'driver').length;
+  const vehicleRecords = records.filter(r => r.type === 'vehicle');
+  const driverRecords = records.filter(r => r.type === 'driver');
 
-  const bVeh = document.getElementById('badgeVehiclesCount');
-  const bDrv = document.getElementById('badgeDriversCount');
-  if (bVeh) bVeh.textContent = vehCount;
-  if (bDrv) bDrv.textContent = drvCount;
+  const bVehicles = document.getElementById('badgeVehiclesCount');
+  const bDrivers = document.getElementById('badgeDriversCount');
+  if (bVehicles) bVehicles.textContent = String(vehicleRecords.length);
+  if (bDrivers) bDrivers.textContent = String(driverRecords.length);
 
-  // 2. Summary stats for the active section only
-  const targetType = activeSection === 'vehicles' ? 'vehicle' : 'driver';
-  const records = allRecords.filter(r => r.type === targetType);
+  const activeRecords = currentSection === 'vehicles' ? vehicleRecords : driverRecords;
 
-  let crit = 0;
-  let warn = 0;
+  let total = activeRecords.length;
+  let critical = 0;
+  let warning = 0;
   let safe = 0;
 
-  records.forEach(r => {
-    const u = calculateRecordUrgency(r);
-    if (u.status === 'critical') crit++;
-    else if (u.status === 'warning') warn++;
+  activeRecords.forEach(rec => {
+    const urgency = calculateRecordUrgency(rec);
+    if (urgency.status === 'critical') critical++;
+    else if (urgency.status === 'warning') warning++;
     else safe++;
   });
 
@@ -809,152 +680,391 @@ function updateStats() {
   const elWarn = document.getElementById('statWarning');
   const elSafe = document.getElementById('statSafe');
 
-  if (elTotal) elTotal.textContent = records.length;
-  if (elCrit) elCrit.textContent = crit;
-  if (elWarn) elWarn.textContent = warn;
-  if (elSafe) elSafe.textContent = safe;
+  if (elTotal) elTotal.textContent = String(total);
+  if (elCrit) elCrit.textContent = String(critical);
+  if (elWarn) elWarn.textContent = String(warning);
+  if (elSafe) elSafe.textContent = String(safe);
 }
 
-// --- 11. Desktop Management: Add Record Modal ---
-function setupAddModal() {
-  const modal = document.getElementById('addModal');
-  const openBtn = document.getElementById('openAddModalBtn');
-  const closeBtn = document.getElementById('closeAddModalBtn');
-  const cancelVeh = document.getElementById('cancelVehicleBtn');
-  const cancelDrv = document.getElementById('cancelDriverBtn');
+// --- 11. Render Vertical Stacked List (Alt Alta Sıralı Liste) ---
+function renderCurrentView() {
+  updateStats();
 
-  const swVeh = document.getElementById('modalSwitchVehicle');
-  const swDrv = document.getElementById('modalSwitchDriver');
-  const fVeh = document.getElementById('vehicleForm');
-  const fDrv = document.getElementById('driverForm');
+  const container = document.getElementById('recordsList');
+  const emptyState = document.getElementById('emptyState');
+  if (!container) return;
 
-  // Hide open button completely on mobile!
-  if (isMobileDevice() && openBtn) {
-    openBtn.style.display = 'none';
+  const records = getStoredRecords(false);
+
+  // 1. Filter by Section (Araçlar vs Sürücüler)
+  let list = records.filter(r => r.type === (currentSection === 'vehicles' ? 'vehicle' : 'driver'));
+
+  // 2. Filter by SubType (Çekici, Dorse, Otomobil)
+  if (currentSubFilter !== 'all') {
+    list = list.filter(r => (r.subType || '') === currentSubFilter);
   }
 
-  function openModal() {
-    if (isMobileDevice()) return; // Strict guard!
-    if (modal) modal.classList.add('active');
+  // 3. Filter by Stat (Critical, Warning, Safe)
+  if (currentStatFilter !== 'all') {
+    list = list.filter(r => {
+      const u = calculateRecordUrgency(r);
+      return u.status === currentStatFilter;
+    });
+  }
 
-    // Auto-switch modal form to match current section
-    if (activeSection === 'vehicles') {
-      if (swVeh && swDrv && fVeh && fDrv) {
-        swVeh.classList.add('active');
-        swDrv.classList.remove('active');
-        fVeh.style.display = 'flex';
-        fDrv.style.display = 'none';
-      }
+  // 4. Filter by Search Query
+  if (currentSearchQuery) {
+    list = list.filter(r => {
+      const matchTitle = (r.title || '').toLowerCase().includes(currentSearchQuery);
+      const matchType = (r.subType || '').toLowerCase().includes(currentSearchQuery);
+      const matchNotes = (r.notes || '').toLowerCase().includes(currentSearchQuery);
+      const matchPassport = (r.passport || '').toLowerCase().includes(currentSearchQuery);
+      return matchTitle || matchType || matchNotes || matchPassport;
+    });
+  }
+
+  // 5. Sort by Urgency (Most critical first)
+  list.sort((a, b) => {
+    const uA = calculateRecordUrgency(a).minDays;
+    const uB = calculateRecordUrgency(b).minDays;
+    return uA - uB;
+  });
+
+  // Check if DOM render is identical to avoid layout shifts
+  const renderSignature = JSON.stringify(list.map(r => ({
+    id: r.id,
+    title: r.title,
+    subType: r.subType,
+    updatedAt: r.updatedAt,
+    u: calculateRecordUrgency(r).text
+  })));
+
+  if (renderSignature === lastRenderedHash && container.children.length === list.length) {
+    return;
+  }
+  lastRenderedHash = renderSignature;
+
+  container.innerHTML = '';
+
+  if (list.length === 0) {
+    if (emptyState) emptyState.style.display = 'block';
+    return;
+  }
+
+  if (emptyState) emptyState.style.display = 'none';
+
+  const isMobile = isMobileDevice();
+
+  list.forEach(rec => {
+    const urgency = calculateRecordUrgency(rec);
+    const row = document.createElement('div');
+    row.className = 'leb-row-card';
+    row.dataset.id = rec.id;
+
+    const icon = rec.type === 'vehicle'
+      ? (rec.subType === 'Dorse' ? '📦' : rec.subType === 'Otomobil' ? '🚗' : '🚛')
+      : '👤';
+
+    let datesHtml = '';
+    if (rec.type === 'vehicle') {
+      const inspDays = getDaysRemaining(rec.inspectionDate);
+      const inspStatus = inspDays !== null ? (inspDays <= 7 ? 'critical' : inspDays <= 30 ? 'warning' : 'safe') : 'safe';
+
+      datesHtml = `
+        <span class="date-tag highlight-tag ${inspStatus}-tag">
+          <strong>🛠️ Muayene:</strong> ${formatDisplayDate(rec.inspectionDate)}
+        </span>
+        ${rec.insuranceDate ? `
+          <span class="date-tag">
+            <strong>📄 Sigorta:</strong> ${formatDisplayDate(rec.insuranceDate)}
+          </span>
+        ` : ''}
+        ${rec.greenCardDate ? `
+          <span class="date-tag">
+            <strong>🌐 Yeşil Kart:</strong> ${formatDisplayDate(rec.greenCardDate)}
+          </span>
+        ` : ''}
+      `;
     } else {
-      if (swVeh && swDrv && fVeh && fDrv) {
-        swDrv.classList.add('active');
-        swVeh.classList.remove('active');
-        fDrv.style.display = 'flex';
-        fVeh.style.display = 'none';
+      const visaDays = getDaysRemaining(rec.visaDate);
+      const visaStatus = visaDays !== null ? (visaDays <= 7 ? 'critical' : visaDays <= 30 ? 'warning' : 'safe') : 'safe';
+
+      datesHtml = `
+        <span class="date-tag highlight-tag ${visaStatus}-tag">
+          <strong>🛂 Vize:</strong> ${formatDisplayDate(rec.visaDate)}
+        </span>
+        ${rec.licenseDate ? `
+          <span class="date-tag">
+            <strong>🪪 Ehliyet:</strong> ${formatDisplayDate(rec.licenseDate)}
+          </span>
+        ` : ''}
+        ${rec.passport ? `
+          <span class="date-tag">
+            <strong>📘 Pasaport:</strong> ${escapeHtml(rec.passport)}
+          </span>
+        ` : ''}
+      `;
+    }
+
+    const actionButtonsHtml = isMobile ? '' : `
+      <div class="card-actions">
+        <button type="button" class="action-btn btn-quick-date" data-id="${rec.id}">
+          📅 Güncelle
+        </button>
+        <button type="button" class="action-btn action-btn-del btn-delete" data-id="${rec.id}" title="Kaydı Sil">
+          🗑️
+        </button>
+      </div>
+    `;
+
+    row.innerHTML = `
+      <div class="row-top-mobile">
+        <div class="row-identity">
+          <div class="row-icon-badge">${icon}</div>
+          <div class="row-texts">
+            <span class="row-title">${escapeHtml(rec.title)}</span>
+            <div class="row-meta-line">
+              <span class="row-type-pill">${escapeHtml(rec.subType || (rec.type === 'vehicle' ? 'Çekici' : 'Kaptan Şoför'))}</span>
+              ${rec.notes ? `<span class="row-note-inline" title="${escapeHtml(rec.notes)}">${escapeHtml(rec.notes)}</span>` : ''}
+            </div>
+          </div>
+        </div>
+        <div class="row-right">
+          <span class="urgency-badge badge-${urgency.status}">
+            ${urgency.text}
+          </span>
+          ${actionButtonsHtml}
+        </div>
+      </div>
+      <div class="row-dates">
+        ${datesHtml}
+      </div>
+    `;
+
+    container.appendChild(row);
+  });
+
+  // Attach event listeners to desktop action buttons
+  if (!isMobile) {
+    container.querySelectorAll('.btn-quick-date').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        openQuickModal(btn.dataset.id);
+      });
+    });
+
+    container.querySelectorAll('.btn-delete').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        deleteRecord(btn.dataset.id);
+      });
+    });
+  }
+}
+
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+// --- 12. Desktop-Only Modals: Add & Quick Update ---
+let activeQuickRecordId = null;
+
+function setupModals() {
+  const openAddBtn = document.getElementById('openAddModalBtn');
+  const addModal = document.getElementById('addModal');
+  const closeAddBtn = document.getElementById('closeAddModalBtn');
+  const cancelVehicleBtn = document.getElementById('cancelVehicleBtn');
+  const cancelDriverBtn = document.getElementById('cancelDriverBtn');
+
+  const switchVehicle = document.getElementById('modalSwitchVehicle');
+  const switchDriver = document.getElementById('modalSwitchDriver');
+  const vehicleForm = document.getElementById('vehicleForm');
+  const driverForm = document.getElementById('driverForm');
+
+  if (isMobileDevice()) {
+    if (openAddBtn) openAddBtn.style.display = 'none';
+    return;
+  }
+
+  function openAddModal() {
+    if (addModal) {
+      addModal.classList.add('active');
+      if (currentSection === 'vehicles') {
+        activateModalTab('vehicle');
+      } else {
+        activateModalTab('driver');
       }
     }
   }
 
-  function closeModal() {
-    if (modal) modal.classList.remove('active');
+  function closeAddModal() {
+    if (addModal) {
+      addModal.classList.remove('active');
+      if (vehicleForm) vehicleForm.reset();
+      if (driverForm) driverForm.reset();
+    }
   }
 
-  if (openBtn) openBtn.addEventListener('click', openModal);
-  if (closeBtn) closeBtn.addEventListener('click', closeModal);
-  if (cancelVeh) cancelVeh.addEventListener('click', closeModal);
-  if (cancelDrv) cancelDrv.addEventListener('click', closeModal);
-
-  if (swVeh && swDrv && fVeh && fDrv) {
-    swVeh.addEventListener('click', () => {
-      swVeh.classList.add('active');
-      swDrv.classList.remove('active');
-      fVeh.style.display = 'flex';
-      fDrv.style.display = 'none';
-    });
-
-    swDrv.addEventListener('click', () => {
-      swDrv.classList.add('active');
-      swVeh.classList.remove('active');
-      fDrv.style.display = 'flex';
-      fVeh.style.display = 'none';
-    });
+  function activateModalTab(type) {
+    if (type === 'vehicle') {
+      if (switchVehicle) switchVehicle.classList.add('active');
+      if (switchDriver) switchDriver.classList.remove('active');
+      if (vehicleForm) vehicleForm.style.display = 'flex';
+      if (driverForm) driverForm.style.display = 'none';
+    } else {
+      if (switchDriver) switchDriver.classList.add('active');
+      if (switchVehicle) switchVehicle.classList.remove('active');
+      if (driverForm) driverForm.style.display = 'flex';
+      if (vehicleForm) vehicleForm.style.display = 'none';
+    }
   }
 
-  // Vehicle Submit
-  if (fVeh) {
-    fVeh.addEventListener('submit', (e) => {
+  if (openAddBtn) openAddBtn.addEventListener('click', openAddModal);
+  if (closeAddBtn) closeAddBtn.addEventListener('click', closeAddModal);
+  if (cancelVehicleBtn) cancelVehicleBtn.addEventListener('click', closeAddModal);
+  if (cancelDriverBtn) cancelDriverBtn.addEventListener('click', closeAddModal);
+
+  if (switchVehicle) switchVehicle.addEventListener('click', () => activateModalTab('vehicle'));
+  if (switchDriver) switchDriver.addEventListener('click', () => activateModalTab('driver'));
+
+  // Vehicle Form Submit
+  if (vehicleForm) {
+    vehicleForm.addEventListener('submit', (e) => {
       e.preventDefault();
-      const plate = document.getElementById('inputPlate').value.trim().toUpperCase();
-      const type = document.getElementById('selectVehicleType').value;
-      const inspectionDate = document.getElementById('inputInspectionDate').value;
-      const insuranceDate = document.getElementById('inputInsuranceDate').value;
-      const greenCardDate = document.getElementById('inputGreenCardDate').value;
+      const plate = document.getElementById('inputPlate').value.trim();
+      const vType = document.getElementById('selectVehicleType').value;
+      const inspDate = document.getElementById('inputInspectionDate').value;
+      const insDate = document.getElementById('inputInsuranceDate').value || null;
+      const greenDate = document.getElementById('inputGreenCardDate').value || null;
       const notes = document.getElementById('inputVehicleNotes').value.trim();
 
-      if (!plate || !inspectionDate) {
-        alert('Lütfen plaka ve muayene bitiş tarihini girin.');
-        return;
-      }
+      if (!plate || !inspDate) return;
 
-      addRecord({
+      const newRec = {
+        id: 'rec_veh_' + Date.now(),
         type: 'vehicle',
-        title: plate,
-        subType: type, // Çekici, Dorse, Otomobil
-        inspectionDate,
-        insuranceDate: insuranceDate || null,
-        greenCardDate: greenCardDate || null,
-        notes
-      });
+        title: plate.toUpperCase(),
+        subType: vType,
+        inspectionDate: inspDate,
+        insuranceDate: insDate,
+        greenCardDate: greenDate,
+        notes: notes || '',
+        createdAt: new Date().toISOString(),
+        updatedAt: Date.now(),
+        deleted: false
+      };
 
-      fVeh.reset();
-      closeModal();
+      const records = getStoredRecords(true);
+      records.unshift(newRec);
+      saveRecordsLocally(records);
+      closeAddModal();
+      renderCurrentView();
+      syncWithCloud({ isManual: false });
     });
   }
 
-  // Driver Submit
-  if (fDrv) {
-    fDrv.addEventListener('submit', (e) => {
+  // Driver Form Submit
+  if (driverForm) {
+    driverForm.addEventListener('submit', (e) => {
       e.preventDefault();
       const name = document.getElementById('inputDriverName').value.trim();
       const visaDate = document.getElementById('inputVisaDate').value;
-      const licenseDate = document.getElementById('inputLicenseDate').value;
+      const licDate = document.getElementById('inputLicenseDate').value || null;
       const passport = document.getElementById('inputPassport').value.trim();
       const notes = document.getElementById('inputDriverNotes').value.trim();
 
-      if (!name || !visaDate) {
-        alert('Lütfen sürücü adı ve vize bitiş tarihini girin.');
-        return;
-      }
+      if (!name || !visaDate) return;
 
-      addRecord({
+      const newRec = {
+        id: 'rec_drv_' + Date.now(),
         type: 'driver',
         title: name,
         subType: 'Kaptan Şoför',
-        visaDate,
-        licenseDate: licenseDate || null,
-        passport: passport || null,
-        notes
-      });
+        visaDate: visaDate,
+        licenseDate: licDate,
+        passport: passport || '',
+        notes: notes || '',
+        createdAt: new Date().toISOString(),
+        updatedAt: Date.now(),
+        deleted: false
+      };
 
-      fDrv.reset();
-      closeModal();
+      const records = getStoredRecords(true);
+      records.unshift(newRec);
+      saveRecordsLocally(records);
+      closeAddModal();
+      renderCurrentView();
+      syncWithCloud({ isManual: false });
+    });
+  }
+
+  // Quick Modal Controls
+  const quickModal = document.getElementById('quickModal');
+  const closeQuickBtn = document.getElementById('closeQuickModalBtn');
+  const cancelQuickBtn = document.getElementById('cancelQuickBtn');
+  const saveQuickBtn = document.getElementById('saveQuickBtn');
+
+  function closeQuickModal() {
+    if (quickModal) quickModal.classList.remove('active');
+    activeQuickRecordId = null;
+  }
+
+  if (closeQuickBtn) closeQuickBtn.addEventListener('click', closeQuickModal);
+  if (cancelQuickBtn) cancelQuickBtn.addEventListener('click', closeQuickModal);
+
+  // Preset buttons (+6 Ay, +1 Yıl, +2 Yıl)
+  const presets = document.querySelectorAll('.preset-pill');
+  presets.forEach(p => {
+    p.addEventListener('click', () => {
+      presets.forEach(x => x.classList.remove('active'));
+      p.classList.add('active');
+      const months = parseInt(p.dataset.months, 10);
+      const dateInput = document.getElementById('quickDateInput');
+      if (dateInput) {
+        const d = new Date();
+        d.setMonth(d.getMonth() + months);
+        dateInput.value = d.toISOString().split('T')[0];
+      }
+    });
+  });
+
+  if (saveQuickBtn) {
+    saveQuickBtn.addEventListener('click', () => {
+      if (!activeQuickRecordId) return;
+      const field = document.getElementById('quickFieldSelect').value;
+      const dateVal = document.getElementById('quickDateInput').value;
+
+      if (!dateVal) return;
+
+      const records = getStoredRecords(true);
+      const rec = records.find(r => r.id === activeQuickRecordId);
+      if (rec) {
+        rec[field] = dateVal;
+        rec.updatedAt = Date.now();
+        saveRecordsLocally(records);
+        closeQuickModal();
+        renderCurrentView();
+        syncWithCloud({ isManual: false });
+      }
     });
   }
 }
 
-// --- 12. Desktop Management: Quick Renewal Modal ---
-let activeRenewalId = null;
-
 function openQuickModal(id) {
-  if (isMobileDevice()) return; // Strict guard!
+  if (isMobileDevice()) return;
 
   const records = getStoredRecords(false);
   const rec = records.find(r => r.id === id);
   if (!rec) return;
 
-  activeRenewalId = id;
-
-  const modal = document.getElementById('quickModal');
+  activeQuickRecordId = id;
+  const quickModal = document.getElementById('quickModal');
   const titleEl = document.getElementById('quickRecordTitle');
   const selectEl = document.getElementById('quickFieldSelect');
   const dateInput = document.getElementById('quickDateInput');
@@ -965,216 +1075,79 @@ function openQuickModal(id) {
     selectEl.innerHTML = '';
     if (rec.type === 'vehicle') {
       selectEl.innerHTML = `
-        <option value="inspectionDate">🛠️ TÜVTÜRK Muayene Bitiş (${formatDateTurkish(rec.inspectionDate)})</option>
-        <option value="insuranceDate">📄 Sigorta / Kasko Bitiş (${formatDateTurkish(rec.insuranceDate)})</option>
-        <option value="greenCardDate">🌐 Yeşil Sigorta (${formatDateTurkish(rec.greenCardDate)})</option>
+        <option value="inspectionDate">🛠️ TÜVTÜRK Muayene Bitiş</option>
+        <option value="insuranceDate">📄 Sigorta / Kasko Bitiş</option>
+        <option value="greenCardDate">🌐 Yeşil Kart (Yurtdışı)</option>
       `;
     } else {
       selectEl.innerHTML = `
-        <option value="visaDate">🛂 Vize Bitiş Tarihi (${formatDateTurkish(rec.visaDate)})</option>
-        <option value="licenseDate">🪪 Ehliyet / SRC (${formatDateTurkish(rec.licenseDate)})</option>
+        <option value="visaDate">🛂 Vize Bitiş Tarihi</option>
+        <option value="licenseDate">🪪 Ehliyet / SRC Bitiş</option>
       `;
     }
+
+    selectEl.addEventListener('change', () => {
+      const field = selectEl.value;
+      if (dateInput && rec[field]) {
+        dateInput.value = rec[field];
+      }
+    });
   }
 
-  // Pre-fill +1 year
+  // Set default date (+1 Yıl preset)
+  const defaultDate = new Date();
+  defaultDate.setFullYear(defaultDate.getFullYear() + 1);
   if (dateInput) {
-    const d = new Date();
-    d.setFullYear(d.getFullYear() + 1);
-    dateInput.value = d.toISOString().split('T')[0];
+    dateInput.value = defaultDate.toISOString().split('T')[0];
   }
 
-  if (modal) modal.classList.add('active');
+  if (quickModal) quickModal.classList.add('active');
 }
 
-function closeQuickModal() {
-  const modal = document.getElementById('quickModal');
-  if (modal) modal.classList.remove('active');
-  activeRenewalId = null;
-}
+function deleteRecord(id) {
+  if (isMobileDevice()) return;
+  const records = getStoredRecords(true);
+  const rec = records.find(r => r.id === id);
+  if (!rec) return;
 
-function saveQuickRenewal() {
-  if (!activeRenewalId || isMobileDevice()) return;
-
-  const selectEl = document.getElementById('quickFieldSelect');
-  const dateInput = document.getElementById('quickDateInput');
-  if (!selectEl || !dateInput || !dateInput.value) return;
-
-  const field = selectEl.value;
-  const newDate = dateInput.value;
-
-  const all = getStoredRecords(true);
-  const target = all.find(r => r.id === activeRenewalId);
-  if (target) {
-    target[field] = newDate;
-    target.updatedAt = Date.now();
-    saveRecordsLocally(all);
-    renderRecords(true);
-    closeQuickModal();
+  if (confirm(`"${rec.title}" kaydını silmek istediğinize emin misiniz?`)) {
+    rec.deleted = true;
+    rec.updatedAt = Date.now();
+    saveRecordsLocally(records);
+    renderCurrentView();
     syncWithCloud({ isManual: false });
   }
 }
 
-// --- 13. Record Mutations ---
-function addRecord(data) {
-  const all = getStoredRecords(true);
-  const newRec = {
-    id: 'rec_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
-    createdAt: new Date().toISOString(),
-    updatedAt: Date.now(),
-    deleted: false,
-    ...data
-  };
-
-  all.unshift(newRec);
-  saveRecordsLocally(all);
-  renderRecords(true);
-  syncWithCloud({ isManual: false });
-}
-
-function deleteRecord(id) {
-  if (isMobileDevice()) return; // Strict guard!
-
-  const all = getStoredRecords(true);
-  const target = all.find(r => r.id === id);
-  if (target) {
-    if (confirm(`"${target.title}" kaydını silmek istediğinize emin misiniz?`)) {
-      target.deleted = true;
-      target.updatedAt = Date.now();
-      saveRecordsLocally(all);
-      renderRecords(true);
-      syncWithCloud({ isManual: false });
-    }
-  }
-}
-
-// --- 14. Event Wiring & Startup ---
+// --- 13. Initialization Lifecycle ---
 document.addEventListener('DOMContentLoaded', () => {
   registerServiceWorker();
   setupNetworkMonitoring();
   setupNotifications();
   setupSectionTabs();
-  setupAddModal();
-  renderSubFilters();
-  renderRecords(true);
-  updateStats();
+  renderSubFilterPills();
+  setupStatFilters();
+  setupSearch();
+  setupModals();
 
-  // Initial Sync
-  if (navigator.onLine) {
-    syncWithCloud({ isManual: false });
+  // Initial local render
+  renderCurrentView();
+
+  // Manual sync button
+  const manualBtn = document.getElementById('manualSyncBtn');
+  if (manualBtn) {
+    manualBtn.addEventListener('click', () => syncWithCloud({ isManual: true }));
   }
 
-  // Bottom Manual Sync Button
-  const syncBtn = document.getElementById('manualSyncBtn');
-  if (syncBtn) {
-    syncBtn.addEventListener('click', () => {
-      syncWithCloud({ isManual: true });
-    });
-  }
-
-  // Search Input
-  const searchInput = document.getElementById('searchInput');
-  const clearSearchBtn = document.getElementById('clearSearchBtn');
-
-  if (searchInput) {
-    searchInput.addEventListener('input', (e) => {
-      currentSearch = e.target.value.trim();
-      if (clearSearchBtn) {
-        clearSearchBtn.style.display = currentSearch ? 'block' : 'none';
-      }
-      renderRecords();
-    });
-  }
-
-  if (clearSearchBtn) {
-    clearSearchBtn.addEventListener('click', () => {
-      if (searchInput) searchInput.value = '';
-      currentSearch = '';
-      clearSearchBtn.style.display = 'none';
-      renderRecords();
-    });
-  }
-
-  // Summary Stat Cards as Quick Filter
-  document.querySelectorAll('.neu-stat-card').forEach(card => {
-    card.addEventListener('click', () => {
-      const f = card.dataset.filter;
-      if (f) {
-        activeFilter = f;
-        document.querySelectorAll('.neu-pill').forEach(p => {
-          if (p.dataset.filter === f) p.classList.add('active');
-          else p.classList.remove('active');
-        });
-        renderRecords();
-      }
-    });
-  });
-
-  // Quick Renewal Modal Actions
-  const closeQuickBtn = document.getElementById('closeQuickModalBtn');
-  const cancelQuickBtn = document.getElementById('cancelQuickBtn');
-  const saveQuickBtn = document.getElementById('saveQuickBtn');
-
-  if (closeQuickBtn) closeQuickBtn.addEventListener('click', closeQuickModal);
-  if (cancelQuickBtn) cancelQuickBtn.addEventListener('click', closeQuickModal);
-  if (saveQuickBtn) saveQuickBtn.addEventListener('click', saveQuickRenewal);
-
-  // Date Preset Pills (+6 Ay, +1 Yıl, +2 Yıl)
-  document.querySelectorAll('.preset-pill').forEach(pill => {
-    pill.addEventListener('click', () => {
-      document.querySelectorAll('.preset-pill').forEach(b => b.classList.remove('active'));
-      pill.classList.add('active');
-      const months = parseInt(pill.dataset.months || '12', 10);
-      const input = document.getElementById('quickDateInput');
-      if (input) {
-        const d = new Date();
-        d.setMonth(d.getMonth() + months);
-        input.value = d.toISOString().split('T')[0];
-      }
-    });
-  });
-
-  // Reset Filters Button in Empty State
-  const btnReset = document.getElementById('btnResetFilters');
-  if (btnReset) {
-    btnReset.addEventListener('click', () => {
-      activeFilter = 'all';
-      currentSearch = '';
-      if (searchInput) searchInput.value = '';
-      if (clearSearchBtn) clearSearchBtn.style.display = 'none';
-      renderSubFilters();
-      renderRecords();
-    });
-  }
-
-  // Toast Button
+  // Update app toast button
   const updateBtn = document.getElementById('btnUpdateApp');
   if (updateBtn) {
     updateBtn.addEventListener('click', applyUpdate);
   }
 
-  // Auto-sync on Tab Focus, Window Focus, or Phone Unlock
-  document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible' && navigator.onLine) {
-      syncWithCloud({ isManual: false });
-      triggerNotificationCheck();
-      if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-        navigator.serviceWorker.ready.then(reg => reg.update()).catch(() => {});
-      }
-    }
-  });
+  // Fetch remote data on startup
+  syncWithCloud({ isManual: false });
 
-  window.addEventListener('focus', () => {
-    if (navigator.onLine) {
-      syncWithCloud({ isManual: false });
-      triggerNotificationCheck();
-    }
-  });
-
-  // Background silent polling every 3.5 seconds
-  setInterval(() => {
-    if (navigator.onLine && document.visibilityState === 'visible') {
-      syncWithCloud({ isManual: false });
-    }
-  }, 3500);
+  // Mobile alert notification check
+  setTimeout(() => triggerNotificationCheck(false), 2000);
 });

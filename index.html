@@ -4,43 +4,44 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   
-  <title>Leb Lojistik - Filo & Sürücü Takip</title>
-  <meta name="description" content="Lojistik filonuz için vize ve muayene süreleri takip merkezi.">
+  <title>Leb - Filo & Sürücü Takip</title>
+  <meta name="description" content="Filo ve sürücüleriniz için muayene, vize ve ehliyet bitiş süreleri takip merkezi.">
 
   <!-- iOS PWA Meta Tags -->
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Leb Lojistik">
-  <link rel="apple-touch-icon" href="icons/apple-touch-icon-180.png?v=3.1.0">
-  <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon-180.png?v=3.1.0">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Leb">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon-180.png?v=3.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon-180.png?v=3.2.0">
 
   <!-- Web App Manifest -->
-  <link rel="manifest" href="manifest.webmanifest?v=3.1.0">
+  <link rel="manifest" href="manifest.webmanifest?v=3.2.0">
 
   <!-- Favicon & Theme Color -->
-  <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon.png?v=3.1.0">
-  <link rel="icon" type="image/svg+xml" href="icons/icon.svg?v=3.1.0">
-  <meta name="theme-color" content="#181B20">
+  <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon.png?v=3.2.0">
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png?v=3.2.0">
+  <link rel="icon" type="image/svg+xml" href="icons/icon.svg?v=3.2.0">
+  <meta name="theme-color" content="#F8F9FA">
 
-  <!-- Stylesheet (Neumorphism v3.1.0) -->
-  <link rel="stylesheet" href="css/app.css?v=3.1.0">
+  <!-- Stylesheet (Leb Minimalist White v3.2.0) -->
+  <link rel="stylesheet" href="css/app.css?v=3.2.0">
 </head>
 <body>
 
-  <!-- Top Neumorphic Header -->
-  <header class="neu-header">
-    <div class="neu-header-inner">
+  <!-- Top Minimal Header -->
+  <header class="leb-header">
+    <div class="leb-header-inner">
       <div class="brand-box">
-        <div class="brand-neu-icon">🚚</div>
+        <img src="icons/icon-192.png?v=3.2.0" alt="Leb Logo" class="brand-avatar-img">
         <div class="brand-titles">
-          <h1 class="brand-main">LEB LOJİSTİK</h1>
-          <span class="brand-sub">Filo & Sürücü Uyumluluk</span>
+          <h1 class="brand-main">Leb</h1>
+          <span class="brand-sub">Filo & Sürücü Takip</span>
         </div>
       </div>
 
       <!-- Desktop Management Action (Strictly Hidden on Mobile) -->
       <div class="desktop-admin-bar">
-        <button id="openAddModalBtn" class="neu-btn neu-btn-primary add-btn">
+        <button id="openAddModalBtn" class="leb-btn leb-btn-primary add-btn">
           <span class="plus-icon">+</span>
           <span id="addBtnLabel">Yeni Araç Ekle</span>
         </button>
@@ -48,101 +49,101 @@
     </div>
   </header>
 
-  <!-- Main Viewport -->
-  <main class="neu-main">
+  <!-- Main Viewport (Centered, Max-Width Container) -->
+  <main class="leb-main">
 
-    <!-- Mobile Notification Banner (If on mobile & permission not granted) -->
-    <div id="mobileNotifBanner" class="neu-banner" style="display: none;">
+    <!-- Mobile Notification Banner -->
+    <div id="mobileNotifBanner" class="leb-banner" style="display: none;">
       <div class="banner-info">
         <span class="banner-icon">🔔</span>
         <div class="banner-texts">
-          <strong>Mobil Bildirimleri Aç</strong>
+          <strong>Bildirimleri Aç</strong>
           <p>Süresi yaklaşan muayene ve vizeler telefonunuza bildirilsin.</p>
         </div>
       </div>
-      <button id="btnEnableNotif" class="neu-btn neu-btn-sm">Etkinleştir</button>
+      <button id="btnEnableNotif" class="leb-btn leb-btn-sm">Etkinleştir</button>
     </div>
 
     <!-- PRIMARY SEGMENTED CONTROL: Separate Araçlar & Sürücüler -->
-    <section class="neu-segmented-wrapper">
-      <div class="neu-segmented-track" role="tablist">
-        <button id="tabVehicles" class="neu-seg-btn active" role="tab" aria-selected="true" data-section="vehicles">
+    <section class="leb-segmented-wrapper">
+      <div class="leb-segmented-track" role="tablist">
+        <button id="tabVehicles" class="leb-seg-btn active" role="tab" aria-selected="true" data-section="vehicles">
           <span class="seg-icon">🚚</span>
           <span class="seg-text">Araçlar</span>
-          <span id="badgeVehiclesCount" class="neu-counter-pill">0</span>
+          <span id="badgeVehiclesCount" class="leb-counter-pill">0</span>
         </button>
-        <button id="tabDrivers" class="neu-seg-btn" role="tab" aria-selected="false" data-section="drivers">
+        <button id="tabDrivers" class="leb-seg-btn" role="tab" aria-selected="false" data-section="drivers">
           <span class="seg-icon">👤</span>
           <span class="seg-text">Sürücüler</span>
-          <span id="badgeDriversCount" class="neu-counter-pill">0</span>
+          <span id="badgeDriversCount" class="leb-counter-pill">0</span>
         </button>
       </div>
     </section>
 
-    <!-- Stat Metric Strip (Clean Neumorphic Summary) -->
-    <section class="neu-stats-strip">
-      <div class="neu-stat-card stat-total" data-filter="all">
+    <!-- Stat Metric Strip (Minimalist Clean Summary) -->
+    <section class="leb-stats-strip">
+      <div class="leb-stat-card stat-total active-stat" data-filter="all">
         <span class="stat-num" id="statTotal">0</span>
-        <span class="stat-title">Toplam Kayıt</span>
+        <span class="stat-title">Toplam</span>
       </div>
-      <div class="neu-stat-card stat-critical" data-filter="critical">
+      <div class="leb-stat-card stat-critical" data-filter="critical">
         <span class="stat-num color-red" id="statCritical">0</span>
-        <span class="stat-title">🔴 Kritik (&lt;7 Gün)</span>
+        <span class="stat-title">🔴 Kritik (&lt;7G)</span>
       </div>
-      <div class="neu-stat-card stat-warning" data-filter="warning">
+      <div class="leb-stat-card stat-warning" data-filter="warning">
         <span class="stat-num color-amber" id="statWarning">0</span>
-        <span class="stat-title">🟡 Yaklaşan (&lt;30 Gün)</span>
+        <span class="stat-title">🟡 Yaklaşan (&lt;30G)</span>
       </div>
-      <div class="neu-stat-card stat-safe" data-filter="safe">
+      <div class="leb-stat-card stat-safe" data-filter="safe">
         <span class="stat-num color-green" id="statSafe">0</span>
         <span class="stat-title">🟢 Sorunsuz</span>
       </div>
     </section>
 
     <!-- Search & Sub-Filter Bar -->
-    <section class="neu-controls-row">
-      <!-- Inset Neumorphic Search Input -->
-      <div class="neu-search-container">
-        <svg class="neu-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+    <section class="leb-controls-row">
+      <!-- Search Input -->
+      <div class="leb-search-container">
+        <svg class="leb-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
           <circle cx="11" cy="11" r="8"></circle>
           <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
         </svg>
-        <input type="text" id="searchInput" placeholder="Plaka, Sürücü veya Not Ara..." autocomplete="off">
-        <button id="clearSearchBtn" class="neu-clear-btn" aria-label="Temizle" style="display: none;">&times;</button>
+        <input type="text" id="searchInput" placeholder="Plaka, İsim veya Not Ara..." autocomplete="off">
+        <button id="clearSearchBtn" class="leb-clear-btn" aria-label="Temizle" style="display: none;">&times;</button>
       </div>
 
       <!-- Sub-Filter Pills (Dynamically populated based on active section) -->
-      <div id="subFiltersTrack" class="neu-filter-pills" role="tablist">
+      <div id="subFiltersTrack" class="leb-filter-pills" role="tablist">
         <!-- Rendered by JS based on Vehicles vs Drivers -->
       </div>
     </section>
 
-    <!-- Records Grid Container -->
-    <section class="neu-records-container">
-      <div id="recordsGrid" class="neu-grid">
-        <!-- Dynamically rendered by app.js -->
+    <!-- Records Vertical List Container (Alt Alta Sıralı Liste) -->
+    <section class="leb-records-container">
+      <div id="recordsList" class="leb-list" role="list">
+        <!-- Dynamically rendered by app.js as stacked vertical rows -->
       </div>
 
       <!-- Empty State -->
-      <div id="emptyState" class="neu-empty-card" style="display: none;">
-        <div class="neu-empty-icon">📁</div>
-        <h3 class="neu-empty-title">Kayıt Bulunamadı</h3>
-        <p class="neu-empty-desc">Bu kategoride veya arama kriterinde kayıt bulunmuyor.</p>
-        <button id="btnResetFilters" class="neu-btn neu-btn-sm">Filtreleri Sıfırla</button>
+      <div id="emptyState" class="leb-empty-card" style="display: none;">
+        <div class="leb-empty-icon">📋</div>
+        <h3 class="leb-empty-title">Kayıt Bulunamadı</h3>
+        <p class="leb-empty-desc">Bu kriterde listelenecek kayıt bulunmuyor.</p>
+        <button id="btnResetFilters" class="leb-btn leb-btn-sm">Filtreleri Sıfırla</button>
       </div>
     </section>
 
   </main>
 
-  <!-- Quiet Bottom Status Footer (Sync Moved Down Out Of The Way) -->
-  <footer class="neu-footer">
-    <div class="neu-footer-inner">
+  <!-- Quiet Bottom Status Footer -->
+  <footer class="leb-footer">
+    <div class="leb-footer-inner">
       <div class="sync-bottom-badge" id="bottomSyncBadge">
         <span class="sync-dot" id="syncStatusDot"></span>
         <span id="syncStatusText">Bulutla Eşitlendi</span>
       </div>
-      <button id="manualSyncBtn" class="neu-btn-icon" title="Şimdi Eşitle" aria-label="Eşitle">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+      <button id="manualSyncBtn" class="leb-btn-icon" title="Şimdi Eşitle" aria-label="Eşitle">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
           <polyline points="23 4 23 10 17 10"></polyline>
           <polyline points="1 20 1 14 7 14"></polyline>
           <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
@@ -152,11 +153,11 @@
   </footer>
 
   <!-- DESKTOP-ONLY MODAL: Yeni Kayıt Ekle (Hidden on Mobile) -->
-  <div id="addModal" class="neu-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="addModalHeading">
-    <div class="neu-modal-box">
-      <div class="neu-modal-head">
-        <h2 id="addModalHeading" class="neu-modal-title">Yeni Kayıt Ekle</h2>
-        <button id="closeAddModalBtn" class="neu-close-btn" aria-label="Kapat">&times;</button>
+  <div id="addModal" class="leb-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="addModalHeading">
+    <div class="leb-modal-box">
+      <div class="leb-modal-head">
+        <h2 id="addModalHeading" class="leb-modal-title">Yeni Kayıt Ekle</h2>
+        <button id="closeAddModalBtn" class="leb-close-btn" aria-label="Kapat">&times;</button>
       </div>
 
       <!-- Modal Type Switcher -->
@@ -170,7 +171,7 @@
       </div>
 
       <!-- Vehicle Form -->
-      <form id="vehicleForm" class="neu-form">
+      <form id="vehicleForm" class="leb-form">
         <div class="form-row">
           <div class="form-group">
             <label for="inputPlate">Araç Plakası *</label>
@@ -204,17 +205,17 @@
 
         <div class="form-group">
           <label for="inputVehicleNotes">Notlar / Açıklama</label>
-          <input type="text" id="inputVehicleNotes" placeholder="Şasi no, güzergah veya not...">
+          <input type="text" id="inputVehicleNotes" placeholder="Şasi no, hat veya not...">
         </div>
 
         <div class="modal-buttons">
-          <button type="button" id="cancelVehicleBtn" class="neu-btn">İptal</button>
-          <button type="submit" class="neu-btn neu-btn-primary">Araç Kaydet</button>
+          <button type="button" id="cancelVehicleBtn" class="leb-btn leb-btn-secondary">İptal</button>
+          <button type="submit" class="leb-btn leb-btn-primary">Araç Kaydet</button>
         </div>
       </form>
 
       <!-- Driver Form -->
-      <form id="driverForm" class="neu-form" style="display: none;">
+      <form id="driverForm" class="leb-form" style="display: none;">
         <div class="form-group">
           <label for="inputDriverName">Sürücü Adı Soyadı *</label>
           <input type="text" id="inputDriverName" placeholder="Örn: Ahmet Yılmaz" required>
@@ -242,19 +243,19 @@
         </div>
 
         <div class="modal-buttons">
-          <button type="button" id="cancelDriverBtn" class="neu-btn">İptal</button>
-          <button type="submit" class="neu-btn neu-btn-primary">Sürücü Kaydet</button>
+          <button type="button" id="cancelDriverBtn" class="leb-btn leb-btn-secondary">İptal</button>
+          <button type="submit" class="leb-btn leb-btn-primary">Sürücü Kaydet</button>
         </div>
       </form>
     </div>
   </div>
 
   <!-- DESKTOP-ONLY MODAL: Hızlı Tarih Güncelle (Hidden on Mobile) -->
-  <div id="quickModal" class="neu-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="quickModalHeading">
-    <div class="neu-modal-box sm-box">
-      <div class="neu-modal-head">
-        <h2 id="quickModalHeading" class="neu-modal-title">Tarih Güncelle</h2>
-        <button id="closeQuickModalBtn" class="neu-close-btn" aria-label="Kapat">&times;</button>
+  <div id="quickModal" class="leb-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="quickModalHeading">
+    <div class="leb-modal-box sm-box">
+      <div class="leb-modal-head">
+        <h2 id="quickModalHeading" class="leb-modal-title">Tarih Güncelle</h2>
+        <button id="closeQuickModalBtn" class="leb-close-btn" aria-label="Kapat">&times;</button>
       </div>
 
       <div class="quick-body">
@@ -280,20 +281,20 @@
         </div>
 
         <div class="modal-buttons">
-          <button type="button" id="cancelQuickBtn" class="neu-btn">İptal</button>
-          <button type="button" id="saveQuickBtn" class="neu-btn neu-btn-primary">Kaydet & Eşitle</button>
+          <button type="button" id="cancelQuickBtn" class="leb-btn leb-btn-secondary">İptal</button>
+          <button type="button" id="saveQuickBtn" class="leb-btn leb-btn-primary">Kaydet & Eşitle</button>
         </div>
       </div>
     </div>
   </div>
 
   <!-- Update Toast -->
-  <aside id="updateToast" class="neu-toast" aria-label="Güncelleme">
-    <span>✨ Leb Lojistik güncellendi!</span>
-    <button id="btnUpdateApp" class="neu-btn neu-btn-sm neu-btn-primary">Yenile</button>
+  <aside id="updateToast" class="leb-toast" aria-label="Güncelleme">
+    <span>✨ Leb güncellendi!</span>
+    <button id="btnUpdateApp" class="leb-btn leb-btn-sm leb-btn-primary">Yenile</button>
   </aside>
 
-  <!-- Script v3.1.0 -->
-  <script src="js/app.js?v=3.1.0"></script>
+  <!-- Script v3.2.0 -->
+  <script src="js/app.js?v=3.2.0"></script>
 </body>
 </html>

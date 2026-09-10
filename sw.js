@@ -1,6 +1,6 @@
-// Leb Lojistik - Service Worker v3.1.0 (Network-First & Web Notifications)
-const CACHE_VERSION = 'v3.1.0';
-const CACHE_NAME = `leb-lojistik-${CACHE_VERSION}`;
+// Leb - Service Worker v3.2.0 (Network-First & Web Notifications)
+const CACHE_VERSION = 'v3.2.0';
+const CACHE_NAME = `leb-app-${CACHE_VERSION}`;
 
 const PRECACHE_ASSETS = [
   './',
@@ -36,7 +36,7 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// 3. Fetch - Network-First for App Shell (HTML, JS, CSS) so updates appear instantly
+// 3. Fetch - Network-First for App Shell (HTML, JS, CSS, Manifest) so updates appear instantly
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
 
@@ -48,12 +48,13 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Network-First for Navigation and App Code (HTML, JS, CSS)
+  // Network-First for Navigation, App Code and Manifest
   const isCodeOrDoc = event.request.mode === 'navigate' ||
                       event.request.destination === 'document' ||
                       url.pathname.endsWith('.html') ||
                       url.pathname.endsWith('.js') ||
-                      url.pathname.endsWith('.css');
+                      url.pathname.endsWith('.css') ||
+                      url.pathname.endsWith('.webmanifest');
 
   if (isCodeOrDoc) {
     event.respondWith(
@@ -74,7 +75,25 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Cache-First for static media/icons with background revalidation
+  // For icons and media: Network-first with cache fallback to prevent stale icon issues
+  if (url.pathname.includes('/icons/')) {
+    event.respondWith(
+      fetch(event.request)
+        .then((networkResponse) => {
+          if (networkResponse && networkResponse.status === 200) {
+            const copy = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
+          }
+          return networkResponse;
+        })
+        .catch(async () => {
+          return caches.match(event.request);
+        })
+    );
+    return;
+  }
+
+  // Cache-First for other assets
   event.respondWith(
     caches.match(event.request).then((cached) => {
       if (cached) return cached;
@@ -97,24 +116,22 @@ self.addEventListener('message', (event) => {
 
   if (event.data && event.data.type === 'SHOW_NOTIFICATION') {
     const { title, body } = event.data;
-    self.registration.showNotification(title || 'Leb Lojistik Bildirimi', {
-      body: body || 'Süresi yaklaşan muayene ve vize kayıtları bulunmaktadır.',
-      icon: './icons/apple-touch-icon-180.png',
-      badge: './icons/favicon.png',
-      vibrate: [200, 100, 200],
-      tag: 'leb-compliance-alert',
-      renotify: true
+    self.registration.showNotification(title || 'Leb Bildirimi', {
+      body: body || 'Süresi yaklaşan muayene veya vize kaydı bulunuyor.',
+      icon: 'icons/icon-192.png?v=3.2.0',
+      badge: 'icons/favicon.png?v=3.2.0',
+      vibrate: [100, 50, 100],
+      data: { url: './' }
     });
   }
 });
 
-// 5. Notification Click - Focus or Open Window
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
   event.waitUntil(
-    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
-      for (const client of clientList) {
-        if (client.url && 'focus' in client) {
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
+      for (let client of windowClients) {
+        if (client.url.includes(self.registration.scope) && 'focus' in client) {
           return client.focus();
         }
       }

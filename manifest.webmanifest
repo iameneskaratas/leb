@@ -1,37 +1,45 @@
 {
-  "name": "Leb Lojistik",
-  "short_name": "Leb Lojistik",
-  "description": "Lojistik Filo ve Sürücü Takip Sistemi - Vize, Ehliyet ve Muayene Bitiş Süreleri",
-  "start_url": "./",
+  "id": "leb-app-pwa-v32",
+  "name": "Leb",
+  "short_name": "Leb",
+  "description": "Filo ve Sürücü Takip Sistemi - Vize, Ehliyet ve Muayene Bitiş Süreleri",
+  "start_url": "./?source=pwa",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#181B20",
-  "theme_color": "#181B20",
+  "background_color": "#F8F9FA",
+  "theme_color": "#F8F9FA",
   "categories": ["business", "productivity", "utilities"],
   "icons": [
     {
-      "src": "icons/apple-touch-icon-180.png",
-      "sizes": "180x180",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "icons/icon-192.png",
+      "src": "icons/icon-192.png?v=3.2.0",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "icons/icon-512.png",
+      "src": "icons/icon-512.png?v=3.2.0",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
-      "src": "icons/icon.svg",
+      "src": "icons/icon-512.png?v=3.2.0",
       "sizes": "512x512",
-      "type": "image/svg+xml"
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "icons/apple-touch-icon-180.png?v=3.2.0",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/favicon.png?v=3.2.0",
+      "sizes": "32x32",
+      "type": "image/png",
+      "purpose": "any"
     }
   ]
 }
