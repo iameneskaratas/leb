@@ -1,7 +1,7 @@
 /**
- * Leb - Minimalist Design System (v3.5.0)
- * Centered Header, Dynamic Scroll Blur, Zero Eye Strain,
- * Smooth Section Transitions, Mobile Search Removed
+ * Leb - Minimalist Design System (v3.6.0)
+ * Centered Header, Transparent Emblem, Zero Eye Strain,
+ * Centered Filters, Themed Selection Windows, Smooth Transitions
  */
 
 :root {
@@ -43,7 +43,7 @@
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
   --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.03), 0 2px 8px rgba(0, 0, 0, 0.02);
   --shadow-card-hover: 0 3px 10px rgba(0, 0, 0, 0.05);
-  --shadow-modal: 0 20px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
+  --shadow-modal: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
 
   /* Radii */
   --radius-sm: 6px;
@@ -81,7 +81,7 @@ body {
   overflow-x: hidden;
 }
 
-/* --- Centered Header with iOS Safe Area Support --- */
+/* --- Centered Header with Generous iOS Safe Area Spacing --- */
 .leb-header {
   position: sticky;
   top: 0;
@@ -89,8 +89,9 @@ body {
   /* At the top of page: 100% crystal clear, zero blur */
   background: var(--bg-app);
   border-bottom: 1px solid transparent;
-  padding-top: calc(env(safe-area-inset-top, 44px) + 6px);
-  padding-bottom: 10px;
+  /* Generous top spacing so header sits cleanly below Dynamic Island / status bar */
+  padding-top: calc(env(safe-area-inset-top, 47px) + 16px);
+  padding-bottom: 12px;
   padding-left: max(16px, env(safe-area-inset-left));
   padding-right: max(16px, env(safe-area-inset-right));
   transition: background 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
@@ -100,7 +101,7 @@ body {
 
 /* Blur effect only appears when scrolling down */
 .leb-header.is-scrolled {
-  background: rgba(248, 249, 250, 0.92);
+  background: rgba(248, 249, 250, 0.94);
   backdrop-filter: blur(12px) !important;
   -webkit-backdrop-filter: blur(12px) !important;
   border-bottom: 1px solid var(--border-subtle);
@@ -117,29 +118,30 @@ body {
   width: 100%;
 }
 
-/* Centered brand: only logo and 'Leb' */
+/* Centered brand: only transparent emblem and bold 'Leb' */
 .brand-centered {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 10px;
 }
 
+/* Transparent, single-layer logo (no outer boxes/borders) */
 .brand-avatar-img {
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
+  width: 42px;
+  height: 42px;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+  border-radius: 0;
   object-fit: contain;
-  background: #FFFFFF;
-  border: 1px solid var(--border-subtle);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
 }
 
 .brand-main {
-  font-size: 1.2rem;
-  font-weight: 700;
+  font-size: 1.75rem;
+  font-weight: 800;
   color: var(--text-primary);
-  letter-spacing: -0.02em;
+  letter-spacing: -0.03em;
   line-height: 1;
 }
 
@@ -197,7 +199,7 @@ body {
   width: 100%;
   max-width: 860px;
   margin: 0 auto;
-  padding-top: 14px;
+  padding-top: 10px;
   padding-bottom: max(32px, env(safe-area-inset-bottom));
   padding-left: max(16px, env(safe-area-inset-left));
   padding-right: max(16px, env(safe-area-inset-right));
@@ -352,11 +354,14 @@ body {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  align-items: center;
+  width: 100%;
 }
 
 .leb-search-container {
   position: relative;
   width: 100%;
+  max-width: 480px;
   display: flex;
   align-items: center;
 }
@@ -400,20 +405,19 @@ body {
   cursor: pointer;
 }
 
+/* Centered Sub-Filter Pills */
 .leb-filter-pills {
   display: flex;
   gap: 6px;
-  overflow-x: auto;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  width: 100%;
   padding-bottom: 2px;
-  scrollbar-width: none;
-}
-
-.leb-filter-pills::-webkit-scrollbar {
-  display: none;
 }
 
 .filter-pill {
-  padding: 5px 12px;
+  padding: 5px 14px;
   font-size: 0.775rem;
   font-weight: 500;
   border-radius: var(--radius-full);
@@ -456,7 +460,7 @@ body {
   transform: translateY(6px);
 }
 
-/* Single List Item Card */
+/* Single List Item Card (Ultra-Clean, Minimal) */
 .leb-row-card {
   background: var(--bg-surface);
   border: 1px solid var(--border-subtle);
@@ -464,7 +468,7 @@ body {
   padding: 12px 16px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
   box-shadow: var(--shadow-card);
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
@@ -479,14 +483,13 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: 10px;
 }
 
 .row-identity {
   display: flex;
   align-items: center;
   gap: 8px;
-  flex-wrap: wrap;
 }
 
 .row-title {
@@ -501,18 +504,9 @@ body {
   font-weight: 600;
   color: var(--text-secondary);
   background: var(--bg-subtle);
-  padding: 1px 6px;
+  padding: 1px 7px;
   border-radius: 4px;
   border: 1px solid var(--border-subtle);
-}
-
-.row-note-inline {
-  font-size: 0.75rem;
-  color: var(--text-muted);
-  max-width: 220px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .row-right {
@@ -703,7 +697,7 @@ body {
   to { transform: rotate(360deg); }
 }
 
-/* --- Modals (Desktop Only) --- */
+/* --- Themed Selection Window (Modals) --- */
 .leb-modal-overlay {
   position: fixed;
   inset: 0;
@@ -724,16 +718,16 @@ body {
 .leb-modal-box {
   background: var(--bg-surface);
   border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-lg);
+  border-radius: 16px;
   width: 100%;
-  max-width: 480px;
-  padding: 20px;
+  max-width: 440px;
+  padding: 22px;
   box-shadow: var(--shadow-modal);
   animation: modalPop 0.15s ease-out;
 }
 
 .leb-modal-box.sm-box {
-  max-width: 400px;
+  max-width: 390px;
 }
 
 @keyframes modalPop {
@@ -796,6 +790,42 @@ body {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
+/* Themed Segmented Selector (Replaces Native Select) */
+.type-segment-track {
+  display: flex;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 3px;
+  gap: 4px;
+  width: 100%;
+}
+
+.type-segment-btn {
+  flex: 1;
+  border: none;
+  background: transparent;
+  padding: 7px 8px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: inherit;
+  text-align: center;
+}
+
+.type-segment-btn:hover {
+  color: var(--text-primary);
+}
+
+.type-segment-btn.active {
+  background: var(--accent-primary);
+  color: var(--text-inverse);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
 /* Forms */
 .leb-form {
   display: flex;
@@ -851,14 +881,13 @@ body {
   color: var(--text-primary);
 }
 
-/* Inputs & Date Pickers */
-.form-group input,
-.form-group select {
+/* Themed Date Input */
+.form-group input {
   width: 100%;
   background: var(--bg-surface);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
-  padding: 7px 10px;
+  padding: 8px 10px;
   font-size: 0.8125rem;
   color: var(--text-primary);
   outline: none;
@@ -867,8 +896,7 @@ body {
   color-scheme: light;
 }
 
-.form-group input:focus,
-.form-group select:focus {
+.form-group input:focus {
   border-color: var(--border-focus);
 }
 
@@ -880,7 +908,7 @@ body {
   margin-top: 8px;
 }
 
-/* Quick Update Modal Presets */
+/* Quick Update Modal */
 .quick-body {
   display: flex;
   flex-direction: column;
@@ -891,8 +919,8 @@ body {
   background: var(--bg-subtle);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
-  padding: 7px 10px;
-  font-size: 0.875rem;
+  padding: 8px 10px;
+  font-size: 0.95rem;
   font-weight: 700;
   color: var(--text-primary);
   text-align: center;
@@ -908,8 +936,8 @@ body {
   background: var(--bg-surface);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
-  padding: 6px 8px;
-  font-size: 0.75rem;
+  padding: 7px 8px;
+  font-size: 0.775rem;
   font-weight: 600;
   color: var(--text-secondary);
   cursor: pointer;
@@ -931,13 +959,14 @@ body {
 
 .date-calculated-preview {
   margin-top: 4px;
-  font-size: 0.775rem;
+  font-size: 0.8125rem;
   font-weight: 600;
   color: var(--text-primary);
   background: var(--bg-subtle);
   border-radius: 4px;
-  padding: 4px 8px;
+  padding: 6px 10px;
   text-align: center;
+  border: 1px solid var(--border-subtle);
 }
 
 /* Toast */
@@ -979,7 +1008,7 @@ body {
   }
 
   .leb-main {
-    padding-top: 10px;
+    padding-top: 6px;
     padding-bottom: max(30px, env(safe-area-inset-bottom));
     gap: 10px;
   }

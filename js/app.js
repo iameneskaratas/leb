@@ -1,7 +1,7 @@
 /**
- * Leb - Fleet & Driver Compliance Engine (v3.3.0)
+ * Leb - Fleet & Driver Compliance Engine (v3.6.0)
  * Calm Palette, Zero Eye Strain, Deduplicated Cloud Sync,
- * Clean Inline Dates, Quick 1-Click Date Presets
+ * Clean Inline Dates, Themed Segmented Modals
  */
 
 // --- 1. Service Worker & Update Manager ---
@@ -11,7 +11,7 @@ function registerServiceWorker() {
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
       navigator.serviceWorker
-        .register('./sw.js?v=3.5.0')
+        .register('./sw.js?v=3.6.0')
         .then((registration) => {
           registration.addEventListener('updatefound', () => {
             newWorker = registration.installing;
@@ -276,7 +276,7 @@ async function syncWithCloud(options = {}) {
       const payload = {
         items: deduplicated,
         lastSync: Date.now(),
-        updatedBy: 'Leb v3.3.0 Clean'
+        updatedBy: 'Leb v3.6.0 Clean'
       };
 
       await fetch(CLOUD_ENDPOINT, {
@@ -331,7 +331,7 @@ const SEED_RECORDS = [
     inspectionDate: getFutureDate(4),
     insuranceDate: getFutureDate(120),
     greenCardDate: getFutureDate(30),
-    notes: 'Avrupa hattı aktif çekici',
+    notes: '',
     createdAt: new Date().toISOString(),
     updatedAt: Date.now(),
     deleted: false
@@ -344,7 +344,7 @@ const SEED_RECORDS = [
     inspectionDate: getFutureDate(18),
     insuranceDate: getFutureDate(200),
     greenCardDate: getFutureDate(18),
-    notes: 'Krone Frigo Dorse',
+    notes: '',
     createdAt: new Date().toISOString(),
     updatedAt: Date.now(),
     deleted: false
@@ -357,7 +357,7 @@ const SEED_RECORDS = [
     inspectionDate: getFutureDate(150),
     insuranceDate: getFutureDate(90),
     greenCardDate: null,
-    notes: 'Şirket binek aracı',
+    notes: '',
     createdAt: new Date().toISOString(),
     updatedAt: Date.now(),
     deleted: false
@@ -370,7 +370,7 @@ const SEED_RECORDS = [
     visaDate: getFutureDate(7),
     licenseDate: getFutureDate(260),
     passport: 'U14589210',
-    notes: 'Almanya Schengen vizesi',
+    notes: '',
     createdAt: new Date().toISOString(),
     updatedAt: Date.now(),
     deleted: false
@@ -383,7 +383,7 @@ const SEED_RECORDS = [
     visaDate: getFutureDate(-2),
     licenseDate: getFutureDate(50),
     passport: 'U88231019',
-    notes: 'Konsolosluk vize randevusu bekliyor',
+    notes: '',
     createdAt: new Date().toISOString(),
     updatedAt: Date.now(),
     deleted: false
@@ -396,7 +396,7 @@ const SEED_RECORDS = [
     visaDate: getFutureDate(120),
     licenseDate: getFutureDate(310),
     passport: 'U99421102',
-    notes: 'Yurtiçi ve Gürcistan hattı',
+    notes: '',
     createdAt: new Date().toISOString(),
     updatedAt: Date.now(),
     deleted: false
@@ -579,32 +579,31 @@ function renderSubFilterPills() {
 
   container.innerHTML = '';
 
-  let pills = [];
   if (currentSection === 'vehicles') {
-    pills = [
+    container.style.display = 'flex';
+    const pills = [
       { id: 'all', label: 'Tümü' },
       { id: 'Çekici', label: 'Çekici' },
       { id: 'Dorse', label: 'Dorse' },
       { id: 'Otomobil', label: 'Otomobil' }
     ];
-  } else {
-    pills = [
-      { id: 'all', label: 'Tüm Kaptanlar' }
-    ];
-  }
 
-  pills.forEach(pill => {
-    const btn = document.createElement('button');
-    btn.className = `filter-pill ${currentSubFilter === pill.id ? 'active' : ''}`;
-    btn.textContent = pill.label;
-    btn.dataset.sub = pill.id;
-    btn.addEventListener('click', () => {
-      currentSubFilter = pill.id;
-      renderSubFilterPills();
-      renderCurrentView();
+    pills.forEach(pill => {
+      const btn = document.createElement('button');
+      btn.className = `filter-pill ${currentSubFilter === pill.id ? 'active' : ''}`;
+      btn.textContent = pill.label;
+      btn.dataset.sub = pill.id;
+      btn.addEventListener('click', () => {
+        currentSubFilter = pill.id;
+        renderSubFilterPills();
+        renderCurrentView();
+      });
+      container.appendChild(btn);
     });
-    container.appendChild(btn);
-  });
+  } else {
+    // Sürücülerde alt kategoriye gerek yok
+    container.style.display = 'none';
+  }
 }
 
 function setupStatFilters() {
@@ -842,12 +841,15 @@ function renderCurrentView() {
       </div>
     `;
 
+    const typePillHtml = rec.type === 'vehicle'
+      ? `<span class="row-type-pill">${escapeHtml(rec.subType || 'Çekici')}</span>`
+      : '';
+
     row.innerHTML = `
       <div class="row-top-mobile">
         <div class="row-identity">
           <span class="row-title">${escapeHtml(rec.title)}</span>
-          <span class="row-type-pill">${escapeHtml(rec.subType || (rec.type === 'vehicle' ? 'Çekici' : 'Kaptan Şoför'))}</span>
-          ${rec.notes ? `<span class="row-note-inline" title="${escapeHtml(rec.notes)}">${escapeHtml(rec.notes)}</span>` : ''}
+          ${typePillHtml}
         </div>
         <div class="row-right">
           <span class="urgency-badge badge-${urgency.status}">
@@ -923,6 +925,17 @@ function setupModals() {
   const vehicleForm = document.getElementById('vehicleForm');
   const driverForm = document.getElementById('driverForm');
 
+  // Themed Segmented Buttons for Vehicle Type
+  const vTypeBtns = document.querySelectorAll('#vehicleTypeTrack .type-segment-btn');
+  const selectVType = document.getElementById('selectVehicleType');
+  vTypeBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      vTypeBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      if (selectVType) selectVType.value = btn.dataset.val;
+    });
+  });
+
   if (isMobileDevice()) {
     if (openAddBtn) openAddBtn.style.display = 'none';
     return;
@@ -944,6 +957,8 @@ function setupModals() {
       addModal.classList.remove('active');
       if (vehicleForm) vehicleForm.reset();
       if (driverForm) driverForm.reset();
+      if (selectVType) selectVType.value = 'Çekici';
+      vTypeBtns.forEach((b, idx) => b.classList.toggle('active', idx === 0));
     }
   }
 
@@ -974,11 +989,10 @@ function setupModals() {
     vehicleForm.addEventListener('submit', (e) => {
       e.preventDefault();
       const plate = document.getElementById('inputPlate').value.trim().toUpperCase();
-      const vType = document.getElementById('selectVehicleType').value;
+      const vType = (selectVType && selectVType.value) || 'Çekici';
       const inspDate = document.getElementById('inputInspectionDate').value;
       const insDate = document.getElementById('inputInsuranceDate').value || null;
       const greenDate = document.getElementById('inputGreenCardDate').value || null;
-      const notes = document.getElementById('inputVehicleNotes').value.trim();
 
       if (!plate || !inspDate) return;
 
@@ -990,7 +1004,7 @@ function setupModals() {
         inspectionDate: inspDate,
         insuranceDate: insDate,
         greenCardDate: greenDate,
-        notes: notes || '',
+        notes: '',
         createdAt: new Date().toISOString(),
         updatedAt: Date.now(),
         deleted: false
@@ -1013,7 +1027,6 @@ function setupModals() {
       const visaDate = document.getElementById('inputVisaDate').value;
       const licDate = document.getElementById('inputLicenseDate').value || null;
       const passport = document.getElementById('inputPassport').value.trim();
-      const notes = document.getElementById('inputDriverNotes').value.trim();
 
       if (!name || !visaDate) return;
 
@@ -1025,7 +1038,7 @@ function setupModals() {
         visaDate: visaDate,
         licenseDate: licDate,
         passport: passport || '',
-        notes: notes || '',
+        notes: '',
         createdAt: new Date().toISOString(),
         updatedAt: Date.now(),
         deleted: false
@@ -1114,35 +1127,62 @@ function openQuickModal(id) {
   activeQuickRecordId = id;
   const quickModal = document.getElementById('quickModal');
   const titleEl = document.getElementById('quickRecordTitle');
-  const selectEl = document.getElementById('quickFieldSelect');
+  const trackEl = document.getElementById('quickDocTypeTrack');
+  const hiddenFieldInput = document.getElementById('quickFieldSelect');
   const dateInput = document.getElementById('quickDateInput');
   const previewEl = document.getElementById('quickDatePreview');
 
-  if (titleEl) titleEl.textContent = `${rec.title} • ${rec.subType || ''}`;
+  if (titleEl) {
+    titleEl.textContent = `${rec.title}${rec.type === 'vehicle' && rec.subType ? ' • ' + rec.subType : ''}`;
+  }
 
-  if (selectEl) {
-    selectEl.innerHTML = '';
-    if (rec.type === 'vehicle') {
-      selectEl.innerHTML = `
-        <option value="inspectionDate">Muayene Bitiş Tarihi</option>
-        <option value="insuranceDate">Sigorta Bitiş Tarihi</option>
-        <option value="greenCardDate">Yeşil Sigorta Tarihi</option>
-      `;
-    } else {
-      selectEl.innerHTML = `
-        <option value="visaDate">Vize Bitiş Tarihi</option>
-        <option value="licenseDate">Ehliyet / SRC Bitiş</option>
-      `;
+  // Options according to type
+  let docOptions = [];
+  if (rec.type === 'vehicle') {
+    docOptions = [
+      { field: 'inspectionDate', label: 'Muayene' },
+      { field: 'insuranceDate', label: 'Sigorta' },
+      { field: 'greenCardDate', label: 'Yeşil Sigorta' }
+    ];
+  } else {
+    docOptions = [
+      { field: 'visaDate', label: 'Vize' },
+      { field: 'licenseDate', label: 'Ehliyet / SRC' }
+    ];
+  }
+
+  function setQuickField(field) {
+    if (hiddenFieldInput) hiddenFieldInput.value = field;
+    if (trackEl) {
+      trackEl.querySelectorAll('.type-segment-btn').forEach(b => {
+        b.classList.toggle('active', b.dataset.field === field);
+      });
     }
+    if (dateInput && rec[field]) {
+      dateInput.value = rec[field];
+      if (previewEl) previewEl.textContent = `Mevcut: ${formatDisplayDate(rec[field])}`;
+    } else if (dateInput && dateInput.value) {
+      if (previewEl) previewEl.textContent = `Yeni Tarih: ${formatDisplayDate(dateInput.value)}`;
+    }
+  }
 
-    selectEl.addEventListener('change', () => {
-      const field = selectEl.value;
-      if (dateInput && rec[field]) {
-        dateInput.value = rec[field];
-        if (previewEl) previewEl.textContent = `Mevcut: ${formatDisplayDate(rec[field])}`;
-      }
+  if (trackEl) {
+    trackEl.innerHTML = '';
+    docOptions.forEach((opt, idx) => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = `type-segment-btn ${idx === 0 ? 'active' : ''}`;
+      btn.dataset.field = opt.field;
+      btn.textContent = opt.label;
+      btn.addEventListener('click', () => {
+        setQuickField(opt.field);
+      });
+      trackEl.appendChild(btn);
     });
   }
+
+  const initialField = docOptions[0].field;
+  setQuickField(initialField);
 
   // Set default date (+1 Yıl preset)
   const defaultDate = new Date();

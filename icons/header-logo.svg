@@ -1,11 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
   <defs>
-    <!-- Clean Light Squircle Background -->
-    <linearGradient id="lightBg" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#FFFFFF" />
-      <stop offset="100%" stop-color="#F8FAFC" />
-    </linearGradient>
-
     <!-- Golden Roasted Leblebi Chickpea Gradient -->
     <linearGradient id="leblebiGrad" x1="20%" y1="10%" x2="80%" y2="90%">
       <stop offset="0%" stop-color="#FBBF24" />
@@ -16,7 +10,7 @@
 
     <!-- Chickpea Beak Highlight -->
     <linearGradient id="beakHighlight" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#FEF3C7" stop-opacity="0.95" />
+      <stop offset="0%" stop-color="#FFFBEB" stop-opacity="0.95" />
       <stop offset="100%" stop-color="#FDE68A" stop-opacity="0" />
     </linearGradient>
 
@@ -33,48 +27,45 @@
       <stop offset="100%" stop-color="#92400E" stop-opacity="0" />
     </radialGradient>
 
-    <!-- Soft Drop Shadow for Chickpea on White Background -->
-    <filter id="chickpeaShadowLight" x="-20%" y="-20%" width="140%" height="140%">
+    <!-- Soft Drop Shadow for Chickpea Shape -->
+    <filter id="chickpeaShadow" x="-20%" y="-20%" width="140%" height="140%">
       <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#78350F" flood-opacity="0.18" />
       <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#000000" flood-opacity="0.08" />
     </filter>
   </defs>
 
-  <!-- Clean Theme-Matching Light Squircle -->
-  <rect x="12" y="12" width="488" height="488" rx="118" fill="url(#lightBg)" stroke="#E2E8F0" stroke-width="18" />
-
-  <!-- Main Roasted Leblebi Chickpea Character / Emblem -->
-  <g filter="url(#chickpeaShadowLight)" transform="translate(0, -6)">
+  <!-- Pure Chickpea Emblem (Transparent Background - Zero Outer Boxes) -->
+  <g filter="url(#chickpeaShadow)">
     <!-- Organic Chickpea Shape -->
-    <path d="M 248 115
-             C 275 110, 310 145, 335 185
-             C 365 235, 375 295, 355 350
-             C 335 405, 275 428, 220 422
-             C 160 415, 125 365, 130 300
-             C 134 240, 168 185, 215 145
-             C 230 132, 238 117, 248 115 Z"
+    <path d="M 252 65
+             C 285 58, 335 105, 365 155
+             C 405 215, 420 290, 395 360
+             C 370 430, 295 458, 225 450
+             C 150 440, 105 380, 112 300
+             C 118 225, 160 155, 218 105
+             C 235 88, 242 68, 252 65 Z"
           fill="url(#leblebiGrad)" />
 
     <!-- Center Cleft / Dimple Line -->
-    <path d="M 246 122
-             C 236 170, 230 225, 242 285
-             C 248 315, 252 345, 245 385"
+    <path d="M 250 75
+             C 238 135, 230 205, 245 280
+             C 252 315, 256 355, 248 405"
           fill="none"
           stroke="#92400E"
-          stroke-width="7"
+          stroke-width="9"
           stroke-linecap="round"
-          opacity="0.4" />
+          opacity="0.38" />
 
     <!-- Soft highlight on top left curved cheek -->
-    <ellipse cx="205" cy="210" rx="38" ry="60"
-             transform="rotate(-25 205 210)"
+    <ellipse cx="205" cy="180" rx="46" ry="72"
+             transform="rotate(-25 205 180)"
              fill="url(#beakHighlight)" />
 
     <!-- Roasted Spots (Kavrulmuş Çorum Leblebisi Benekleri) -->
-    <circle cx="285" cy="275" r="32" fill="url(#roastSpotGrad)" />
-    <circle cx="315" cy="225" r="20" fill="url(#roastSpotGradSmall)" />
-    <circle cx="200" cy="335" r="26" fill="url(#roastSpotGrad)" />
-    <circle cx="255" cy="360" r="16" fill="url(#roastSpotGradSmall)" />
-    <circle cx="170" cy="265" r="15" fill="url(#roastSpotGradSmall)" />
+    <circle cx="305" cy="265" r="38" fill="url(#roastSpotGrad)" />
+    <circle cx="340" cy="205" r="24" fill="url(#roastSpotGradSmall)" />
+    <circle cx="205" cy="340" r="32" fill="url(#roastSpotGrad)" />
+    <circle cx="270" cy="370" r="20" fill="url(#roastSpotGradSmall)" />
+    <circle cx="165" cy="250" r="18" fill="url(#roastSpotGradSmall)" />
   </g>
 </svg>
