@@ -1,5 +1,5 @@
-// Leb Lojistik - Service Worker v3.0.0 (Network-First & Web Notifications)
-const CACHE_VERSION = 'v3.0.0';
+// Leb Lojistik - Service Worker v3.1.0 (Network-First & Web Notifications)
+const CACHE_VERSION = 'v3.1.0';
 const CACHE_NAME = `leb-lojistik-${CACHE_VERSION}`;
 
 const PRECACHE_ASSETS = [
