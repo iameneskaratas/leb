@@ -11,7 +11,7 @@ function registerServiceWorker() {
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
       navigator.serviceWorker
-        .register('./sw.js?v=3.4.0')
+        .register('./sw.js?v=3.5.0')
         .then((registration) => {
           registration.addEventListener('updatefound', () => {
             newWorker = registration.installing;
@@ -530,33 +530,46 @@ function setupSectionTabs() {
   const tabVehicles = document.getElementById('tabVehicles');
   const tabDrivers = document.getElementById('tabDrivers');
   const addBtnLabel = document.getElementById('addBtnLabel');
+  const listContainer = document.getElementById('recordsList');
 
-  if (tabVehicles && tabDrivers) {
-    tabVehicles.addEventListener('click', () => {
-      if (currentSection === 'vehicles') return;
-      currentSection = 'vehicles';
+  function switchSection(target) {
+    if (currentSection === target) return;
+    currentSection = target;
+
+    if (listContainer) {
+      listContainer.classList.add('switching');
+    }
+
+    if (target === 'vehicles') {
       tabVehicles.classList.add('active');
       tabVehicles.setAttribute('aria-selected', 'true');
       tabDrivers.classList.remove('active');
       tabDrivers.setAttribute('aria-selected', 'false');
       if (addBtnLabel) addBtnLabel.textContent = 'Yeni Araç Ekle';
-      currentSubFilter = 'all';
-      renderSubFilterPills();
-      renderCurrentView();
-    });
-
-    tabDrivers.addEventListener('click', () => {
-      if (currentSection === 'drivers') return;
-      currentSection = 'drivers';
+    } else {
       tabDrivers.classList.add('active');
       tabDrivers.setAttribute('aria-selected', 'true');
       tabVehicles.classList.remove('active');
       tabVehicles.setAttribute('aria-selected', 'false');
       if (addBtnLabel) addBtnLabel.textContent = 'Yeni Sürücü Ekle';
-      currentSubFilter = 'all';
-      renderSubFilterPills();
+    }
+
+    currentSubFilter = 'all';
+    renderSubFilterPills();
+
+    setTimeout(() => {
       renderCurrentView();
-    });
+      if (listContainer) {
+        requestAnimationFrame(() => {
+          listContainer.classList.remove('switching');
+        });
+      }
+    }, 120);
+  }
+
+  if (tabVehicles && tabDrivers) {
+    tabVehicles.addEventListener('click', () => switchSection('vehicles'));
+    tabDrivers.addEventListener('click', () => switchSection('drivers'));
   }
 }
 

@@ -1,7 +1,7 @@
 /**
- * Leb - Minimalist Design System (v3.3.0)
- * Calm Palette, Zero Eye Strain, iOS PWA Safe Area Support,
- * Clean Vertical List Layout, Strict Mobile Read-Only Gate
+ * Leb - Minimalist Design System (v3.5.0)
+ * Centered Header, Dynamic Scroll Blur, Zero Eye Strain,
+ * Smooth Section Transitions, Mobile Search Removed
  */
 
 :root {
@@ -81,30 +81,30 @@ body {
   overflow-x: hidden;
 }
 
-/* --- Header with Dynamic Scroll Blur & iOS Safe Area Support --- */
+/* --- Centered Header with iOS Safe Area Support --- */
 .leb-header {
   position: sticky;
   top: 0;
   z-index: 50;
-  /* At the top of page: completely clear, NO blur, matching canvas */
+  /* At the top of page: 100% crystal clear, zero blur */
   background: var(--bg-app);
   border-bottom: 1px solid transparent;
-  padding-top: max(12px, env(safe-area-inset-top));
-  padding-bottom: 12px;
-  padding-left: max(18px, env(safe-area-inset-left));
-  padding-right: max(18px, env(safe-area-inset-right));
-  transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
+  padding-top: calc(env(safe-area-inset-top, 44px) + 6px);
+  padding-bottom: 10px;
+  padding-left: max(16px, env(safe-area-inset-left));
+  padding-right: max(16px, env(safe-area-inset-right));
+  transition: background 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
 }
 
 /* Blur effect only appears when scrolling down */
 .leb-header.is-scrolled {
-  background: rgba(248, 249, 250, 0.88);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  background: rgba(248, 249, 250, 0.92);
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
   border-bottom: 1px solid var(--border-subtle);
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
 }
 
 .leb-header-inner {
@@ -112,46 +112,41 @@ body {
   margin: 0 auto;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
+  position: relative;
+  width: 100%;
 }
 
-.brand-box {
+/* Centered brand: only logo and 'Leb' */
+.brand-centered {
   display: flex;
   align-items: center;
-  gap: 10px;
+  justify-content: center;
+  gap: 8px;
 }
 
 .brand-avatar-img {
-  width: 36px;
-  height: 36px;
-  border-radius: 9px;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
   object-fit: contain;
   background: #FFFFFF;
   border: 1px solid var(--border-subtle);
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
 }
 
-.brand-titles {
-  display: flex;
-  flex-direction: column;
-}
-
 .brand-main {
-  font-size: 1.15rem;
+  font-size: 1.2rem;
   font-weight: 700;
   color: var(--text-primary);
   letter-spacing: -0.02em;
-  line-height: 1.1;
+  line-height: 1;
 }
 
-.brand-sub {
-  font-size: 0.725rem;
-  color: var(--text-secondary);
-  font-weight: 500;
-}
-
-/* Header Action Button (Desktop Only) */
+/* Header Action Button (Desktop Only, Absolute Right) */
 .desktop-admin-bar {
+  position: absolute;
+  right: 0;
   display: flex;
   align-items: center;
 }
@@ -202,14 +197,14 @@ body {
   width: 100%;
   max-width: 860px;
   margin: 0 auto;
-  padding-top: 16px;
+  padding-top: 14px;
   padding-bottom: max(32px, env(safe-area-inset-bottom));
   padding-left: max(16px, env(safe-area-inset-left));
   padding-right: max(16px, env(safe-area-inset-right));
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 12px;
 }
 
 /* Mobile Banner */
@@ -268,7 +263,7 @@ body {
   border: none;
   border-radius: var(--radius-sm);
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   font-family: inherit;
 }
 
@@ -292,7 +287,7 @@ body {
   color: var(--text-inverse);
 }
 
-/* --- Stat Metric Strip (Calm, Clean) --- */
+/* --- Stat Metric Strip (Modern, Clean) --- */
 .leb-stats-strip {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -327,7 +322,7 @@ body {
 }
 
 .stat-title {
-  font-size: 0.6875rem;
+  font-size: 0.725rem;
   color: var(--text-secondary);
   font-weight: 500;
   margin-top: 2px;
@@ -352,7 +347,7 @@ body {
 .stat-num-warning { color: var(--status-warning-text); }
 .stat-num-safe { color: var(--status-safe-text); }
 
-/* --- Search & Sub-Filter Bar --- */
+/* --- Controls Row: Search & Sub-Filter Pills --- */
 .leb-controls-row {
   display: flex;
   flex-direction: column;
@@ -443,7 +438,7 @@ body {
   font-weight: 600;
 }
 
-/* --- Records List: Clean Stacked Rows --- */
+/* --- Records List: Smooth Animated Stacked Rows --- */
 .leb-records-container {
   width: 100%;
 }
@@ -453,6 +448,12 @@ body {
   flex-direction: column;
   gap: 8px;
   width: 100%;
+  transition: opacity 0.22s cubic-bezier(0.4, 0, 0.2, 1), transform 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.leb-list.switching {
+  opacity: 0;
+  transform: translateY(6px);
 }
 
 /* Single List Item Card */
@@ -583,7 +584,7 @@ body {
   border-color: var(--status-critical-border);
 }
 
-/* Row Dates Section: Calm Inline Typography (No Emoji Salad!) */
+/* Row Dates Section: Calm Inline Typography */
 .row-dates {
   display: flex;
   align-items: center;
@@ -702,7 +703,7 @@ body {
   to { transform: rotate(360deg); }
 }
 
-/* --- Modals (Desktop Only, Clean & Minimalist) --- */
+/* --- Modals (Desktop Only) --- */
 .leb-modal-overlay {
   position: fixed;
   inset: 0;
@@ -766,7 +767,7 @@ body {
   color: var(--text-primary);
 }
 
-/* Modal Tab Track (Simplified) */
+/* Modal Tab Track */
 .modal-tab-track {
   display: flex;
   background: var(--bg-subtle);
@@ -972,10 +973,15 @@ body {
     display: none !important;
   }
 
+  /* User explicitly requested: Hide search on mobile */
+  .leb-search-container {
+    display: none !important;
+  }
+
   .leb-main {
-    padding-top: 12px;
+    padding-top: 10px;
     padding-bottom: max(30px, env(safe-area-inset-bottom));
-    gap: 12px;
+    gap: 10px;
   }
 
   /* Compact Stats */
