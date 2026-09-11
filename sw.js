@@ -1,5 +1,5 @@
-// Leb - Service Worker v4.9.9 (100% Solid Crisp Zero-Blur Header System Bar)
-const CACHE_VERSION = 'v4.9.9';
+// Leb - Service Worker v5.0.0 (High Contrast Razor-Sharp Header System Bar)
+const CACHE_VERSION = 'v5.0.0';
 const CACHE_NAME = `leb-app-${CACHE_VERSION}`;
 
 const PRECACHE_ASSETS = [

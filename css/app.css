@@ -191,11 +191,46 @@ body {
   align-items: center;
   gap: 6px;
   background: var(--bg-surface);
-  border: 1px solid var(--border-subtle);
+  border: 1.5px solid var(--border-subtle);
   border-radius: var(--radius-full);
   padding: 4px 10px;
   box-shadow: var(--shadow-sm);
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.header-system-bar .leb-btn-icon {
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-primary);
+  border-radius: 50%;
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+
+.header-system-bar .leb-btn-icon svg {
+  width: 17px;
+  height: 17px;
+  stroke: var(--text-primary);
+  stroke-width: 2.3;
+  display: block;
+}
+
+.header-system-bar .leb-btn-icon:hover {
+  background: var(--bg-hover);
+}
+
+.header-system-bar .leb-btn-icon:active {
+  transform: scale(0.9);
+}
+
+.header-system-bar .theme-toggle-btn.active svg {
+  stroke: #0284C7;
+}
+
+.header-system-bar .notif-bell-btn.granted svg {
+  stroke: #059669;
 }
 
 .export-btn {
@@ -1596,7 +1631,7 @@ body.theme-wallpaper .hero-title {
     display: none !important;
   }
 
-  /* Mobile Header: 100% Transparent Bar, ZERO Blur, NO Dividing Line */
+  /* Mobile Header: 100% Transparent Bar, ZERO Blur, NO Dividing Line, Non-blocking pointer events */
   .leb-header,
   .leb-header.is-scrolled,
   body.theme-wallpaper .leb-header,
@@ -1607,10 +1642,11 @@ body.theme-wallpaper .hero-title {
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
     box-shadow: none !important;
-    padding-top: max(8px, env(safe-area-inset-top));
+    padding-top: max(10px, env(safe-area-inset-top));
     padding-bottom: 2px;
     padding-left: 14px;
     padding-right: 14px;
+    pointer-events: none !important;
   }
 
   .leb-header-inner {
@@ -1637,24 +1673,36 @@ body.theme-wallpaper .hero-title {
 
   .header-system-bar,
   body:not(.theme-wallpaper) .header-system-bar {
+    pointer-events: auto !important;
     background: #FFFFFF !important;
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
     filter: none !important;
-    border: 1px solid #CBD5E1 !important;
+    border: 1.5px solid #CBD5E1 !important;
     border-radius: 9999px !important;
-    padding: 3px 8px !important;
-    gap: 4px !important;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+    height: 38px !important;
+    padding: 0 8px 0 10px !important;
+    gap: 6px !important;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08) !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    box-sizing: border-box !important;
   }
 
   body.theme-wallpaper .header-system-bar {
+    pointer-events: auto !important;
     background: #0F172A !important;
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
     filter: none !important;
-    border: 1px solid #334155 !important;
-    box-shadow: none !important;
+    border: 1.5px solid rgba(255, 255, 255, 0.25) !important;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35) !important;
+    height: 38px !important;
+    padding: 0 8px 0 10px !important;
+    gap: 6px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    box-sizing: border-box !important;
   }
 
   .sync-status-label {
@@ -1662,77 +1710,134 @@ body.theme-wallpaper .hero-title {
   }
 
   .sync-bottom-badge {
-    padding: 2px 4px !important;
+    padding: 0 !important;
+    margin: 0 !important;
     display: inline-flex !important;
     align-items: center !important;
+    justify-content: center !important;
   }
 
   .sync-dot {
-    width: 8px !important;
-    height: 8px !important;
+    width: 9px !important;
+    height: 9px !important;
+    min-width: 9px !important;
+    min-height: 9px !important;
     background: #10B981 !important;
     border-radius: 50% !important;
-    box-shadow: none !important;
+    box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.25) !important;
+    display: inline-block !important;
+  }
+
+  .sync-dot.error {
+    background: #EF4444 !important;
+    box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.25) !important;
   }
 
   .footer-actions {
     display: inline-flex !important;
     align-items: center !important;
-    padding-left: 5px !important;
-    gap: 3px !important;
-    border-left: 1px solid #CBD5E1 !important;
+    padding-left: 6px !important;
+    gap: 4px !important;
+    border-left: 1.5px solid #E2E8F0 !important;
+    margin-left: 2px !important;
   }
 
   body.theme-wallpaper .footer-actions {
-    border-left: 1px solid #334155 !important;
+    border-left: 1.5px solid rgba(255, 255, 255, 0.22) !important;
   }
 
-  .leb-btn-icon {
-    width: 28px !important;
-    height: 28px !important;
+  .header-system-bar .leb-btn-icon {
+    width: 32px !important;
+    height: 32px !important;
+    min-width: 32px !important;
+    min-height: 32px !important;
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
-    color: #1E293B !important;
+    color: #0F172A !important;
     background: transparent !important;
     border: none !important;
-    border-radius: 6px !important;
+    border-radius: 50% !important;
     padding: 0 !important;
     box-shadow: none !important;
     filter: none !important;
-    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    transition: transform 0.15s ease, background 0.15s ease !important;
   }
 
-  body.theme-wallpaper .leb-btn-icon {
-    color: #F8FAFC !important;
+  .header-system-bar .leb-btn-icon svg {
+    width: 18px !important;
+    height: 18px !important;
+    stroke: #0F172A !important;
+    stroke-width: 2.3 !important;
+    display: block !important;
+    transition: stroke 0.15s ease, transform 0.15s ease !important;
   }
 
-  .leb-btn-icon:hover {
-    background: rgba(0, 0, 0, 0.06) !important;
+  /* Bell button in Light Mode: Crisp Slate #0F172A (NEVER washed out or faded) */
+  .header-system-bar .notif-bell-btn.needs-perm,
+  .header-system-bar .notif-bell-btn.needs-perm svg {
+    color: #0F172A !important;
+    stroke: #0F172A !important;
+    opacity: 1 !important;
   }
 
-  body.theme-wallpaper .leb-btn-icon:hover {
-    background: rgba(255, 255, 255, 0.12) !important;
-  }
-
-  .leb-btn-icon:active {
-    transform: scale(0.9) !important;
-  }
-
-  .theme-toggle-btn.active {
+  .header-system-bar .theme-toggle-btn.active,
+  .header-system-bar .theme-toggle-btn.active svg {
     color: #0284C7 !important;
+    stroke: #0284C7 !important;
   }
 
-  body.theme-wallpaper .theme-toggle-btn.active {
-    color: #38BDF8 !important;
-  }
-
-  .notif-bell-btn.granted {
+  .header-system-bar .notif-bell-btn.granted,
+  .header-system-bar .notif-bell-btn.granted svg {
     color: #059669 !important;
+    stroke: #059669 !important;
   }
 
-  body.theme-wallpaper .notif-bell-btn.granted {
+  .header-system-bar .notif-bell-btn.denied,
+  .header-system-bar .notif-bell-btn.denied svg {
+    color: #EF4444 !important;
+    stroke: #EF4444 !important;
+  }
+
+  .header-system-bar .leb-btn-icon:hover {
+    background: rgba(15, 23, 42, 0.08) !important;
+  }
+
+  .header-system-bar .leb-btn-icon:active {
+    transform: scale(0.86) !important;
+  }
+
+  /* Wallpaper Theme: Ultra-Crisp Pure White SVGs */
+  body.theme-wallpaper .header-system-bar .leb-btn-icon {
+    color: #FFFFFF !important;
+  }
+
+  body.theme-wallpaper .header-system-bar .leb-btn-icon svg {
+    stroke: #FFFFFF !important;
+    stroke-width: 2.3 !important;
+  }
+
+  body.theme-wallpaper .header-system-bar .notif-bell-btn.needs-perm,
+  body.theme-wallpaper .header-system-bar .notif-bell-btn.needs-perm svg {
+    color: #FFFFFF !important;
+    stroke: #FFFFFF !important;
+    opacity: 1 !important;
+  }
+
+  body.theme-wallpaper .header-system-bar .leb-btn-icon:hover {
+    background: rgba(255, 255, 255, 0.16) !important;
+  }
+
+  body.theme-wallpaper .header-system-bar .theme-toggle-btn.active,
+  body.theme-wallpaper .header-system-bar .theme-toggle-btn.active svg {
+    color: #38BDF8 !important;
+    stroke: #38BDF8 !important;
+  }
+
+  body.theme-wallpaper .header-system-bar .notif-bell-btn.granted,
+  body.theme-wallpaper .header-system-bar .notif-bell-btn.granted svg {
     color: #34D399 !important;
+    stroke: #34D399 !important;
   }
 
   /* Main Viewport Spacing (Leaves room for floating bottom dock) */
@@ -2343,8 +2448,8 @@ body.theme-wallpaper .header-system-bar {
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
   filter: none !important;
-  border: 1px solid #334155 !important;
-  box-shadow: none !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.25) !important;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35) !important;
 }
 
 body.theme-wallpaper .sync-bottom-badge {
@@ -2355,17 +2460,36 @@ body.theme-wallpaper .footer-actions {
   border-left-color: rgba(255, 255, 255, 0.24) !important;
 }
 
-body.theme-wallpaper .leb-btn-icon {
-  color: rgba(255, 255, 255, 0.85) !important;
-}
-
-body.theme-wallpaper .leb-btn-icon:hover {
+body.theme-wallpaper .header-system-bar .leb-btn-icon {
   color: #FFFFFF !important;
-  background: rgba(255, 255, 255, 0.2) !important;
 }
 
-body.theme-wallpaper .theme-toggle-btn.active {
+body.theme-wallpaper .header-system-bar .leb-btn-icon svg {
+  stroke: #FFFFFF !important;
+  stroke-width: 2.3 !important;
+}
+
+body.theme-wallpaper .header-system-bar .notif-bell-btn.needs-perm,
+body.theme-wallpaper .header-system-bar .notif-bell-btn.needs-perm svg {
+  color: #FFFFFF !important;
+  stroke: #FFFFFF !important;
+  opacity: 1 !important;
+}
+
+body.theme-wallpaper .header-system-bar .leb-btn-icon:hover {
+  background: rgba(255, 255, 255, 0.16) !important;
+}
+
+body.theme-wallpaper .header-system-bar .theme-toggle-btn.active,
+body.theme-wallpaper .header-system-bar .theme-toggle-btn.active svg {
   color: #38BDF8 !important;
+  stroke: #38BDF8 !important;
+}
+
+body.theme-wallpaper .header-system-bar .notif-bell-btn.granted,
+body.theme-wallpaper .header-system-bar .notif-bell-btn.granted svg {
+  color: #34D399 !important;
+  stroke: #34D399 !important;
 }
 
 /* Empty State */
