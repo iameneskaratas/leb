@@ -1,5 +1,5 @@
-// Leb - Service Worker v4.8.2 (Web Push Background Alerts & Minimal Compliance Engine)
-const CACHE_VERSION = 'v4.8.2';
+// Leb - Service Worker v4.9.0 (Wallpaper Theme, Web Push Background Alerts & Stability)
+const CACHE_VERSION = 'v4.9.0';
 const CACHE_NAME = `leb-app-${CACHE_VERSION}`;
 
 const PRECACHE_ASSETS = [
@@ -9,6 +9,7 @@ const PRECACHE_ASSETS = [
   './js/app.js',
   './manifest.webmanifest',
   './icons/header-logo.svg',
+  './icons/wallpaper.jpg',
   './icons/apple-touch-icon-180.png',
   './icons/apple-touch-icon.png',
   './icons/icon-192.png',

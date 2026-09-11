@@ -63,10 +63,11 @@
   -webkit-tap-highlight-color: transparent;
 }
 
-/* --- Global Scrollbar Suppression (Clean viewport across all browsers & OS) --- */
+/* --- Global Scrollbar Suppression & Mobile Elastic Bounce Prevention --- */
 html, body {
   scrollbar-width: none !important; /* Firefox */
   -ms-overflow-style: none !important; /* IE & Edge */
+  overscroll-behavior-y: none; /* Prevents jarring whole-page bouncing on mobile */
 }
 
 html::-webkit-scrollbar,
@@ -1713,47 +1714,262 @@ body {
 }
 
 /* ==========================================================================
-   AUTHENTIC APPLE iOS ACTIVITY INDICATOR PULL-TO-REFRESH
-   Zero rotating arrows. Native 12-step Apple spinner styling.
+   WALLPAPER THEME (DESERT NIGHT & REFINED GLASSMORPHISM)
+   Mobile & Web Responsive, High Legibility, Persistent State
    ========================================================================== */
-.leb-pull-refresh {
+.wallpaper-backdrop {
   position: fixed;
-  top: calc(env(safe-area-inset-top, 47px) + 6px);
-  left: 50%;
-  transform: translate(-50%, -65px) scale(0.6);
-  z-index: 999;
-  width: 38px;
-  height: 38px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(255, 255, 255, 0.96);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  border-radius: 50%;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.07);
-  color: #374151;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  background-color: #0A0D14;
+  background-image: url('../icons/wallpaper.jpg');
+  background-repeat: no-repeat;
+  background-position: center top;
+  background-size: cover;
+  z-index: -1;
   pointer-events: none;
   opacity: 0;
-  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease;
+  transition: opacity 0.3s ease;
 }
 
-.leb-pull-refresh .ios-spinner {
-  width: 20px;
-  height: 20px;
-  display: block;
-  transform-origin: center;
-  color: #111827;
+body.theme-wallpaper .wallpaper-backdrop {
+  opacity: 1;
 }
 
-.leb-pull-refresh.syncing .ios-spinner {
-  animation: appleSpin 0.9s steps(12, end) infinite !important;
+body.theme-wallpaper {
+  background-color: #0A0D14;
+  color: #F8FAFC;
 }
 
-@keyframes appleSpin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+/* Header in Wallpaper Theme */
+body.theme-wallpaper .leb-header {
+  background: rgba(10, 14, 22, 0.65);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+body.theme-wallpaper .leb-header.is-scrolled {
+  background: rgba(10, 14, 22, 0.85);
+  border-bottom-color: rgba(255, 255, 255, 0.12);
+}
+
+body.theme-wallpaper .brand-main {
+  color: #FFFFFF;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+}
+
+/* Primary Tabs (Araçlar vs Sürücüler) */
+body.theme-wallpaper .segmented-track {
+  background: rgba(15, 23, 42, 0.7);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+body.theme-wallpaper .segment-btn {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+body.theme-wallpaper .segment-btn:hover {
+  color: #FFFFFF;
+}
+
+body.theme-wallpaper .segment-btn.active {
+  background: rgba(255, 255, 255, 0.95);
+  color: #0F172A;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}
+
+/* Sub-filter pills */
+body.theme-wallpaper .sub-pill {
+  background: rgba(15, 23, 42, 0.5);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.8);
+}
+
+body.theme-wallpaper .sub-pill:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #FFFFFF;
+}
+
+body.theme-wallpaper .sub-pill.active {
+  background: #FFFFFF;
+  color: #0F172A;
+  border-color: #FFFFFF;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+}
+
+/* Stat Cards */
+body.theme-wallpaper .leb-stat-card {
+  background: rgba(15, 23, 42, 0.5);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+}
+
+body.theme-wallpaper .stat-label {
+  color: rgba(255, 255, 255, 0.65);
+}
+
+body.theme-wallpaper .stat-value {
+  color: #FFFFFF;
+}
+
+body.theme-wallpaper .leb-stat-card.active-stat {
+  border-color: rgba(255, 255, 255, 0.4);
+  background: rgba(30, 41, 59, 0.6);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.4);
+}
+
+/* Search Bar */
+body.theme-wallpaper .leb-search-bar {
+  background: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #FFFFFF;
+}
+
+body.theme-wallpaper .search-input {
+  color: #FFFFFF;
+}
+
+body.theme-wallpaper .search-input::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+body.theme-wallpaper .search-icon {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+/* Row Cards */
+body.theme-wallpaper .leb-row-card {
+  background: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+}
+
+body.theme-wallpaper .leb-row-card:hover {
+  background: rgba(20, 30, 50, 0.65);
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+body.theme-wallpaper .row-title {
+  color: #FFFFFF;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+}
+
+body.theme-wallpaper .row-type-pill {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #E2E8F0;
+}
+
+body.theme-wallpaper .date-name {
+  color: rgba(255, 255, 255, 0.55);
+}
+
+body.theme-wallpaper .date-val {
+  color: #E2E8F0;
+}
+
+body.theme-wallpaper .date-bullet {
+  color: rgba(255, 255, 255, 0.25);
+}
+
+body.theme-wallpaper .row-notes-tag {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #CBD5E1;
+}
+
+/* Row Card Actions */
+body.theme-wallpaper .action-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: #FFFFFF;
+}
+
+body.theme-wallpaper .action-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+body.theme-wallpaper .action-btn-del:hover {
+  background: rgba(239, 68, 68, 0.25);
+  color: #FCA5A5;
+  border-color: rgba(239, 68, 68, 0.4);
+}
+
+/* Footer Status Bar */
+body.theme-wallpaper .leb-footer-inner {
+  background: rgba(15, 23, 42, 0.7);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #E2E8F0;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+}
+
+body.theme-wallpaper .sync-bottom-badge {
+  color: #E2E8F0;
+}
+
+body.theme-wallpaper .footer-actions {
+  border-left-color: rgba(255, 255, 255, 0.12);
+}
+
+body.theme-wallpaper .leb-btn-icon {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+body.theme-wallpaper .leb-btn-icon:hover {
+  color: #FFFFFF;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+body.theme-wallpaper .theme-toggle-btn.active {
+  color: #38BDF8;
+}
+
+/* Empty State */
+body.theme-wallpaper .leb-empty-title {
+  color: #FFFFFF;
+}
+
+body.theme-wallpaper .leb-empty-desc {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* Desktop Admin Bar Buttons */
+body.theme-wallpaper .export-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: #FFFFFF;
+}
+
+body.theme-wallpaper .export-btn:hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+body.theme-wallpaper .add-btn {
+  background: #FFFFFF;
+  color: #0F172A;
+}
+
+body.theme-wallpaper .add-btn:hover {
+  background: #F1F5F9;
 }
 
 

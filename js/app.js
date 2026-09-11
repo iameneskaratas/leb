@@ -12,7 +12,7 @@ function registerServiceWorker() {
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
       navigator.serviceWorker
-        .register('./sw.js?v=4.8.2')
+        .register('./sw.js?v=4.9.0')
         .catch((err) => {
           console.warn('[Leb] ServiceWorker register note:', err);
         });
@@ -431,133 +431,43 @@ function setupLifecycleSync() {
 }
 
 /**
- * Native-style mobile Pull-to-Refresh
+ * Wallpaper Theme Engine (Desert Night & Glassmorphism)
+ * Persisted preference in localStorage, mobile & desktop optimized
  */
-function setupPullToRefresh() {
-  if (!isMobileDevice()) return;
+const THEME_STORAGE_KEY = 'leb_wallpaper_theme';
 
-  const pullIndicator = document.createElement('div');
-  pullIndicator.id = 'lebPullToRefresh';
-  pullIndicator.className = 'leb-pull-refresh';
-  pullIndicator.setAttribute('aria-hidden', 'true');
-  pullIndicator.innerHTML = `
-    <svg class="ios-spinner" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-      <line x1="12" y1="2" x2="12" y2="6" stroke-width="2.2" stroke-linecap="round" opacity="1"/>
-      <line x1="17" y1="3.34" x2="15" y2="6.8" stroke-width="2.2" stroke-linecap="round" opacity="0.91"/>
-      <line x1="20.66" y1="7" x2="17.2" y2="9" stroke-width="2.2" stroke-linecap="round" opacity="0.82"/>
-      <line x1="22" y1="12" x2="18" y2="12" stroke-width="2.2" stroke-linecap="round" opacity="0.73"/>
-      <line x1="20.66" y1="17" x2="17.2" y2="15" stroke-width="2.2" stroke-linecap="round" opacity="0.64"/>
-      <line x1="17" y1="20.66" x2="15" y2="17.2" stroke-width="2.2" stroke-linecap="round" opacity="0.55"/>
-      <line x1="12" y1="22" x2="12" y2="18" stroke-width="2.2" stroke-linecap="round" opacity="0.46"/>
-      <line x1="7" y1="20.66" x2="9" y2="17.2" stroke-width="2.2" stroke-linecap="round" opacity="0.37"/>
-      <line x1="3.34" y1="17" x2="6.8" y2="15" stroke-width="2.2" stroke-linecap="round" opacity="0.28"/>
-      <line x1="2" y1="12" x2="6" y2="12" stroke-width="2.2" stroke-linecap="round" opacity="0.19"/>
-      <line x1="3.34" y1="7" x2="6.8" y2="9" stroke-width="2.2" stroke-linecap="round" opacity="0.14"/>
-      <line x1="7" y1="3.34" x2="9" y2="6.8" stroke-width="2.2" stroke-linecap="round" opacity="0.1"/>
-    </svg>
-  `;
-  document.body.prepend(pullIndicator);
+function applyTheme(themeMode) {
+  const isWallpaper = themeMode === 'wallpaper';
+  document.body.classList.toggle('theme-wallpaper', isWallpaper);
 
-  const spinnerIcon = pullIndicator.querySelector('.ios-spinner');
-  let startY = 0;
-  let currentPull = 0;
-  let isTracking = false;
-  let isRefreshing = false;
-  const PULL_THRESHOLD = 50;
-
-  function resetIndicator() {
-    isTracking = false;
-    currentPull = 0;
-    pullIndicator.style.transition = 'transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease';
-    pullIndicator.style.transform = 'translate(-50%, -65px) scale(0.6)';
-    pullIndicator.style.opacity = '0';
-    pullIndicator.classList.remove('syncing');
+  const toggleBtn = document.getElementById('btnThemeToggle');
+  if (toggleBtn) {
+    toggleBtn.classList.toggle('active', isWallpaper);
+    toggleBtn.title = isWallpaper
+      ? 'Klasik Sade Görünüme Geç'
+      : 'Duvar Kağıdı Görünümüne Geç';
   }
 
-  window.addEventListener('touchstart', (e) => {
-    if (isRefreshing) return;
-    if (window.scrollY <= 1) {
-      startY = e.touches[0].clientY;
-      isTracking = true;
-      currentPull = 0;
-      pullIndicator.style.transition = 'none';
-    } else {
-      isTracking = false;
-    }
-  }, { passive: true });
+  const metaTheme = document.querySelector('meta[name="theme-color"]');
+  if (metaTheme) {
+    metaTheme.setAttribute('content', isWallpaper ? '#0A0D14' : '#F8F9FA');
+  }
+}
 
-  window.addEventListener('touchmove', (e) => {
-    if (!isTracking || isRefreshing) return;
-    const y = e.touches[0].clientY;
-    const diff = y - startY;
+function setupThemeToggle() {
+  const savedTheme = localStorage.getItem(THEME_STORAGE_KEY) || 'default';
+  applyTheme(savedTheme);
 
-    if (diff > 8 && window.scrollY <= 1) {
-      currentPull = Math.min(diff * 0.4, 75);
-      const progress = Math.min(currentPull / PULL_THRESHOLD, 1);
-      const scale = 0.65 + (progress * 0.35);
+  const toggleBtn = document.getElementById('btnThemeToggle');
+  if (!toggleBtn) return;
 
-      pullIndicator.style.transform = `translate(-50%, ${currentPull}px) scale(${scale})`;
-      pullIndicator.style.opacity = String(progress);
-    } else if (diff < 0) {
-      resetIndicator();
-    }
-  }, { passive: true });
-
-  async function triggerRefresh() {
-    isRefreshing = true;
-    isTracking = false;
-    pullIndicator.classList.add('syncing');
-    pullIndicator.style.transition = 'transform 0.2s ease, opacity 0.2s ease';
-    pullIndicator.style.transform = 'translate(-50%, 40px) scale(1)';
-    pullIndicator.style.opacity = '1';
-
-    if (navigator.vibrate) {
-      try { navigator.vibrate(10); } catch (e) {}
-    }
-
+  toggleBtn.addEventListener('click', () => {
+    const isCurrentlyWallpaper = document.body.classList.contains('theme-wallpaper');
+    const newTheme = isCurrentlyWallpaper ? 'default' : 'wallpaper';
     try {
-      lastRenderedHash = '';
-      await Promise.race([
-        syncWithCloud({ isManual: true }),
-        new Promise(resolve => setTimeout(resolve, 2000))
-      ]);
-    } catch (e) {
-      console.warn('[PullRefresh] sync note:', e);
-    } finally {
-      setTimeout(() => {
-        isRefreshing = false;
-        resetIndicator();
-      }, 250);
-    }
-  }
-
-  window.addEventListener('touchend', () => {
-    if (!isTracking || isRefreshing) return;
-    if (currentPull >= PULL_THRESHOLD) {
-      triggerRefresh();
-    } else {
-      resetIndicator();
-    }
-  }, { passive: true });
-
-  window.addEventListener('touchcancel', () => {
-    if (!isRefreshing) resetIndicator();
-  }, { passive: true });
-
-  window.addEventListener('scroll', () => {
-    if (isTracking && !isRefreshing && window.scrollY > 5) {
-      resetIndicator();
-    }
-  }, { passive: true });
-
-  document.addEventListener('visibilitychange', () => {
-    if (document.hidden && !isRefreshing) {
-      resetIndicator();
-    }
-  });
-
-  window.addEventListener('blur', () => {
-    if (!isRefreshing) resetIndicator();
+      localStorage.setItem(THEME_STORAGE_KEY, newTheme);
+    } catch (e) {}
+    applyTheme(newTheme);
   });
 }
 
@@ -2767,7 +2677,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Realtime Cloud Sync via EventSource (SSE) & Lifecycle Listeners
   setupRealtimeSync();
   setupLifecycleSync();
-  setupPullToRefresh();
+  setupThemeToggle();
 
   // Scheduled Compliance Notifications (15-Day Milestone & 7-Day 10 AM Daily)
   setupNotificationButton();
