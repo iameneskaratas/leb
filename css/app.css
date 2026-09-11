@@ -2115,103 +2115,258 @@ body.theme-wallpaper .leb-empty-desc {
 /* Desktop Admin Bar Buttons */
 body.theme-wallpaper .export-btn {
   background: rgba(255, 255, 255, 0.12) !important;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   border: 1px solid rgba(255, 255, 255, 0.2) !important;
   color: #FFFFFF !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
 body.theme-wallpaper .export-btn:hover {
-  background: rgba(255, 255, 255, 0.22) !important;
+  background: rgba(255, 255, 255, 0.2) !important;
+  border-color: rgba(255, 255, 255, 0.32) !important;
+  transform: translateY(-1px) !important;
+}
+
+body.theme-wallpaper .export-btn svg {
+  color: rgba(255, 255, 255, 0.85) !important;
 }
 
 body.theme-wallpaper .add-btn {
   background: #FFFFFF !important;
   color: #0F172A !important;
+  border: 1px solid #FFFFFF !important;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25) !important;
+  font-weight: 600 !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
 body.theme-wallpaper .add-btn:hover {
   background: #F1F5F9 !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3) !important;
 }
 
-/* Modals & Forms & Calendar Popover */
+/* ==========================================================================
+   MODALS, FORMS, PRESETS & DIALOGS IN WALLPAPER THEME
+   Unified, Luminous Frosted Glass, High Legibility, Smooth Transitions
+   ========================================================================== */
 body.theme-wallpaper .leb-modal-overlay {
-  background: rgba(0, 0, 0, 0.65) !important;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  background: rgba(0, 0, 0, 0.6) !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   z-index: 9999;
 }
 
 body.theme-wallpaper .leb-modal-box {
-  background: rgba(22, 28, 44, 0.94) !important;
+  background: rgba(18, 24, 38, 0.92) !important;
   backdrop-filter: blur(28px);
   -webkit-backdrop-filter: blur(28px);
-  border: 1px solid rgba(255, 255, 255, 0.22) !important;
+  border: 1px solid rgba(255, 255, 255, 0.18) !important;
   color: #FFFFFF !important;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7) !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.75), inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
 }
 
 body.theme-wallpaper .leb-modal-title {
   color: #FFFFFF !important;
+  font-weight: 700 !important;
 }
 
 body.theme-wallpaper .leb-close-btn {
-  color: rgba(255, 255, 255, 0.7) !important;
+  color: rgba(255, 255, 255, 0.65) !important;
+  transition: color 0.18s ease;
 }
 
 body.theme-wallpaper .leb-close-btn:hover {
   color: #FFFFFF !important;
 }
 
-body.theme-wallpaper .modal-tab-track {
+/* Modal Title Badge in Quick Modal (e.g. 34 FB 1919 • Çekici) */
+body.theme-wallpaper .quick-title-badge {
   background: rgba(255, 255, 255, 0.1) !important;
+  border: 1px solid rgba(255, 255, 255, 0.18) !important;
+  border-radius: 8px !important;
+  color: #FFFFFF !important;
+  font-weight: 700 !important;
+  text-align: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important;
+}
+
+/* Modal Tab Switcher (Araç / Sürücü) */
+body.theme-wallpaper .modal-tab-track {
+  background: rgba(255, 255, 255, 0.08) !important;
   border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  border-radius: 8px !important;
 }
 
 body.theme-wallpaper .modal-tab-btn {
-  color: rgba(255, 255, 255, 0.8) !important;
+  color: rgba(255, 255, 255, 0.75) !important;
+  font-weight: 600 !important;
+  border-radius: 6px !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+body.theme-wallpaper .modal-tab-btn:hover {
+  color: #FFFFFF !important;
 }
 
 body.theme-wallpaper .modal-tab-btn.active {
   background: #FFFFFF !important;
   color: #0F172A !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25) !important;
 }
 
-body.theme-wallpaper .form-group label {
-  color: rgba(255, 255, 255, 0.88) !important;
-}
-
-body.theme-wallpaper .form-group input,
-body.theme-wallpaper .form-group textarea,
-body.theme-wallpaper .leb-custom-date-trigger {
-  background: rgba(255, 255, 255, 0.1) !important;
-  border-color: rgba(255, 255, 255, 0.2) !important;
-  color: #FFFFFF !important;
-}
-
-body.theme-wallpaper .form-group input:focus,
-body.theme-wallpaper .form-group textarea:focus,
-body.theme-wallpaper .leb-custom-date-trigger:focus {
-  border-color: #38BDF8 !important;
-  background: rgba(255, 255, 255, 0.16) !important;
-}
-
+/* Document & Type Segment Tracks */
 body.theme-wallpaper .type-segment-track {
-  background: rgba(255, 255, 255, 0.1) !important;
+  background: rgba(255, 255, 255, 0.08) !important;
   border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  border-radius: 8px !important;
 }
 
 body.theme-wallpaper .type-segment-btn {
   color: rgba(255, 255, 255, 0.8) !important;
+  background: transparent !important;
+  border-radius: 6px !important;
+  font-weight: 500 !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+body.theme-wallpaper .type-segment-btn:hover {
+  color: #FFFFFF !important;
+  background: rgba(255, 255, 255, 0.1) !important;
 }
 
 body.theme-wallpaper .type-segment-btn.active {
   background: #FFFFFF !important;
   color: #0F172A !important;
+  font-weight: 700 !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25) !important;
 }
 
+/* Presets Rows & Preset Pills (+6 Ay, +1 Yıl, +2 Yıl) */
+body.theme-wallpaper .presets-row {
+  display: flex;
+  gap: 6px;
+}
+
+body.theme-wallpaper .preset-pill {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid rgba(255, 255, 255, 0.16) !important;
+  border-radius: 8px !important;
+  color: rgba(255, 255, 255, 0.85) !important;
+  font-weight: 600 !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+body.theme-wallpaper .preset-pill:hover {
+  background: rgba(255, 255, 255, 0.18) !important;
+  border-color: rgba(255, 255, 255, 0.3) !important;
+  color: #FFFFFF !important;
+}
+
+body.theme-wallpaper .preset-pill.active {
+  background: #FFFFFF !important;
+  color: #0F172A !important;
+  border-color: #FFFFFF !important;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25) !important;
+}
+
+/* Chip Presets in Add Modal (+1 Yıl, +6 Ay, +2 Yıl) */
+body.theme-wallpaper .preset-chip {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid rgba(255, 255, 255, 0.16) !important;
+  color: rgba(255, 255, 255, 0.85) !important;
+  border-radius: 6px !important;
+  transition: all 0.18s ease !important;
+}
+
+body.theme-wallpaper .preset-chip:hover {
+  background: rgba(255, 255, 255, 0.2) !important;
+  color: #FFFFFF !important;
+  border-color: rgba(255, 255, 255, 0.3) !important;
+}
+
+/* Date Trigger Buttons (.leb-date-trigger) */
+body.theme-wallpaper .leb-date-trigger {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid rgba(255, 255, 255, 0.18) !important;
+  border-radius: 8px !important;
+  color: #FFFFFF !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+body.theme-wallpaper .leb-date-trigger:hover {
+  background: rgba(255, 255, 255, 0.14) !important;
+  border-color: rgba(255, 255, 255, 0.3) !important;
+}
+
+body.theme-wallpaper .leb-date-trigger:focus,
+body.theme-wallpaper .leb-date-trigger.is-open {
+  border-color: rgba(255, 255, 255, 0.5) !important;
+  background: rgba(255, 255, 255, 0.16) !important;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.1) !important;
+}
+
+body.theme-wallpaper .leb-date-trigger .date-icon {
+  color: rgba(255, 255, 255, 0.7) !important;
+}
+
+body.theme-wallpaper .leb-date-trigger .date-display-text.is-placeholder {
+  color: rgba(255, 255, 255, 0.45) !important;
+}
+
+/* Calculated Date Preview (Mevcut: 13 Eyl 2026) */
+body.theme-wallpaper .date-calculated-preview {
+  background: rgba(255, 255, 255, 0.06) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  border-radius: 6px !important;
+  color: rgba(255, 255, 255, 0.85) !important;
+}
+
+/* Form Inputs & Labels */
+body.theme-wallpaper .form-group label {
+  color: rgba(255, 255, 255, 0.85) !important;
+  font-weight: 500 !important;
+}
+
+body.theme-wallpaper .form-group input,
+body.theme-wallpaper .form-group textarea,
+body.theme-wallpaper .leb-input {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid rgba(255, 255, 255, 0.18) !important;
+  border-radius: 8px !important;
+  color: #FFFFFF !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+body.theme-wallpaper .form-group input:focus,
+body.theme-wallpaper .form-group textarea:focus,
+body.theme-wallpaper .leb-input:focus {
+  border-color: rgba(255, 255, 255, 0.5) !important;
+  background: rgba(255, 255, 255, 0.14) !important;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.1) !important;
+}
+
+body.theme-wallpaper .form-group input::placeholder,
+body.theme-wallpaper .form-group textarea::placeholder,
+body.theme-wallpaper .leb-input::placeholder {
+  color: rgba(255, 255, 255, 0.45) !important;
+}
+
+/* Appointment Toggle Button */
 body.theme-wallpaper .btn-quick-appointment {
-  background: rgba(255, 255, 255, 0.1) !important;
-  border-color: rgba(255, 255, 255, 0.18) !important;
-  color: rgba(255, 255, 255, 0.88) !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid rgba(255, 255, 255, 0.18) !important;
+  border-radius: 8px !important;
+  color: rgba(255, 255, 255, 0.85) !important;
+  font-weight: 600 !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+body.theme-wallpaper .btn-quick-appointment:hover {
+  background: rgba(255, 255, 255, 0.16) !important;
+  border-color: rgba(255, 255, 255, 0.3) !important;
+  color: #FFFFFF !important;
 }
 
 body.theme-wallpaper .btn-quick-appointment.active {
@@ -2220,15 +2375,87 @@ body.theme-wallpaper .btn-quick-appointment.active {
   color: #A7F3D0 !important;
 }
 
+/* Modal Action Buttons (İptal vs Kaydet) */
+body.theme-wallpaper .modal-buttons .leb-btn-secondary {
+  background: rgba(255, 255, 255, 0.1) !important;
+  border: 1px solid rgba(255, 255, 255, 0.18) !important;
+  border-radius: 8px !important;
+  color: rgba(255, 255, 255, 0.9) !important;
+  font-weight: 600 !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+body.theme-wallpaper .modal-buttons .leb-btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.18) !important;
+  border-color: rgba(255, 255, 255, 0.3) !important;
+  color: #FFFFFF !important;
+}
+
+body.theme-wallpaper .modal-buttons .leb-btn-primary {
+  background: #FFFFFF !important;
+  color: #0F172A !important;
+  border: 1px solid #FFFFFF !important;
+  border-radius: 8px !important;
+  font-weight: 600 !important;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25) !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+body.theme-wallpaper .modal-buttons .leb-btn-primary:hover {
+  background: #F1F5F9 !important;
+  transform: translateY(-1px) !important;
+}
+
+/* Export Modal Cards */
+body.theme-wallpaper .export-card {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid rgba(255, 255, 255, 0.16) !important;
+  border-radius: 10px !important;
+  color: #FFFFFF !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+body.theme-wallpaper .export-card:hover {
+  background: rgba(255, 255, 255, 0.15) !important;
+  border-color: rgba(255, 255, 255, 0.3) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3) !important;
+}
+
+body.theme-wallpaper .export-card-title {
+  color: #FFFFFF !important;
+}
+
+body.theme-wallpaper .export-card-pill {
+  background: rgba(255, 255, 255, 0.15) !important;
+  color: #FFFFFF !important;
+}
+
+body.theme-wallpaper .export-card-desc {
+  color: rgba(255, 255, 255, 0.72) !important;
+}
+
+body.theme-wallpaper .export-card-arrow {
+  color: rgba(255, 255, 255, 0.6) !important;
+}
+
+body.theme-wallpaper .export-card:hover .export-card-arrow {
+  color: #FFFFFF !important;
+}
+
+/* Calendar Popover */
 body.theme-wallpaper .leb-calendar-popover {
-  background: #141A28 !important;
-  border-color: rgba(255, 255, 255, 0.22) !important;
+  background: rgba(18, 24, 40, 0.95) !important;
+  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px);
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
   color: #F8FAFC !important;
-  box-shadow: 0 24px 48px -6px rgba(0, 0, 0, 0.7) !important;
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.75), inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
 }
 
 body.theme-wallpaper .cal-title-btn {
   color: #FFFFFF !important;
+  transition: all 0.15s ease !important;
 }
 
 body.theme-wallpaper .cal-title-btn:hover {
@@ -2237,6 +2464,7 @@ body.theme-wallpaper .cal-title-btn:hover {
 
 body.theme-wallpaper .cal-nav-btn {
   color: #CBD5E1 !important;
+  transition: all 0.15s ease !important;
 }
 
 body.theme-wallpaper .cal-nav-btn:hover {
@@ -2244,30 +2472,66 @@ body.theme-wallpaper .cal-nav-btn:hover {
   color: #FFFFFF !important;
 }
 
+body.theme-wallpaper .cal-presets {
+  border-bottom-color: rgba(255, 255, 255, 0.12) !important;
+}
+
 body.theme-wallpaper .cal-preset-btn {
-  background: rgba(255, 255, 255, 0.1) !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
   color: #E2E8F0 !important;
+  transition: all 0.15s ease !important;
 }
 
 body.theme-wallpaper .cal-preset-btn:hover {
   background: rgba(255, 255, 255, 0.2) !important;
+  color: #FFFFFF !important;
+}
+
+body.theme-wallpaper .cal-weekdays span {
+  color: rgba(255, 255, 255, 0.5) !important;
 }
 
 body.theme-wallpaper .cal-day-cell {
-  color: #E2E8F0 !important;
+  color: #F1F5F9 !important;
+  transition: all 0.15s ease !important;
 }
 
 body.theme-wallpaper .cal-day-cell:hover:not(.is-disabled):not(.is-selected) {
-  background: rgba(255, 255, 255, 0.15) !important;
+  background: rgba(255, 255, 255, 0.16) !important;
 }
 
 body.theme-wallpaper .cal-day-cell.is-selected {
   background: #FFFFFF !important;
   color: #0F172A !important;
+  font-weight: 700 !important;
+}
+
+body.theme-wallpaper .cal-day-cell.is-today:not(.is-selected) {
+  color: #FFFFFF !important;
+  font-weight: 700 !important;
 }
 
 body.theme-wallpaper .cal-day-cell.is-other-month {
   color: #64748B !important;
+}
+
+body.theme-wallpaper .cal-footer-btn {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  color: #E2E8F0 !important;
+  transition: all 0.15s ease !important;
+}
+
+body.theme-wallpaper .cal-footer-btn:hover {
+  background: rgba(255, 255, 255, 0.18) !important;
+  color: #FFFFFF !important;
+}
+
+body.theme-wallpaper .cal-footer-btn.cal-btn-done {
+  background: #FFFFFF !important;
+  color: #0F172A !important;
+  font-weight: 600 !important;
 }
 
 

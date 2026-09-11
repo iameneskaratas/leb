@@ -1,5 +1,5 @@
-// Leb - Service Worker v4.9.2 (Luminous Glassmorphism Theme & Transparent Footer Fix)
-const CACHE_VERSION = 'v4.9.2';
+// Leb - Service Worker v4.9.3 (Full Modal Glassmorphism Harmonization & Smooth Transitions)
+const CACHE_VERSION = 'v4.9.3';
 const CACHE_NAME = `leb-app-${CACHE_VERSION}`;
 
 const PRECACHE_ASSETS = [

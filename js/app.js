@@ -12,7 +12,7 @@ function registerServiceWorker() {
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
       navigator.serviceWorker
-        .register('./sw.js?v=4.9.2')
+        .register('./sw.js?v=4.9.3')
         .catch((err) => {
           console.warn('[Leb] ServiceWorker register note:', err);
         });
