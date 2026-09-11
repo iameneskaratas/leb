@@ -134,32 +134,34 @@ body {
   margin: 0 auto;
   display: flex;
   align-items: center;
-  justify-content: center;
-  position: relative;
+  justify-content: space-between;
   width: 100%;
 }
 
-/* Centered brand: only transparent emblem and bold 'Leb' */
+/* Brand: Transparent emblem and bold 'Leb' */
 .brand-centered {
   display: flex;
   align-items: center;
-  justify-content: center;
   gap: 10px;
+  flex-shrink: 0;
+  text-decoration: none;
+  user-select: none;
 }
 
 /* Transparent, single-layer logo (no outer boxes/borders) */
 .brand-avatar-img {
-  width: 42px;
-  height: 42px;
+  width: 38px;
+  height: 38px;
   border: none;
   background: transparent;
   box-shadow: none;
   border-radius: 0;
   object-fit: contain;
+  flex-shrink: 0;
 }
 
 .brand-main {
-  font-size: 1.75rem;
+  font-size: 1.65rem;
   font-weight: 800;
   color: var(--text-primary);
   letter-spacing: -0.03em;
@@ -168,11 +170,11 @@ body {
 
 /* Header Action Group (Desktop: Right Aligned, Mobile: Spaced) */
 .header-actions-group {
-  position: absolute;
-  right: 0;
+  position: static;
   display: flex;
   align-items: center;
   gap: 10px;
+  flex-shrink: 0;
 }
 
 .desktop-admin-bar {
