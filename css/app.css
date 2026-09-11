@@ -309,7 +309,7 @@ body {
 .leb-hero-brand {
   display: none;
   width: 100%;
-  padding: 6px 4px 10px;
+  padding: 4px 4px 8px;
   user-select: none;
 }
 
@@ -317,13 +317,13 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 14px;
+  gap: 10px;
 }
 
 .hero-logo-img {
-  width: 58px;
-  height: 58px;
-  filter: drop-shadow(0 4px 14px rgba(0, 0, 0, 0.45));
+  width: 40px;
+  height: 40px;
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.4));
   flex-shrink: 0;
   object-fit: contain;
 }
@@ -335,32 +335,17 @@ body {
 }
 
 .hero-title {
-  font-size: 2.3rem;
-  font-weight: 900;
+  font-size: 1.7rem;
+  font-weight: 800;
   color: var(--text-primary);
-  letter-spacing: -0.04em;
+  letter-spacing: -0.03em;
   line-height: 1;
   margin: 0;
 }
 
-.hero-subtitle {
-  font-size: 0.75rem;
-  font-weight: 500;
-  color: var(--text-secondary);
-  letter-spacing: 0.02em;
-  margin-top: 3px;
-  margin-bottom: 0;
-  opacity: 0.85;
-}
-
 body.theme-wallpaper .hero-title {
   color: #FFFFFF !important;
-  text-shadow: 0 2px 14px rgba(0, 0, 0, 0.65);
-}
-
-body.theme-wallpaper .hero-subtitle {
-  color: rgba(255, 255, 255, 0.8) !important;
-  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.55);
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.6);
 }
 
 /* --- Primary Segmented Control --- */
@@ -393,25 +378,31 @@ body.theme-wallpaper .hero-subtitle {
   border: none;
   border-radius: var(--radius-sm);
   cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1);
   font-family: inherit;
+  user-select: none;
+}
+
+.leb-seg-btn:active {
+  transform: scale(0.94);
 }
 
 .leb-seg-btn .seg-icon {
   display: inline-block;
   opacity: 0.75;
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .leb-seg-btn.active .seg-icon {
   opacity: 1;
-  transform: scale(1.05);
+  transform: scale(1.06);
 }
 
 .leb-seg-btn.active {
   background-color: var(--bg-surface);
   color: var(--text-primary);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  animation: segBtnPop 0.26s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .leb-counter-pill {
@@ -421,6 +412,7 @@ body.theme-wallpaper .hero-subtitle {
   font-weight: 700;
   padding: 1px 6px;
   border-radius: var(--radius-full);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .leb-seg-btn.active .leb-counter-pill {
@@ -442,7 +434,7 @@ body.theme-wallpaper .hero-subtitle {
   padding: 8px 10px;
   text-align: center;
   cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.26s cubic-bezier(0.16, 1, 0.3, 1);
   box-shadow: var(--shadow-sm);
   user-select: none;
 }
@@ -453,13 +445,14 @@ body.theme-wallpaper .hero-subtitle {
 }
 
 .leb-stat-card:active {
-  transform: scale(0.96);
+  transform: scale(0.94);
 }
 
 .leb-stat-card.active-stat {
   border-color: var(--text-primary);
   background: var(--bg-hover);
   box-shadow: var(--shadow-card);
+  animation: statCardPop 0.26s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .stat-num {
@@ -573,7 +566,7 @@ body.theme-wallpaper .hero-subtitle {
   border: 1px solid var(--border-subtle);
   cursor: pointer;
   white-space: nowrap;
-  transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   font-family: inherit;
   user-select: none;
 }
@@ -584,7 +577,7 @@ body.theme-wallpaper .hero-subtitle {
 }
 
 .filter-pill:active {
-  transform: scale(0.96);
+  transform: scale(0.93);
 }
 
 .filter-pill.active {
@@ -593,6 +586,7 @@ body.theme-wallpaper .hero-subtitle {
   border-color: var(--accent-primary);
   font-weight: 600;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+  animation: filterPillPop 0.24s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 /* --- Records List: Smooth Animated Stacked Rows --- */
@@ -1600,31 +1594,28 @@ body.theme-wallpaper .hero-subtitle {
     display: none !important;
   }
 
-  /* Mobile Header: Pure Transparent Bar with Top Right System Capsule */
-  .leb-header {
+  /* Mobile Header: 100% Transparent Bar, ZERO Blur, NO Dividing Line */
+  .leb-header,
+  .leb-header.is-scrolled,
+  body.theme-wallpaper .leb-header,
+  body.theme-wallpaper .leb-header.is-scrolled {
     background: transparent !important;
+    border: none !important;
     border-bottom: none !important;
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
     box-shadow: none !important;
     padding-top: max(8px, env(safe-area-inset-top));
-    padding-bottom: 4px;
+    padding-bottom: 2px;
     padding-left: 14px;
     padding-right: 14px;
-  }
-
-  .leb-header.is-scrolled {
-    background: rgba(15, 20, 32, 0.6) !important;
-    backdrop-filter: blur(16px) !important;
-    -webkit-backdrop-filter: blur(16px) !important;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.12) !important;
   }
 
   .leb-header-inner {
     justify-content: flex-end !important;
   }
 
-  /* Hide tiny header logo on mobile; replaced by large Hero Brand in page body */
+  /* Hide tiny header logo on mobile; replaced by Hero Brand in page body */
   .leb-header .brand-centered {
     display: none !important;
   }
@@ -1634,17 +1625,32 @@ body.theme-wallpaper .hero-subtitle {
     display: flex !important;
     justify-content: center !important;
     align-items: center !important;
-    margin: 4px 0 12px 0;
+    margin: 2px 0 10px 0;
   }
 
-  /* Mobile Top Right System Capsule */
+  /* Mobile Top Right System Capsule: Crisp, Zero Blur, Floating Pill */
   .header-actions-group {
     position: static !important;
   }
 
-  .header-system-bar {
+  .header-system-bar,
+  body.theme-wallpaper .header-system-bar {
+    background: rgba(18, 24, 38, 0.88) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    border: 1px solid rgba(255, 255, 255, 0.22) !important;
+    border-radius: 9999px !important;
     padding: 3px 6px !important;
     gap: 4px !important;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35) !important;
+  }
+
+  body:not(.theme-wallpaper) .header-system-bar {
+    background: rgba(255, 255, 255, 0.96) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    border: 1px solid rgba(0, 0, 0, 0.12) !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
   }
 
   .sync-status-label {
@@ -1663,6 +1669,11 @@ body.theme-wallpaper .hero-subtitle {
   .leb-btn-icon {
     width: 26px !important;
     height: 26px !important;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  }
+
+  .leb-btn-icon:active {
+    transform: scale(0.9) !important;
   }
 
   /* Main Viewport Spacing (Leaves room for floating bottom dock) */
@@ -2032,17 +2043,19 @@ body.theme-wallpaper .leb-pull-indicator .ptr-icon {
   z-index: 2;
 }
 
-/* Header in Wallpaper Theme */
-body.theme-wallpaper .leb-header {
-  background: rgba(15, 20, 32, 0.45) !important;
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.14) !important;
-}
+/* Header in Wallpaper Theme (Desktop Only - Mobile is handled in max-width: 768px) */
+@media (min-width: 769px) {
+  body.theme-wallpaper .leb-header {
+    background: rgba(15, 20, 32, 0.45) !important;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.14) !important;
+  }
 
-body.theme-wallpaper .leb-header.is-scrolled {
-  background: rgba(15, 20, 32, 0.8) !important;
-  border-bottom-color: rgba(255, 255, 255, 0.2) !important;
+  body.theme-wallpaper .leb-header.is-scrolled {
+    background: rgba(15, 20, 32, 0.8) !important;
+    border-bottom-color: rgba(255, 255, 255, 0.2) !important;
+  }
 }
 
 body.theme-wallpaper .brand-main {
@@ -2265,13 +2278,13 @@ body.theme-wallpaper .badge-appointment-noted {
   color: #A7F3D0 !important;
 }
 
-/* Header System Capsule in Wallpaper Theme */
+/* Header System Capsule in Wallpaper Theme (Crisp, Zero Blur) */
 body.theme-wallpaper .header-system-bar {
-  background: rgba(255, 255, 255, 0.18) !important;
-  backdrop-filter: blur(28px) saturate(190%) !important;
-  -webkit-backdrop-filter: blur(28px) saturate(190%) !important;
-  border: 1px solid rgba(255, 255, 255, 0.32) !important;
-  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.35) !important;
+  background: rgba(18, 24, 38, 0.88) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border: 1px solid rgba(255, 255, 255, 0.22) !important;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.35) !important;
 }
 
 body.theme-wallpaper .sync-bottom-badge {
@@ -2736,5 +2749,57 @@ body.theme-wallpaper .cal-footer-btn.cal-btn-done {
   font-weight: 600 !important;
 }
 
+/* ==========================================================================
+   FLUID DIRECTIONAL SLIDE ANIMATIONS (Touch Swipe & Tab Switch)
+   Smooth iOS Liquid Glass & Modern App Transition
+   ========================================================================== */
+@keyframes slideInFromRight {
+  0% {
+    opacity: 0.25;
+    transform: translateX(34px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
 
+@keyframes slideInFromLeft {
+  0% {
+    opacity: 0.25;
+    transform: translateX(-34px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
 
+.slide-from-right {
+  animation: slideInFromRight 0.28s cubic-bezier(0.16, 1, 0.3, 1) both !important;
+}
+
+.slide-from-left {
+  animation: slideInFromLeft 0.28s cubic-bezier(0.16, 1, 0.3, 1) both !important;
+}
+
+/* Modal and Action Button Smooth Tap Scaling */
+.action-btn,
+.modal-tab-btn,
+.type-segment-btn,
+.preset-pill,
+.preset-chip,
+.leb-btn-primary,
+.leb-btn-secondary {
+  transition: all 0.24s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.action-btn:active,
+.modal-tab-btn:active,
+.type-segment-btn:active,
+.preset-pill:active,
+.preset-chip:active,
+.leb-btn-primary:active,
+.leb-btn-secondary:active {
+  transform: scale(0.95) !important;
+}

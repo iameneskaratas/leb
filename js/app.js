@@ -12,7 +12,7 @@ function registerServiceWorker() {
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
       navigator.serviceWorker
-        .register('./sw.js?v=4.9.7')
+        .register('./sw.js?v=4.9.8')
         .catch((err) => {
           console.warn('[Leb] ServiceWorker register note:', err);
         });
@@ -1143,7 +1143,7 @@ function setupSectionTabs() {
   const tabDrivers = document.getElementById('tabDrivers');
   const addBtnLabel = document.getElementById('addBtnLabel');
 
-  function switchSection(target) {
+  function switchSection(target, direction = null) {
     if (currentSection === target) return;
     currentSection = target;
 
@@ -1185,15 +1185,107 @@ function setupSectionTabs() {
 
     renderSubFilterPills();
 
+    // Gentle tactile haptic pulse on tab switch (supported devices)
+    if (navigator.vibrate) {
+      try { navigator.vibrate(12); } catch (e) {}
+    }
+
+    // Directional slide transition for records list
+    const recordsList = document.getElementById('recordsList');
+    if (recordsList && direction) {
+      recordsList.classList.remove('slide-from-right', 'slide-from-left');
+      void recordsList.offsetWidth; // Trigger reflow
+      if (direction === 'from-right') {
+        recordsList.classList.add('slide-from-right');
+      } else if (direction === 'from-left') {
+        recordsList.classList.add('slide-from-left');
+      }
+      setTimeout(() => {
+        if (recordsList) {
+          recordsList.classList.remove('slide-from-right', 'slide-from-left');
+        }
+      }, 320);
+    }
+
     // Instant redraw, zero timeout delay
     lastRenderedHash = '';
     renderCurrentView();
   }
 
   if (tabVehicles && tabDrivers) {
-    tabVehicles.addEventListener('click', () => switchSection('vehicles'));
-    tabDrivers.addEventListener('click', () => switchSection('drivers'));
+    tabVehicles.addEventListener('click', () => switchSection('vehicles', 'from-left'));
+    tabDrivers.addEventListener('click', () => switchSection('drivers', 'from-right'));
   }
+
+  // Setup touch swipe gesture for WhatsApp / Instagram / iOS Liquid Glass experience
+  setupSwipeNavigation(switchSection);
+}
+
+/**
+ * Touch Swipe Gesture Navigation (Liquid Glass Mobile Experience)
+ * Swiping Left (finger dragged right -> left) switches to 'Sürücüler'
+ * Swiping Right (finger dragged left -> right) switches to 'Araçlar'
+ * Perfectly smooth, respects vertical scrolling
+ */
+function setupSwipeNavigation(switchSection) {
+  let touchStartX = 0;
+  let touchStartY = 0;
+  let touchStartTime = 0;
+  let isSwiping = false;
+
+  const targetArea = document.querySelector('.leb-main') || document.body;
+
+  targetArea.addEventListener('touchstart', (e) => {
+    // Single touch only
+    if (e.touches.length !== 1) return;
+
+    // Do not trigger swipe if modal or calendar popover is open
+    const openOverlay = document.querySelector('.leb-modal-overlay.active, .leb-calendar-popover.active');
+    if (openOverlay) return;
+
+    const touch = e.touches[0];
+    touchStartX = touch.clientX;
+    touchStartY = touch.clientY;
+    touchStartTime = Date.now();
+    isSwiping = true;
+  }, { passive: true });
+
+  targetArea.addEventListener('touchmove', (e) => {
+    if (!isSwiping) return;
+    const touch = e.touches[0];
+    const deltaX = touch.clientX - touchStartX;
+    const deltaY = touch.clientY - touchStartY;
+
+    // If vertical movement is dominant, user is scrolling down/up -> cancel horizontal swipe
+    if (Math.abs(deltaY) > Math.abs(deltaX) * 1.3 && Math.abs(deltaY) > 15) {
+      isSwiping = false;
+    }
+  }, { passive: true });
+
+  targetArea.addEventListener('touchend', (e) => {
+    if (!isSwiping) return;
+    isSwiping = false;
+
+    const touch = e.changedTouches[0];
+    const deltaX = touch.clientX - touchStartX;
+    const deltaY = touch.clientY - touchStartY;
+    const duration = Date.now() - touchStartTime;
+
+    // Deliberate horizontal gesture (>40px, under 650ms, dominant horizontal)
+    if (Math.abs(deltaX) > 40 && Math.abs(deltaX) > Math.abs(deltaY) * 1.25 && duration < 650) {
+      if (deltaX < 0) {
+        // Swiped Left -> Switch to Drivers
+        if (currentSection === 'vehicles') {
+          switchSection('drivers', 'from-right');
+        }
+      } else {
+        // Swiped Right -> Switch to Vehicles
+        if (currentSection === 'drivers') {
+          switchSection('vehicles', 'from-left');
+        }
+      }
+    }
+  }, { passive: true });
 }
 
 function renderSubFilterPills() {
