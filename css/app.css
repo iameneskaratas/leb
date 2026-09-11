@@ -1714,9 +1714,68 @@ body {
 }
 
 /* ==========================================================================
-   WALLPAPER THEME (DESERT NIGHT & REFINED GLASSMORPHISM)
-   Mobile & Web Responsive, High Legibility, Persistent State
+   ULTRA-SMOOTH FLOATING PULL-TO-REFRESH (STATIONARY PAGE, NO JITTER)
+   The site content does NOT move at all. Only this minimal spinner drops down.
    ========================================================================== */
+.leb-pull-indicator {
+  position: fixed;
+  top: -50px;
+  left: 50%;
+  transform: translateX(-50%) translateY(0);
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: #FFFFFF;
+  border: 1px solid var(--border-subtle);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12), 0 1px 3px rgba(0, 0, 0, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10001;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s ease, transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform, opacity;
+}
+
+.leb-pull-indicator .ptr-icon {
+  color: var(--text-primary);
+  transition: transform 0.1s linear;
+}
+
+.leb-pull-indicator.is-pulling {
+  transition: none;
+}
+
+.leb-pull-indicator.is-refreshing {
+  opacity: 1 !important;
+  transform: translateX(-50%) translateY(72px) !important;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease;
+}
+
+.leb-pull-indicator.is-refreshing .ptr-icon {
+  animation: ptr-spin 0.8s linear infinite;
+}
+
+@keyframes ptr-spin {
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* ==========================================================================
+   WALLPAPER THEME (DESERT NIGHT & REFINED GLASSMORPHISM)
+   Mobile & Web Responsive, High Legibility, Smooth Persistent State
+   ========================================================================== */
+html.theme-wallpaper {
+  background-color: #06080E !important;
+}
+
+body.theme-wallpaper {
+  background: transparent !important;
+  color: #F8FAFC !important;
+}
+
 .wallpaper-backdrop {
   position: fixed;
   top: 0;
@@ -1726,12 +1785,12 @@ body {
   width: 100vw;
   height: 100vh;
   height: 100dvh;
-  background-color: #0A0D14;
+  background-color: #06080E;
   background-image: url('../icons/wallpaper.jpg');
   background-repeat: no-repeat;
-  background-position: center top;
+  background-position: center 58%;
   background-size: cover;
-  z-index: -1;
+  z-index: 0;
   pointer-events: none;
   opacity: 0;
   transition: opacity 0.3s ease;
@@ -1741,235 +1800,457 @@ body.theme-wallpaper .wallpaper-backdrop {
   opacity: 1;
 }
 
-body.theme-wallpaper {
-  background-color: #0A0D14;
-  color: #F8FAFC;
+/* Pull to Refresh in Wallpaper Theme */
+body.theme-wallpaper .leb-pull-indicator {
+  background: rgba(15, 23, 42, 0.88);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.45);
+}
+
+body.theme-wallpaper .leb-pull-indicator .ptr-icon {
+  color: #FFFFFF;
+}
+
+/* Ensure all page content stacks cleanly above backdrop */
+.leb-header,
+.leb-main,
+.leb-footer {
+  position: relative;
+  z-index: 2;
 }
 
 /* Header in Wallpaper Theme */
 body.theme-wallpaper .leb-header {
-  background: rgba(10, 14, 22, 0.65);
+  background: rgba(10, 14, 22, 0.68) !important;
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
 }
 
 body.theme-wallpaper .leb-header.is-scrolled {
-  background: rgba(10, 14, 22, 0.85);
-  border-bottom-color: rgba(255, 255, 255, 0.12);
+  background: rgba(10, 14, 22, 0.88) !important;
+  border-bottom-color: rgba(255, 255, 255, 0.15) !important;
 }
 
 body.theme-wallpaper .brand-main {
-  color: #FFFFFF;
-  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+  color: #FFFFFF !important;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
 }
 
 /* Primary Tabs (Araçlar vs Sürücüler) */
-body.theme-wallpaper .segmented-track {
-  background: rgba(15, 23, 42, 0.7);
+body.theme-wallpaper .leb-segmented-track {
+  background: rgba(15, 23, 42, 0.68) !important;
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
 }
 
-body.theme-wallpaper .segment-btn {
-  color: rgba(255, 255, 255, 0.7);
+body.theme-wallpaper .leb-seg-btn {
+  color: rgba(255, 255, 255, 0.72) !important;
 }
 
-body.theme-wallpaper .segment-btn:hover {
-  color: #FFFFFF;
+body.theme-wallpaper .leb-seg-btn:hover {
+  color: #FFFFFF !important;
 }
 
-body.theme-wallpaper .segment-btn.active {
-  background: rgba(255, 255, 255, 0.95);
-  color: #0F172A;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+body.theme-wallpaper .leb-seg-btn.active {
+  background: rgba(255, 255, 255, 0.95) !important;
+  color: #0F172A !important;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35) !important;
 }
 
-/* Sub-filter pills */
-body.theme-wallpaper .sub-pill {
-  background: rgba(15, 23, 42, 0.5);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.8);
+body.theme-wallpaper .leb-counter-pill {
+  background: rgba(255, 255, 255, 0.12) !important;
+  color: rgba(255, 255, 255, 0.85) !important;
 }
 
-body.theme-wallpaper .sub-pill:hover {
-  background: rgba(255, 255, 255, 0.12);
-  color: #FFFFFF;
+body.theme-wallpaper .leb-seg-btn.active .leb-counter-pill {
+  background: #0F172A !important;
+  color: #FFFFFF !important;
 }
 
-body.theme-wallpaper .sub-pill.active {
-  background: #FFFFFF;
-  color: #0F172A;
-  border-color: #FFFFFF;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
-}
-
-/* Stat Cards */
+/* Stat Metric Cards */
 body.theme-wallpaper .leb-stat-card {
-  background: rgba(15, 23, 42, 0.5);
+  background: rgba(15, 23, 42, 0.58) !important;
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.09);
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3) !important;
 }
 
-body.theme-wallpaper .stat-label {
-  color: rgba(255, 255, 255, 0.65);
-}
-
-body.theme-wallpaper .stat-value {
-  color: #FFFFFF;
+body.theme-wallpaper .leb-stat-card:hover {
+  background: rgba(20, 30, 50, 0.72) !important;
+  border-color: rgba(255, 255, 255, 0.22) !important;
 }
 
 body.theme-wallpaper .leb-stat-card.active-stat {
-  border-color: rgba(255, 255, 255, 0.4);
-  background: rgba(30, 41, 59, 0.6);
-  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.4);
+  border-color: rgba(255, 255, 255, 0.45) !important;
+  background: rgba(30, 41, 59, 0.75) !important;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.45) !important;
 }
 
-/* Search Bar */
-body.theme-wallpaper .leb-search-bar {
-  background: rgba(15, 23, 42, 0.55);
+body.theme-wallpaper .stat-num {
+  color: #FFFFFF !important;
+}
+
+body.theme-wallpaper .stat-num-critical {
+  color: #F87171 !important;
+}
+
+body.theme-wallpaper .stat-num-warning {
+  color: #FBBF24 !important;
+}
+
+body.theme-wallpaper .stat-num-safe {
+  color: #34D399 !important;
+}
+
+body.theme-wallpaper .stat-title {
+  color: rgba(255, 255, 255, 0.75) !important;
+}
+
+/* Search Bar Container */
+body.theme-wallpaper .leb-search-container input {
+  background: rgba(15, 23, 42, 0.6) !important;
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: #FFFFFF;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  color: #FFFFFF !important;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25) !important;
 }
 
-body.theme-wallpaper .search-input {
-  color: #FFFFFF;
+body.theme-wallpaper .leb-search-container input:focus {
+  border-color: rgba(255, 255, 255, 0.45) !important;
+  background: rgba(20, 30, 50, 0.8) !important;
 }
 
-body.theme-wallpaper .search-input::placeholder {
-  color: rgba(255, 255, 255, 0.4);
+body.theme-wallpaper .leb-search-container input::placeholder {
+  color: rgba(255, 255, 255, 0.45) !important;
 }
 
-body.theme-wallpaper .search-icon {
-  color: rgba(255, 255, 255, 0.5);
+body.theme-wallpaper .leb-search-icon {
+  color: rgba(255, 255, 255, 0.5) !important;
+}
+
+body.theme-wallpaper .leb-clear-btn {
+  color: rgba(255, 255, 255, 0.5) !important;
+}
+
+body.theme-wallpaper .leb-clear-btn:hover {
+  color: #FFFFFF !important;
+}
+
+/* Filter Pills */
+body.theme-wallpaper .filter-pill {
+  background: rgba(15, 23, 42, 0.58) !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  color: rgba(255, 255, 255, 0.8) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important;
+}
+
+body.theme-wallpaper .filter-pill:hover {
+  background: rgba(255, 255, 255, 0.16) !important;
+  color: #FFFFFF !important;
+  border-color: rgba(255, 255, 255, 0.25) !important;
+}
+
+body.theme-wallpaper .filter-pill.active {
+  background: #FFFFFF !important;
+  color: #0F172A !important;
+  border-color: #FFFFFF !important;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35) !important;
 }
 
 /* Row Cards */
 body.theme-wallpaper .leb-row-card {
-  background: rgba(15, 23, 42, 0.55);
+  background: rgba(15, 23, 42, 0.6) !important;
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.09);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3) !important;
 }
 
 body.theme-wallpaper .leb-row-card:hover {
-  background: rgba(20, 30, 50, 0.65);
-  border-color: rgba(255, 255, 255, 0.16);
+  background: rgba(20, 30, 50, 0.72) !important;
+  border-color: rgba(255, 255, 255, 0.18) !important;
 }
 
 body.theme-wallpaper .row-title {
-  color: #FFFFFF;
+  color: #FFFFFF !important;
   text-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
 }
 
 body.theme-wallpaper .row-type-pill {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  color: #E2E8F0;
+  background: rgba(255, 255, 255, 0.1) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  color: #E2E8F0 !important;
 }
 
 body.theme-wallpaper .date-name {
-  color: rgba(255, 255, 255, 0.55);
+  color: rgba(255, 255, 255, 0.6) !important;
 }
 
 body.theme-wallpaper .date-val {
-  color: #E2E8F0;
+  color: #F1F5F9 !important;
 }
 
 body.theme-wallpaper .date-bullet {
-  color: rgba(255, 255, 255, 0.25);
+  color: rgba(255, 255, 255, 0.3) !important;
 }
 
 body.theme-wallpaper .row-notes-tag {
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  color: #CBD5E1;
+  background: rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  color: #CBD5E1 !important;
 }
 
-/* Row Card Actions */
 body.theme-wallpaper .action-btn {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  color: #FFFFFF;
+  background: rgba(255, 255, 255, 0.1) !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  color: #FFFFFF !important;
 }
 
 body.theme-wallpaper .action-btn:hover {
-  background: rgba(255, 255, 255, 0.2);
-  border-color: rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.2) !important;
+  border-color: rgba(255, 255, 255, 0.25) !important;
 }
 
 body.theme-wallpaper .action-btn-del:hover {
-  background: rgba(239, 68, 68, 0.25);
-  color: #FCA5A5;
-  border-color: rgba(239, 68, 68, 0.4);
+  background: rgba(239, 68, 68, 0.25) !important;
+  color: #FCA5A5 !important;
+  border-color: rgba(239, 68, 68, 0.4) !important;
+}
+
+body.theme-wallpaper .urgency-badge.badge-critical {
+  background: rgba(239, 68, 68, 0.22) !important;
+  border: 1px solid rgba(239, 68, 68, 0.4) !important;
+  color: #FCA5A5 !important;
+}
+
+body.theme-wallpaper .urgency-badge.badge-warning {
+  background: rgba(245, 158, 11, 0.22) !important;
+  border: 1px solid rgba(245, 158, 11, 0.4) !important;
+  color: #FCD34D !important;
+}
+
+body.theme-wallpaper .urgency-badge.badge-safe {
+  background: rgba(16, 185, 129, 0.2) !important;
+  border: 1px solid rgba(16, 185, 129, 0.35) !important;
+  color: #6EE7B7 !important;
+}
+
+body.theme-wallpaper .badge-appointment-noted {
+  background: rgba(16, 185, 129, 0.2) !important;
+  border: 1px solid rgba(16, 185, 129, 0.35) !important;
+  color: #6EE7B7 !important;
 }
 
 /* Footer Status Bar */
 body.theme-wallpaper .leb-footer-inner {
-  background: rgba(15, 23, 42, 0.7);
+  background: rgba(15, 23, 42, 0.75) !important;
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  color: #E2E8F0;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  color: #E2E8F0 !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35) !important;
 }
 
 body.theme-wallpaper .sync-bottom-badge {
-  color: #E2E8F0;
+  color: #E2E8F0 !important;
 }
 
 body.theme-wallpaper .footer-actions {
-  border-left-color: rgba(255, 255, 255, 0.12);
+  border-left-color: rgba(255, 255, 255, 0.12) !important;
 }
 
 body.theme-wallpaper .leb-btn-icon {
-  color: rgba(255, 255, 255, 0.7);
+  color: rgba(255, 255, 255, 0.72) !important;
 }
 
 body.theme-wallpaper .leb-btn-icon:hover {
-  color: #FFFFFF;
-  background: rgba(255, 255, 255, 0.12);
+  color: #FFFFFF !important;
+  background: rgba(255, 255, 255, 0.12) !important;
 }
 
 body.theme-wallpaper .theme-toggle-btn.active {
-  color: #38BDF8;
+  color: #38BDF8 !important;
 }
 
 /* Empty State */
+body.theme-wallpaper .leb-empty-card {
+  background: rgba(15, 23, 42, 0.58) !important;
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
 body.theme-wallpaper .leb-empty-title {
-  color: #FFFFFF;
+  color: #FFFFFF !important;
 }
 
 body.theme-wallpaper .leb-empty-desc {
-  color: rgba(255, 255, 255, 0.6);
+  color: rgba(255, 255, 255, 0.6) !important;
 }
 
 /* Desktop Admin Bar Buttons */
 body.theme-wallpaper .export-btn {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  color: #FFFFFF;
+  background: rgba(255, 255, 255, 0.1) !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  color: #FFFFFF !important;
 }
 
 body.theme-wallpaper .export-btn:hover {
-  background: rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.18) !important;
 }
 
 body.theme-wallpaper .add-btn {
-  background: #FFFFFF;
-  color: #0F172A;
+  background: #FFFFFF !important;
+  color: #0F172A !important;
 }
 
 body.theme-wallpaper .add-btn:hover {
-  background: #F1F5F9;
+  background: #F1F5F9 !important;
 }
+
+/* Modals & Forms & Calendar Popover */
+body.theme-wallpaper .leb-modal-overlay {
+  background: rgba(0, 0, 0, 0.7) !important;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 9999;
+}
+
+body.theme-wallpaper .leb-modal-box {
+  background: rgba(15, 23, 42, 0.92) !important;
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.16) !important;
+  color: #FFFFFF !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7) !important;
+}
+
+body.theme-wallpaper .leb-modal-title {
+  color: #FFFFFF !important;
+}
+
+body.theme-wallpaper .leb-close-btn {
+  color: rgba(255, 255, 255, 0.6) !important;
+}
+
+body.theme-wallpaper .leb-close-btn:hover {
+  color: #FFFFFF !important;
+}
+
+body.theme-wallpaper .modal-tab-track {
+  background: rgba(30, 41, 59, 0.7) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+body.theme-wallpaper .modal-tab-btn {
+  color: rgba(255, 255, 255, 0.7) !important;
+}
+
+body.theme-wallpaper .modal-tab-btn.active {
+  background: #FFFFFF !important;
+  color: #0F172A !important;
+}
+
+body.theme-wallpaper .form-group label {
+  color: rgba(255, 255, 255, 0.8) !important;
+}
+
+body.theme-wallpaper .form-group input,
+body.theme-wallpaper .form-group textarea,
+body.theme-wallpaper .leb-custom-date-trigger {
+  background: rgba(30, 41, 59, 0.6) !important;
+  border-color: rgba(255, 255, 255, 0.15) !important;
+  color: #FFFFFF !important;
+}
+
+body.theme-wallpaper .form-group input:focus,
+body.theme-wallpaper .form-group textarea:focus,
+body.theme-wallpaper .leb-custom-date-trigger:focus {
+  border-color: #38BDF8 !important;
+}
+
+body.theme-wallpaper .type-segment-track {
+  background: rgba(30, 41, 59, 0.7) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+body.theme-wallpaper .type-segment-btn {
+  color: rgba(255, 255, 255, 0.7) !important;
+}
+
+body.theme-wallpaper .type-segment-btn.active {
+  background: #FFFFFF !important;
+  color: #0F172A !important;
+}
+
+body.theme-wallpaper .btn-quick-appointment {
+  background: rgba(30, 41, 59, 0.6) !important;
+  border-color: rgba(255, 255, 255, 0.15) !important;
+  color: rgba(255, 255, 255, 0.8) !important;
+}
+
+body.theme-wallpaper .btn-quick-appointment.active {
+  background: rgba(16, 185, 129, 0.25) !important;
+  border-color: #10B981 !important;
+  color: #6EE7B7 !important;
+}
+
+body.theme-wallpaper .leb-calendar-popover {
+  background: #0F172A !important;
+  border-color: rgba(255, 255, 255, 0.18) !important;
+  color: #F8FAFC !important;
+  box-shadow: 0 24px 48px -6px rgba(0, 0, 0, 0.6) !important;
+}
+
+body.theme-wallpaper .cal-title-btn {
+  color: #FFFFFF !important;
+}
+
+body.theme-wallpaper .cal-title-btn:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+}
+
+body.theme-wallpaper .cal-nav-btn {
+  color: #CBD5E1 !important;
+}
+
+body.theme-wallpaper .cal-nav-btn:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+  color: #FFFFFF !important;
+}
+
+body.theme-wallpaper .cal-preset-btn {
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: #E2E8F0 !important;
+}
+
+body.theme-wallpaper .cal-preset-btn:hover {
+  background: rgba(255, 255, 255, 0.16) !important;
+}
+
+body.theme-wallpaper .cal-day-cell {
+  color: #E2E8F0 !important;
+}
+
+body.theme-wallpaper .cal-day-cell:hover:not(.is-disabled):not(.is-selected) {
+  background: rgba(255, 255, 255, 0.12) !important;
+}
+
+body.theme-wallpaper .cal-day-cell.is-selected {
+  background: #FFFFFF !important;
+  color: #0F172A !important;
+}
+
+body.theme-wallpaper .cal-day-cell.is-other-month {
+  color: #475569 !important;
+}
+
 
 

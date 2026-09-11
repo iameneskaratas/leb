@@ -12,7 +12,7 @@ function registerServiceWorker() {
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
       navigator.serviceWorker
-        .register('./sw.js?v=4.9.0')
+        .register('./sw.js?v=4.9.1')
         .catch((err) => {
           console.warn('[Leb] ServiceWorker register note:', err);
         });
@@ -438,6 +438,7 @@ const THEME_STORAGE_KEY = 'leb_wallpaper_theme';
 
 function applyTheme(themeMode) {
   const isWallpaper = themeMode === 'wallpaper';
+  document.documentElement.classList.toggle('theme-wallpaper', isWallpaper);
   document.body.classList.toggle('theme-wallpaper', isWallpaper);
 
   const toggleBtn = document.getElementById('btnThemeToggle');
@@ -450,7 +451,7 @@ function applyTheme(themeMode) {
 
   const metaTheme = document.querySelector('meta[name="theme-color"]');
   if (metaTheme) {
-    metaTheme.setAttribute('content', isWallpaper ? '#0A0D14' : '#F8F9FA');
+    metaTheme.setAttribute('content', isWallpaper ? '#06080E' : '#F8F9FA');
   }
 }
 
@@ -469,6 +470,110 @@ function setupThemeToggle() {
     } catch (e) {}
     applyTheme(newTheme);
   });
+}
+
+// --- 5.2 Ultra-Smooth Stationary Pull-to-Refresh for Mobile ---
+function setupPullToRefresh() {
+  const ptrEl = document.getElementById('lebPullToRefresh');
+  if (!ptrEl) return;
+
+  const iconEl = ptrEl.querySelector('.ptr-icon');
+  let startY = 0;
+  let currentY = 0;
+  let isTracking = false;
+  let isRefreshing = false;
+  const PULL_THRESHOLD = 45; // effective downward threshold in px
+  const RESISTANCE = 0.38;
+
+  function resetIndicator() {
+    ptrEl.classList.remove('is-pulling');
+    ptrEl.style.opacity = '0';
+    ptrEl.style.transform = 'translateX(-50%) translateY(0)';
+    if (iconEl) iconEl.style.transform = '';
+  }
+
+  window.addEventListener('touchstart', (e) => {
+    if (isRefreshing) return;
+    if (window.scrollY <= 1) {
+      startY = e.touches[0].clientY;
+      currentY = startY;
+      isTracking = true;
+    } else {
+      isTracking = false;
+    }
+  }, { passive: true });
+
+  window.addEventListener('touchmove', (e) => {
+    if (!isTracking || isRefreshing) return;
+
+    if (window.scrollY > 1) {
+      isTracking = false;
+      resetIndicator();
+      return;
+    }
+
+    currentY = e.touches[0].clientY;
+    const diff = currentY - startY;
+
+    if (diff > 8) {
+      // Prevent browser default elastic bounce so page stays completely stationary
+      if (e.cancelable) {
+        e.preventDefault();
+      }
+
+      const pull = Math.min(diff * RESISTANCE, 75);
+      ptrEl.classList.add('is-pulling');
+      ptrEl.style.opacity = String(Math.min(pull / 28, 1));
+      ptrEl.style.transform = `translateX(-50%) translateY(${pull + 62}px)`;
+
+      if (iconEl) {
+        iconEl.style.transform = `rotate(${pull * 6}deg)`;
+      }
+    } else {
+      resetIndicator();
+    }
+  }, { passive: false });
+
+  const handleTouchEnd = async () => {
+    if (!isTracking || isRefreshing) return;
+    isTracking = false;
+    ptrEl.classList.remove('is-pulling');
+
+    const diff = currentY - startY;
+    const pull = diff * RESISTANCE;
+
+    if (pull >= PULL_THRESHOLD) {
+      isRefreshing = true;
+      ptrEl.classList.add('is-refreshing');
+      if (iconEl) iconEl.style.transform = '';
+
+      if (navigator.vibrate) {
+        try { navigator.vibrate(12); } catch (err) {}
+      }
+
+      const syncPromise = syncWithCloud({ isManual: true });
+      const minDelay = new Promise((resolve) => setTimeout(resolve, 650));
+
+      try {
+        await Promise.all([syncPromise, minDelay]);
+      } catch (err) {
+        console.warn('PTR sync warning:', err);
+      } finally {
+        ptrEl.style.opacity = '0';
+        ptrEl.style.transform = 'translateX(-50%) translateY(0)';
+        setTimeout(() => {
+          ptrEl.classList.remove('is-refreshing');
+          isRefreshing = false;
+          resetIndicator();
+        }, 220);
+      }
+    } else {
+      resetIndicator();
+    }
+  };
+
+  window.addEventListener('touchend', handleTouchEnd, { passive: true });
+  window.addEventListener('touchcancel', resetIndicator, { passive: true });
 }
 
 // --- 6. Initial Clean Seed Data ---
@@ -2678,6 +2783,7 @@ document.addEventListener('DOMContentLoaded', () => {
   setupRealtimeSync();
   setupLifecycleSync();
   setupThemeToggle();
+  setupPullToRefresh();
 
   // Scheduled Compliance Notifications (15-Day Milestone & 7-Day 10 AM Daily)
   setupNotificationButton();

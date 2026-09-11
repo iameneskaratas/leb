@@ -1,5 +1,5 @@
-// Leb - Service Worker v4.9.0 (Wallpaper Theme, Web Push Background Alerts & Stability)
-const CACHE_VERSION = 'v4.9.0';
+// Leb - Service Worker v4.9.1 (Refined Wallpaper Theme & Stationary Pull-to-Refresh)
+const CACHE_VERSION = 'v4.9.1';
 const CACHE_NAME = `leb-app-${CACHE_VERSION}`;
 
 const PRECACHE_ASSETS = [
