@@ -1,5 +1,5 @@
-// Leb - Service Worker v4.9.4 (Luminous Frosted Modals & Global ESC Key Close)
-const CACHE_VERSION = 'v4.9.4';
+// Leb - Service Worker v4.9.5 (Floating Apple Liquid Glass Dock & Mobile Header System Capsule)
+const CACHE_VERSION = 'v4.9.5';
 const CACHE_NAME = `leb-app-${CACHE_VERSION}`;
 
 const PRECACHE_ASSETS = [

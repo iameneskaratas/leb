@@ -166,13 +166,32 @@ body {
   line-height: 1;
 }
 
-/* Header Action Button (Desktop Only, Absolute Right) */
-.desktop-admin-bar {
+/* Header Action Group (Desktop: Right Aligned, Mobile: Spaced) */
+.header-actions-group {
   position: absolute;
   right: 0;
   display: flex;
   align-items: center;
+  gap: 10px;
+}
+
+.desktop-admin-bar {
+  display: flex;
+  align-items: center;
   gap: 8px;
+}
+
+/* Header System Status Capsule */
+.header-system-bar {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-full);
+  padding: 4px 10px;
+  box-shadow: var(--shadow-sm);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .export-btn {
@@ -316,6 +335,17 @@ body {
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   font-family: inherit;
+}
+
+.leb-seg-btn .seg-icon {
+  display: inline-block;
+  opacity: 0.75;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.leb-seg-btn.active .seg-icon {
+  opacity: 1;
+  transform: scale(1.05);
 }
 
 .leb-seg-btn.active {
@@ -1497,21 +1527,125 @@ body {
 /* ==========================================================================
    STRICT MOBILE READ-ONLY GATE & RESPONSIVE RULES (max-width: 768px)
    Mobile is strictly for viewing! All admin tools, modals, and actions hidden.
+   Floating Apple Liquid Glass Dock for primary navigation at bottom.
    ========================================================================== */
 @media (max-width: 768px) {
-  /* Hide Admin bar, Add button, Export Button, Modals, Card Actions & Search strictly on Mobile */
+  /* Hide Admin bar, Add button, Export Button, Modals, Card Actions, Search & Footer strictly on Mobile */
   .desktop-admin-bar,
   .export-btn,
   .card-actions,
   .leb-modal-overlay,
-  .leb-search-container {
+  .leb-search-container,
+  .leb-footer {
     display: none !important;
   }
 
+  /* Compact Header Layout on Mobile */
+  .leb-header {
+    padding-top: max(8px, env(safe-area-inset-top));
+    padding-bottom: 8px;
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+
+  .leb-header-inner {
+    justify-content: space-between !important;
+  }
+
+  .brand-centered {
+    justify-content: flex-start !important;
+    gap: 8px !important;
+  }
+
+  .brand-avatar-img {
+    width: 32px !important;
+    height: 32px !important;
+  }
+
+  .brand-main {
+    font-size: 1.35rem !important;
+  }
+
+  /* Mobile Top Right System Capsule */
+  .header-actions-group {
+    position: static !important;
+  }
+
+  .header-system-bar {
+    padding: 3px 6px !important;
+    gap: 4px !important;
+  }
+
+  .sync-status-label {
+    display: none !important;
+  }
+
+  .sync-bottom-badge {
+    padding: 2px 4px !important;
+  }
+
+  .footer-actions {
+    padding-left: 4px !important;
+    gap: 2px !important;
+  }
+
+  .leb-btn-icon {
+    width: 26px !important;
+    height: 26px !important;
+  }
+
+  /* Main Viewport Spacing (Leaves room for floating bottom dock) */
   .leb-main {
     padding-top: 6px;
-    padding-bottom: max(30px, env(safe-area-inset-bottom));
+    padding-bottom: max(96px, calc(76px + env(safe-area-inset-bottom))) !important;
     gap: 10px;
+  }
+
+  /* FLOATING APPLE LIQUID GLASS BOTTOM DOCK (Araçlar vs Sürücüler) */
+  .leb-segmented-wrapper {
+    position: fixed !important;
+    bottom: max(14px, env(safe-area-inset-bottom)) !important;
+    left: 0 !important;
+    right: 0 !important;
+    display: flex !important;
+    justify-content: center !important;
+    z-index: 95 !important;
+    pointer-events: none !important;
+    padding: 0 16px !important;
+    width: 100% !important;
+    margin: 0 !important;
+  }
+
+  .leb-segmented-track {
+    pointer-events: auto !important;
+    width: 100% !important;
+    max-width: 360px !important;
+    background: rgba(255, 255, 255, 0.88) !important;
+    backdrop-filter: blur(28px) saturate(190%) !important;
+    -webkit-backdrop-filter: blur(28px) saturate(190%) !important;
+    border: 1px solid rgba(0, 0, 0, 0.08) !important;
+    border-radius: 28px !important;
+    padding: 5px !important;
+    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.16) !important;
+  }
+
+  body.theme-wallpaper .leb-segmented-track {
+    background: rgba(255, 255, 255, 0.18) !important;
+    backdrop-filter: blur(32px) saturate(190%) !important;
+    -webkit-backdrop-filter: blur(32px) saturate(190%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.32) !important;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45), inset 0 1px 1px rgba(255, 255, 255, 0.45) !important;
+  }
+
+  .leb-seg-btn {
+    border-radius: 22px !important;
+    padding: 10px 14px !important;
+    font-size: 0.875rem !important;
+    font-weight: 600 !important;
+  }
+
+  .leb-seg-btn .seg-icon {
+    display: inline-block;
   }
 
   /* Compact Stats */
@@ -1531,6 +1665,17 @@ body {
     font-size: 0.625rem;
   }
 
+  /* Sub Filter Pills under Stats */
+  .leb-filter-pills {
+    padding-top: 2px;
+    padding-bottom: 4px;
+  }
+
+  .filter-pill {
+    padding: 4px 12px;
+    font-size: 0.75rem;
+  }
+
   /* List Row Mobile */
   .leb-row-card {
     padding: 10px 12px;
@@ -1548,7 +1693,7 @@ body {
 }
 
 /* ==========================================================================
-   QUIET BOTTOM STATUS FOOTER & REALTIME SYNC BADGE
+   QUIET BOTTOM SPACER (Desktop minimal spacer)
    ========================================================================== */
 .leb-footer {
   width: 100%;
@@ -1560,17 +1705,6 @@ body {
   background: transparent !important;
   border: none !important;
   box-shadow: none !important;
-}
-
-.leb-footer-inner {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  background: var(--bg-surface);
-  border: 1px solid var(--border-subtle);
-  border-radius: 20px;
-  padding: 4px 12px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 }
 
 .sync-bottom-badge {
@@ -2060,20 +2194,13 @@ body.theme-wallpaper .badge-appointment-noted {
   color: #A7F3D0 !important;
 }
 
-/* Footer Status Bar */
-body.theme-wallpaper .leb-footer {
-  background: transparent !important;
-  border: none !important;
-  box-shadow: none !important;
-}
-
-body.theme-wallpaper .leb-footer-inner {
-  background: rgba(20, 26, 38, 0.65) !important;
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.2) !important;
-  color: #FFFFFF !important;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35) !important;
+/* Header System Capsule in Wallpaper Theme */
+body.theme-wallpaper .header-system-bar {
+  background: rgba(255, 255, 255, 0.18) !important;
+  backdrop-filter: blur(28px) saturate(190%) !important;
+  -webkit-backdrop-filter: blur(28px) saturate(190%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.32) !important;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.35) !important;
 }
 
 body.theme-wallpaper .sync-bottom-badge {
@@ -2081,16 +2208,16 @@ body.theme-wallpaper .sync-bottom-badge {
 }
 
 body.theme-wallpaper .footer-actions {
-  border-left-color: rgba(255, 255, 255, 0.2) !important;
+  border-left-color: rgba(255, 255, 255, 0.24) !important;
 }
 
 body.theme-wallpaper .leb-btn-icon {
-  color: rgba(255, 255, 255, 0.8) !important;
+  color: rgba(255, 255, 255, 0.85) !important;
 }
 
 body.theme-wallpaper .leb-btn-icon:hover {
   color: #FFFFFF !important;
-  background: rgba(255, 255, 255, 0.16) !important;
+  background: rgba(255, 255, 255, 0.2) !important;
 }
 
 body.theme-wallpaper .theme-toggle-btn.active {

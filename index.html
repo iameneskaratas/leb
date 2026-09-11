@@ -31,8 +31,8 @@
     })();
   </script>
 
-  <!-- Stylesheet (Leb v4.9.4) -->
-  <link rel="stylesheet" href="css/app.css?v=4.9.4">
+  <!-- Stylesheet (Leb v4.9.5) -->
+  <link rel="stylesheet" href="css/app.css?v=4.9.5">
 </head>
 <body>
   <!-- Wallpaper Background Layer (Optimized for Mobile & Desktop) -->
@@ -50,26 +50,59 @@
   <!-- Top Minimal Centered Header (Safe Spacing from iOS Status Bar) -->
   <header class="leb-header" id="mainHeader">
     <div class="leb-header-inner">
-      <!-- Perfectly Centered: Large Logo & Bold Leb Title -->
+      <!-- Brand: Logo & Title -->
       <div class="brand-centered">
         <img src="icons/header-logo.svg?v=3.8.0" alt="Leb Logo" class="brand-avatar-img">
         <h1 class="brand-main">Leb</h1>
       </div>
 
-      <!-- Desktop Admin Action (Desktop Only, Completely Hidden on Mobile) -->
-      <div class="desktop-admin-bar">
-        <button id="btnExportExcel" class="leb-btn leb-btn-secondary export-btn" title="Excel formatında (CSV) tüm kayıtları indir">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-            <polyline points="7 10 12 15 17 10"></polyline>
-            <line x1="12" y1="15" x2="12" y2="3"></line>
-          </svg>
-          <span>Excel'e Aktar</span>
-        </button>
-        <button id="openAddModalBtn" class="leb-btn leb-btn-primary add-btn" title="Yeni Kayıt Ekle">
-          <span class="plus-icon">+</span>
-          <span id="addBtnLabel">Yeni Ekle</span>
-        </button>
+      <!-- Header Actions Group: System Capsule (Mobile & Desktop) + Desktop Admin Tools -->
+      <div class="header-actions-group">
+        <!-- Quiet System Status & Action Capsule -->
+        <div class="header-system-bar" id="headerSystemBar">
+          <div class="sync-bottom-badge" id="bottomSyncBadge" title="Bulut Senkronizasyon Durumu">
+            <span class="sync-dot" id="syncStatusDot"></span>
+            <span id="syncStatusText" class="sync-status-label">Bulutla Eşitlendi</span>
+          </div>
+          <div class="footer-actions">
+            <button id="btnThemeToggle" class="leb-btn-icon theme-toggle-btn" title="Duvar Kağıdı Görünümü (Aç/Kapat)" aria-label="Tema Değiştir">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                <polyline points="21 15 16 10 5 21"></polyline>
+              </svg>
+            </button>
+            <button id="btnNotifToggle" class="leb-btn-icon notif-bell-btn" title="Bildirim Durumu" aria-label="Bildirim Ayarı">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+              </svg>
+            </button>
+            <button id="manualSyncBtn" class="leb-btn-icon" title="Şimdi Eşitle" aria-label="Eşitle">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="23 4 23 10 17 10"></polyline>
+                <polyline points="1 20 1 14 7 14"></polyline>
+                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Desktop Admin Action (Desktop Only, Completely Hidden on Mobile) -->
+        <div class="desktop-admin-bar">
+          <button id="btnExportExcel" class="leb-btn leb-btn-secondary export-btn" title="Excel formatında (CSV) tüm kayıtları indir">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="7 10 12 15 17 10"></polyline>
+              <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+            <span>Excel'e Aktar</span>
+          </button>
+          <button id="openAddModalBtn" class="leb-btn leb-btn-primary add-btn" title="Yeni Kayıt Ekle">
+            <span class="plus-icon">+</span>
+            <span id="addBtnLabel">Yeni Ekle</span>
+          </button>
+        </div>
       </div>
     </div>
   </header>
@@ -77,19 +110,29 @@
   <!-- Main Viewport -->
   <main class="leb-main">
 
-    <!-- PRIMARY SEGMENTED TABS: Araçlar vs Sürücüler (Smooth Switch) -->
-    <section class="leb-segmented-wrapper">
+    <!-- PRIMARY SEGMENTED TABS: Araçlar vs Sürücüler (Floating Apple Liquid Glass Dock on Mobile) -->
+    <nav class="leb-segmented-wrapper" aria-label="Bölüm Seçici">
       <div class="leb-segmented-track" role="tablist">
         <button id="tabVehicles" class="leb-seg-btn active" role="tab" aria-selected="true" data-section="vehicles">
+          <svg class="seg-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="1" y="3" width="15" height="13"></rect>
+            <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon>
+            <circle cx="5.5" cy="18.5" r="2.5"></circle>
+            <circle cx="18.5" cy="18.5" r="2.5"></circle>
+          </svg>
           <span class="seg-text">Araçlar</span>
           <span id="badgeVehiclesCount" class="leb-counter-pill">0</span>
         </button>
         <button id="tabDrivers" class="leb-seg-btn" role="tab" aria-selected="false" data-section="drivers">
+          <svg class="seg-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+            <circle cx="12" cy="7" r="4"></circle>
+          </svg>
           <span class="seg-text">Sürücüler</span>
           <span id="badgeDriversCount" class="leb-counter-pill">0</span>
         </button>
       </div>
-    </section>
+    </nav>
 
     <!-- Stat Metric Strip (Clean, Modern, No (<7G) clutter) -->
     <section class="leb-stats-strip">
@@ -145,37 +188,8 @@
 
   </main>
 
-  <!-- Quiet Bottom Status Footer -->
-  <footer class="leb-footer">
-    <div class="leb-footer-inner">
-      <div class="sync-bottom-badge" id="bottomSyncBadge">
-        <span class="sync-dot" id="syncStatusDot"></span>
-        <span id="syncStatusText">Bulutla Eşitlendi</span>
-      </div>
-      <div class="footer-actions">
-        <button id="btnThemeToggle" class="leb-btn-icon theme-toggle-btn" title="Duvar Kağıdı Görünümü (Aç/Kapat)" aria-label="Tema Değiştir">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-            <circle cx="8.5" cy="8.5" r="1.5"></circle>
-            <polyline points="21 15 16 10 5 21"></polyline>
-          </svg>
-        </button>
-        <button id="btnNotifToggle" class="leb-btn-icon notif-bell-btn" title="Bildirim Durumu" aria-label="Bildirim Ayarı">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
-            <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
-          </svg>
-        </button>
-        <button id="manualSyncBtn" class="leb-btn-icon" title="Şimdi Eşitle" aria-label="Eşitle">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polyline points="23 4 23 10 17 10"></polyline>
-            <polyline points="1 20 1 14 7 14"></polyline>
-            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
-          </svg>
-        </button>
-      </div>
-    </div>
-  </footer>
+  <!-- Bottom Spacer / Status Footer -->
+  <footer class="leb-footer" aria-hidden="true"></footer>
 
   <!-- DESKTOP-ONLY MODAL: Sade Yeni Kayıt Ekle (Hidden on Mobile) -->
   <div id="addModal" class="leb-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="addModalHeading">
@@ -604,7 +618,7 @@
     </div>
   </div>
 
-  <!-- Script v4.9.4 -->
-  <script src="js/app.js?v=4.9.4"></script>
+  <!-- Script v4.9.5 -->
+  <script src="js/app.js?v=4.9.5"></script>
 </body>
 </html>
