@@ -1,0 +1,9 @@
+{
+  "name": "leb",
+  "version": "4.8.2",
+  "private": true,
+  "description": "Leb - Fleet & Driver Compliance Engine",
+  "dependencies": {
+    "web-push": "^3.6.7"
+  }
+}

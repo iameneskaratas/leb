@@ -51,9 +51,15 @@
       ]
     }
   ],
+  "crons": [
+    {
+      "path": "/api/check-compliance",
+      "schedule": "0 7 * * *"
+    }
+  ],
   "rewrites": [
     {
-      "source": "/(.*)",
+      "source": "/((?!api/).*)",
       "destination": "/index.html"
     }
   ]

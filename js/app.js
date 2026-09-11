@@ -12,7 +12,7 @@ function registerServiceWorker() {
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
       navigator.serviceWorker
-        .register('./sw.js?v=4.8.1')
+        .register('./sw.js?v=4.8.2')
         .catch((err) => {
           console.warn('[Leb] ServiceWorker register note:', err);
         });
@@ -895,8 +895,8 @@ function checkAndDispatchComplianceAlerts() {
       if (days !== null && days <= 15 && days > 7) {
         const cycleKey = `${rec.id}_${doc.key}_${doc.dateStr}`;
         if (!history15d[cycleKey]) {
-          const title = `Leb: ${rec.title} - ${doc.label}`;
-          const body = `${doc.label} süresinin dolmasına 15 gün kaldı (${formatDisplayDate(doc.dateStr)}).`;
+          const title = `${rec.title} • ${doc.label}`;
+          const body = `15 gün kaldı (${formatDisplayDate(doc.dateStr)})`;
           sendSystemNotification(title, body, `15d-${rec.id}-${doc.key}`);
           history15d[cycleKey] = Date.now();
           historyChanged = true;
@@ -942,18 +942,18 @@ function checkAndDispatchComplianceAlerts() {
     if (urgentItems.length > 0) {
       if (urgentItems.length === 1) {
         const item = urgentItems[0];
-        const statusText = item.days <= 0 ? 'süresi DOLDU!' : `${item.days} gün kaldı!`;
+        const statusText = item.days <= 0 ? 'Süresi doldu!' : `${item.days} gün kaldı`;
         sendSystemNotification(
-          `Leb: ${item.recTitle} - ${item.docLabel}`,
-          `${item.docLabel} için ${statusText} Randevu henüz alınmadı.`,
+          `${item.recTitle} • ${item.docLabel}`,
+          `${statusText} • Randevu henüz alınmadı`,
           `daily-7d-${todayDateStr}`
         );
       } else {
         const sample = urgentItems.slice(0, 3).map(u => `${u.recTitle} (${u.docLabel})`).join(', ');
         const extra = urgentItems.length > 3 ? ` ve ${urgentItems.length - 3} diğer` : '';
         sendSystemNotification(
-          `Leb: ${urgentItems.length} Evrak İçin Randevu Alınmadı!`,
-          `Son 7 güne giren evraklar: ${sample}${extra}. Lütfen randevu durumunu kontrol edin.`,
+          `${urgentItems.length} Evrak İçin Randevu Alınmadı`,
+          `${sample}${extra} • Lütfen randevu durumunu kontrol edin`,
           `daily-7d-${todayDateStr}`
         );
       }
@@ -986,6 +986,54 @@ function scheduleNext10AmTimer() {
     checkAndDispatchComplianceAlerts();
     scheduleNext10AmTimer();
   }, msUntil10Am);
+}
+
+// --- Web Push Subscription Sync Engine (For alerts when app/phone is closed) ---
+const VAPID_PUBLIC_KEY = 'BOyB7XaqE9ZE3MsO8FgV3MPvAkaWgwVyilbPasuaDN1eSW-rZ53v1tyIYGFacwncjX6ojzGNciKuBZfIUH1xkpM';
+
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/\-/g, '+').replace(/_/g, '/');
+  const rawData = window.atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+  for (let i = 0; i < rawData.length; ++i) {
+    outputArray[i] = rawData.charCodeAt(i);
+  }
+  return outputArray;
+}
+
+async function syncPushSubscriptionToCloud() {
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    let sub = await reg.pushManager.getSubscription();
+    if (!sub) {
+      sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+      });
+    }
+    if (sub) {
+      const subJson = sub.toJSON();
+      const endpoint = subJson.endpoint || '';
+      if (!endpoint) return;
+      const endpointKey = btoa(endpoint).replace(/[/+=]/g, '').slice(-32);
+      await fetch(`https://leb1919-default-rtdb.firebaseio.com/leb_subscriptions/${endpointKey}.json`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sub: subJson,
+          updatedAt: Date.now(),
+          platform: navigator.platform || '',
+          userAgent: navigator.userAgent || ''
+        })
+      });
+    }
+  } catch (e) {
+    console.warn('[WebPush Sync Note]:', e);
+  }
 }
 
 function updateNotificationButtonUI() {
@@ -1039,10 +1087,10 @@ function setupNotificationButton() {
         const result = await Notification.requestPermission();
         updateNotificationButtonUI();
         if (result === 'granted') {
-          // Send an immediate confirmation test notification
+          await syncPushSubscriptionToCloud();
           await sendSystemNotification(
-            'Leb Sistem Testi',
-            'Bildirimler başarıyla açıldı! 15 gün kala ve 7 gün kala sabah 10:00 uyarılarını alacaksınız.',
+            'Bildirim Testi',
+            'Bildirimler aktif • 15 gün kala ve 7 gün kala 10:00 uyarıları çalışıyor',
             'leb-welcome-test'
           );
           checkAndDispatchComplianceAlerts();
@@ -1053,10 +1101,10 @@ function setupNotificationButton() {
     } else if (Notification.permission === 'denied') {
       alert("Bildirimler tarayıcınızda engellenmiş. Adres çubuğundaki kilit simgesine (veya telefon ayarları > bildirimler) basıp izin verin.");
     } else if (Notification.permission === 'granted') {
-      // Already granted -> Send an instant test notification so user can verify anytime
+      await syncPushSubscriptionToCloud();
       await sendSystemNotification(
-        'Leb Test Bildirimi',
-        'Bildirim sistemi sorunsuz çalışıyor! 15 gün kala ve 7 gün kala sabah 10:00 uyarıları aktif.',
+        'Bildirim Testi',
+        'Bildirimler aktif • 15 gün kala ve 7 gün kala 10:00 uyarıları çalışıyor',
         'leb-manual-test-' + Date.now()
       );
       checkAndDispatchComplianceAlerts();
@@ -2725,11 +2773,13 @@ document.addEventListener('DOMContentLoaded', () => {
   setupNotificationButton();
   scheduleNext10AmTimer();
   checkAndDispatchComplianceAlerts();
+  syncPushSubscriptionToCloud();
 
   // App focus listener to dispatch 10 AM daily alerts when opening the app
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') {
       checkAndDispatchComplianceAlerts();
+      syncPushSubscriptionToCloud();
     }
   });
 });

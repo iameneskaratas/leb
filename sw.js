@@ -1,5 +1,5 @@
-// Leb - Service Worker v4.8.1 (Scheduled Compliance Alerts: 15-Day Milestone & 7-Day 10 AM Daily)
-const CACHE_VERSION = 'v4.8.1';
+// Leb - Service Worker v4.8.2 (Web Push Background Alerts & Minimal Compliance Engine)
+const CACHE_VERSION = 'v4.8.2';
 const CACHE_NAME = `leb-app-${CACHE_VERSION}`;
 
 const PRECACHE_ASSETS = [
@@ -123,6 +123,28 @@ self.addEventListener('notificationclick', (event) => {
       if (clients.openWindow) {
         return clients.openWindow('./');
       }
+    })
+  );
+});
+
+// 5. Web Push Notification Event (Delivers alerts when app/device is closed)
+self.addEventListener('push', (event) => {
+  let payload = { title: 'Leb', body: '' };
+  if (event.data) {
+    try {
+      payload = event.data.json();
+    } catch (e) {
+      payload = { title: 'Leb', body: event.data.text() };
+    }
+  }
+  event.waitUntil(
+    self.registration.showNotification(payload.title || 'Leb', {
+      body: payload.body || '',
+      icon: 'icons/apple-touch-icon-180.png?v=3.6.0',
+      badge: 'icons/favicon.png?v=3.9.0',
+      tag: payload.tag || 'leb-compliance',
+      vibrate: [200, 100, 200],
+      data: { url: './' }
     })
   );
 });
