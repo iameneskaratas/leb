@@ -1,5 +1,5 @@
-// Leb - Service Worker v4.7.0 (Silent Pure Architecture & Apple iOS Activity Spinner)
-const CACHE_VERSION = 'v4.7.0';
+// Leb - Service Worker v4.8.0 (Scheduled Compliance Alerts: 15-Day Milestone & 7-Day 10 AM Daily)
+const CACHE_VERSION = 'v4.8.0';
 const CACHE_NAME = `leb-app-${CACHE_VERSION}`;
 
 const PRECACHE_ASSETS = [
@@ -92,9 +92,37 @@ self.addEventListener('fetch', (event) => {
   );
 });
 
-// 4. Message Support (Immediate Activation)
+// 4. Message & Scheduled Compliance Notification Support
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
   }
+
+  if (event.data && event.data.type === 'SHOW_NOTIFICATION') {
+    const { title, body, tag } = event.data;
+    self.registration.showNotification(title || 'Leb', {
+      body: body || '',
+      tag: tag || 'leb-compliance',
+      icon: 'icons/apple-touch-icon-180.png?v=3.6.0',
+      badge: 'icons/favicon.png?v=3.9.0',
+      vibrate: [200, 100, 200],
+      data: { url: './' }
+    });
+  }
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
+      for (let client of windowClients) {
+        if (client.url.includes(self.registration.scope) && 'focus' in client) {
+          return client.focus();
+        }
+      }
+      if (clients.openWindow) {
+        return clients.openWindow('./');
+      }
+    })
+  );
 });

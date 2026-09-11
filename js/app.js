@@ -1,7 +1,8 @@
 /**
- * Leb - Fleet & Driver Compliance Engine (v4.3.0)
+ * Leb - Fleet & Driver Compliance Engine (v4.8.0)
  * Calm Palette, Zero Eye Strain, Instant Hard Delete,
- * Realtime SSE Cloud Sync, Mobile Deletion Mirroring, Mobile Pull-to-Refresh
+ * Realtime SSE Cloud Sync, Mobile Deletion Mirroring, Mobile Pull-to-Refresh,
+ * Scheduled Compliance Notifications (15-Day Milestone & 7-Day 10 AM Daily)
  */
 
 // --- 1. Service Worker & Update Manager ---
@@ -11,7 +12,7 @@ function registerServiceWorker() {
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
       navigator.serviceWorker
-        .register('./sw.js?v=4.7.0')
+        .register('./sw.js?v=4.8.0')
         .catch((err) => {
           console.warn('[Leb] ServiceWorker register note:', err);
         });
@@ -210,7 +211,9 @@ function areItemListsEqual(listA, listB) {
       a.roderDate !== b.roderDate ||
       a.takoTuvDate !== b.takoTuvDate ||
       a.passportDate !== b.passportDate ||
-      a.passport !== b.passport
+      a.passport !== b.passport ||
+      (a.notes || '') !== (b.notes || '') ||
+      Boolean(a.appointmentTaken) !== Boolean(b.appointmentTaken)
     ) {
       return false;
     }
@@ -789,6 +792,256 @@ function formatDisplayDate(dateStr) {
   }
 }
 
+// --- 8.5. Scheduled Compliance Notifications (15-Day Milestone & 7-Day 10 AM Daily) ---
+const NOTIF_15D_KEY = 'leb_notif_15d_history_v1';
+const NOTIF_DAILY_DATE_KEY = 'leb_notif_last_10am_date';
+
+function isAppointmentNoted(rec) {
+  if (!rec) return false;
+  if (rec.appointmentTaken === true || rec.appointmentTaken === 'true') return true;
+  const notes = rec.notes || '';
+  if (!notes) return false;
+  const lower = toTurkishLower(notes);
+  return (
+    lower.includes('alındı') ||
+    lower.includes('alindi') ||
+    lower.includes('randevu') ||
+    lower.includes('yapıldı') ||
+    lower.includes('yapildi') ||
+    lower.includes('tamam') ||
+    lower.includes('ödendi') ||
+    lower.includes('odendi')
+  );
+}
+
+function getRecordDocumentDates(rec) {
+  if (!rec) return [];
+  const list = [];
+  if (rec.type === 'vehicle') {
+    if (rec.inspectionDate) list.push({ key: 'inspectionDate', label: 'Muayene', dateStr: rec.inspectionDate });
+    if (rec.insuranceDate) list.push({ key: 'insuranceDate', label: 'Sigorta', dateStr: rec.insuranceDate });
+    if (rec.greenCardDate) list.push({ key: 'greenCardDate', label: 'Yeşil Sigorta', dateStr: rec.greenCardDate });
+    const subType = rec.subType || '';
+    if (subType === 'Çekici' || subType === 'Dorse') {
+      if (rec.roderDate) list.push({ key: 'roderDate', label: 'Roder', dateStr: rec.roderDate });
+    }
+    if (subType === 'Çekici') {
+      if (rec.takoTuvDate) list.push({ key: 'takoTuvDate', label: 'Tako Tüv', dateStr: rec.takoTuvDate });
+    }
+  } else {
+    if (rec.visaDate) list.push({ key: 'visaDate', label: 'Vize', dateStr: rec.visaDate });
+    if (rec.licenseDate) list.push({ key: 'licenseDate', label: 'Ehliyet / SRC', dateStr: rec.licenseDate });
+    if (rec.passportDate) list.push({ key: 'passportDate', label: 'Pasaport', dateStr: rec.passportDate });
+  }
+  return list;
+}
+
+async function sendSystemNotification(title, body, tag) {
+  if (!('Notification' in window)) return;
+  if (Notification.permission !== 'granted') return;
+
+  try {
+    if ('serviceWorker' in navigator) {
+      const reg = await navigator.serviceWorker.ready;
+      if (reg && reg.showNotification) {
+        await reg.showNotification(title, {
+          body,
+          tag: tag || 'leb-compliance',
+          icon: 'icons/apple-touch-icon-180.png?v=3.6.0',
+          badge: 'icons/favicon.png?v=3.9.0',
+          vibrate: [200, 100, 200],
+          data: { url: './' }
+        });
+        return;
+      }
+    }
+  } catch (e) {
+    console.warn('[Notification SW Note]:', e);
+  }
+
+  // Fallback to desktop Notification constructor
+  try {
+    new Notification(title, {
+      body,
+      tag: tag || 'leb-compliance',
+      icon: 'icons/apple-touch-icon-180.png?v=3.6.0'
+    });
+  } catch (err) {
+    console.warn('[Notification API Note]:', err);
+  }
+}
+
+function checkAndDispatchComplianceAlerts() {
+  if (!('Notification' in window) || Notification.permission !== 'granted') {
+    return;
+  }
+
+  const records = getStoredRecords(false);
+  if (!records || records.length === 0) return;
+
+  // 1. 15-Day Milestone Rule: Sent ONCE per document expiration date cycle
+  let history15d = {};
+  try {
+    history15d = JSON.parse(localStorage.getItem(NOTIF_15D_KEY) || '{}');
+  } catch (e) {
+    history15d = {};
+  }
+  let historyChanged = false;
+
+  records.forEach(rec => {
+    const docs = getRecordDocumentDates(rec);
+    docs.forEach(doc => {
+      const days = getDaysRemaining(doc.dateStr);
+      if (days !== null && days <= 15 && days > 7) {
+        const cycleKey = `${rec.id}_${doc.key}_${doc.dateStr}`;
+        if (!history15d[cycleKey]) {
+          const title = `Leb: ${rec.title} - ${doc.label}`;
+          const body = `${doc.label} süresinin dolmasına 15 gün kaldı (${formatDisplayDate(doc.dateStr)}).`;
+          sendSystemNotification(title, body, `15d-${rec.id}-${doc.key}`);
+          history15d[cycleKey] = Date.now();
+          historyChanged = true;
+        }
+      }
+    });
+  });
+
+  if (historyChanged) {
+    try {
+      localStorage.setItem(NOTIF_15D_KEY, JSON.stringify(history15d));
+    } catch (e) {}
+  }
+
+  // 2. 7-Day Milestone Rule: Every day at 10:00 AM unless "muayene / randevu alındı"
+  const now = new Date();
+  const currentHour = now.getHours();
+  const todayDateStr = getTodayDateStr();
+  const lastDailySentDate = localStorage.getItem(NOTIF_DAILY_DATE_KEY);
+
+  // If it is 10:00 AM or later and today's alert hasn't run yet
+  if (currentHour >= 10 && lastDailySentDate !== todayDateStr) {
+    const urgentItems = [];
+
+    records.forEach(rec => {
+      // If user marked appointment taken or notes indicate appointment taken, SKIP!
+      if (isAppointmentNoted(rec)) return;
+
+      const docs = getRecordDocumentDates(rec);
+      docs.forEach(doc => {
+        const days = getDaysRemaining(doc.dateStr);
+        if (days !== null && days <= 7 && days >= -30) {
+          urgentItems.push({
+            recTitle: rec.title,
+            docLabel: doc.label,
+            days,
+            dateStr: doc.dateStr
+          });
+        }
+      });
+    });
+
+    if (urgentItems.length > 0) {
+      if (urgentItems.length === 1) {
+        const item = urgentItems[0];
+        const statusText = item.days <= 0 ? 'süresi DOLDU!' : `${item.days} gün kaldı!`;
+        sendSystemNotification(
+          `Leb: ${item.recTitle} - ${item.docLabel}`,
+          `${item.docLabel} için ${statusText} Randevu henüz alınmadı.`,
+          `daily-7d-${todayDateStr}`
+        );
+      } else {
+        const sample = urgentItems.slice(0, 3).map(u => `${u.recTitle} (${u.docLabel})`).join(', ');
+        const extra = urgentItems.length > 3 ? ` ve ${urgentItems.length - 3} diğer` : '';
+        sendSystemNotification(
+          `Leb: ${urgentItems.length} Evrak İçin Randevu Alınmadı!`,
+          `Son 7 güne giren evraklar: ${sample}${extra}. Lütfen randevu durumunu kontrol edin.`,
+          `daily-7d-${todayDateStr}`
+        );
+      }
+    }
+
+    // Mark as sent for today
+    try {
+      localStorage.setItem(NOTIF_DAILY_DATE_KEY, todayDateStr);
+    } catch (e) {}
+  }
+}
+
+let timer10AmId = null;
+function scheduleNext10AmTimer() {
+  if (timer10AmId) {
+    clearTimeout(timer10AmId);
+    timer10AmId = null;
+  }
+
+  const now = new Date();
+  const target10Am = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 10, 0, 0, 0);
+
+  if (now.getTime() >= target10Am.getTime()) {
+    // If it's already past 10 AM today, schedule for tomorrow at 10 AM
+    target10Am.setDate(target10Am.getDate() + 1);
+  }
+
+  const msUntil10Am = target10Am.getTime() - now.getTime();
+  timer10AmId = setTimeout(() => {
+    checkAndDispatchComplianceAlerts();
+    scheduleNext10AmTimer();
+  }, msUntil10Am);
+}
+
+function updateNotificationButtonUI() {
+  const btn = document.getElementById('btnNotifToggle');
+  if (!btn) return;
+
+  if (!('Notification' in window)) {
+    btn.style.display = 'none';
+    return;
+  }
+
+  const perm = Notification.permission;
+  btn.classList.remove('granted', 'needs-perm', 'denied');
+
+  if (perm === 'granted') {
+    btn.classList.add('granted');
+    btn.title = "Bildirimler Aktif (15 gün ve 7 gün kala her sabah 10:00'da uyarı)";
+  } else if (perm === 'denied') {
+    btn.classList.add('denied');
+    btn.title = "Bildirimler Tarayıcıda Engellendi (Kilit ikonuna basıp izin verin)";
+  } else {
+    btn.classList.add('needs-perm');
+    btn.title = "Bildirimleri Aç (15 gün ve 7 gün kala sabah 10:00 uyarıları)";
+  }
+}
+
+function setupNotificationButton() {
+  const btn = document.getElementById('btnNotifToggle');
+  if (!btn) return;
+
+  updateNotificationButtonUI();
+
+  btn.addEventListener('click', async () => {
+    if (!('Notification' in window)) {
+      return;
+    }
+
+    if (Notification.permission === 'default') {
+      try {
+        const result = await Notification.requestPermission();
+        updateNotificationButtonUI();
+        if (result === 'granted') {
+          checkAndDispatchComplianceAlerts();
+        }
+      } catch (e) {
+        console.warn('Perm request note:', e);
+      }
+    } else if (Notification.permission === 'denied') {
+      alert("Bildirimler tarayıcınızda engellenmiş. Adres çubuğundaki kilit simgesine basıp 'Bildirimler'e izin verin.");
+    } else {
+      // Already granted, run check
+      checkAndDispatchComplianceAlerts();
+    }
+  });
+}
+
 // --- 9. App State & Filter Management ---
 let currentSection = 'vehicles'; // 'vehicles' | 'drivers'
 let currentStatFilter = 'all';    // 'all' | 'critical' | 'warning' | 'safe'
@@ -1034,7 +1287,7 @@ function renderCurrentView() {
 
   // Layout signature to prevent unnecessary DOM redraws while guaranteeing updates on any state change
   const renderSignature = `${currentSection}_${currentStatFilter}_${currentSubFilter}_${currentSearchQuery}_${list.length}_${list.map(r => 
-    `${r.id}_${r.title}_${r.subType}_${r.updatedAt}_${r.inspectionDate}_${r.insuranceDate}_${r.greenCardDate}_${r.roderDate}_${r.takoTuvDate}_${r.visaDate}_${r.licenseDate}_${r.passportDate}`
+    `${r.id}_${r.title}_${r.subType}_${r.updatedAt}_${r.inspectionDate}_${r.insuranceDate}_${r.greenCardDate}_${r.roderDate}_${r.takoTuvDate}_${r.visaDate}_${r.licenseDate}_${r.passportDate}_${r.notes || ''}_${r.appointmentTaken || false}`
   ).join('|')}`;
 
   if (renderSignature === lastRenderedHash && container.children.length === list.length) {
@@ -1147,11 +1400,22 @@ function renderCurrentView() {
       ? `<span class="row-type-pill">${escapeHtml(rec.subType || 'Çekici')}</span>`
       : '';
 
+    const isAppt = isAppointmentNoted(rec);
+    const appointmentBadgeHtml = isAppt
+      ? `<span class="badge-appointment-noted" title="Muayene / Randevu Alındı">✓ Randevu Alındı</span>`
+      : '';
+
+    const notesTagHtml = rec.notes
+      ? `<span class="row-notes-tag" title="Not: ${escapeHtml(rec.notes)}">📝 ${escapeHtml(rec.notes)}</span>`
+      : '';
+
     row.innerHTML = `
       <div class="row-top-mobile">
         <div class="row-identity">
           <span class="row-title">${escapeHtml(rec.title)}</span>
           ${typePillHtml}
+          ${appointmentBadgeHtml}
+          ${notesTagHtml}
         </div>
         <div class="row-right">
           <span class="urgency-badge badge-${urgency.status}">
@@ -1694,6 +1958,9 @@ function setupModals() {
         return;
       }
 
+      const vNotesInput = document.getElementById('inputVehicleNotes');
+      const vNotes = vNotesInput ? vNotesInput.value.trim() : '';
+
       const newRec = {
         id: 'veh_' + Date.now(),
         type: 'vehicle',
@@ -1704,7 +1971,8 @@ function setupModals() {
         greenCardDate: greenDate,
         roderDate: roderDate,
         takoTuvDate: takoTuvDate,
-        notes: '',
+        notes: vNotes,
+        appointmentTaken: isAppointmentNoted({ notes: vNotes }),
         createdAt: new Date().toISOString(),
         updatedAt: Date.now(),
         deleted: false
@@ -1739,6 +2007,7 @@ function setupModals() {
       renderCurrentView();
 
       pushToCloud(records);
+      checkAndDispatchComplianceAlerts();
     });
   }
 
@@ -1752,6 +2021,8 @@ function setupModals() {
       const licDate = document.getElementById('inputLicenseDate').value || null;
       const passport = document.getElementById('inputPassport').value.trim();
       const passportDate = document.getElementById('inputPassportDate') ? document.getElementById('inputPassportDate').value : null;
+      const dNotesInput = document.getElementById('inputDriverNotes');
+      const dNotes = dNotesInput ? dNotesInput.value.trim() : '';
 
       if (!name) {
         if (nameInput) {
@@ -1779,7 +2050,8 @@ function setupModals() {
         licenseDate: licDate,
         passport: passport || '',
         passportDate: passportDate || null,
-        notes: '',
+        notes: dNotes,
+        appointmentTaken: isAppointmentNoted({ notes: dNotes }),
         createdAt: new Date().toISOString(),
         updatedAt: Date.now(),
         deleted: false
@@ -1814,6 +2086,7 @@ function setupModals() {
       renderCurrentView();
 
       pushToCloud(records);
+      checkAndDispatchComplianceAlerts();
     });
   }
 
@@ -1876,12 +2149,21 @@ function setupModals() {
       const rec = records.find(r => r.id === activeQuickRecordId);
       if (rec) {
         rec[field] = dateVal;
+        const btnToggleAppt = document.getElementById('btnToggleAppointment');
+        const quickNotesInput = document.getElementById('quickNotesInput');
+        if (btnToggleAppt) {
+          rec.appointmentTaken = btnToggleAppt.classList.contains('active');
+        }
+        if (quickNotesInput) {
+          rec.notes = quickNotesInput.value.trim();
+        }
         rec.updatedAt = Date.now();
         saveRecordsLocally(records);
         closeQuickModal();
         lastRenderedHash = '';
         renderCurrentView();
         pushToCloud(records);
+        checkAndDispatchComplianceAlerts();
       }
     });
   }
@@ -1902,6 +2184,22 @@ function openQuickModal(id) {
 
   if (titleEl) {
     titleEl.textContent = `${rec.title}${rec.type === 'vehicle' && rec.subType ? ' • ' + rec.subType : ''}`;
+  }
+
+  // Bind appointment status toggle and notes
+  const btnToggleAppt = document.getElementById('btnToggleAppointment');
+  const quickNotesInput = document.getElementById('quickNotesInput');
+  let currentApptStatus = isAppointmentNoted(rec);
+  if (btnToggleAppt) {
+    btnToggleAppt.classList.toggle('active', currentApptStatus);
+    btnToggleAppt.onclick = (e) => {
+      e.preventDefault();
+      currentApptStatus = !currentApptStatus;
+      btnToggleAppt.classList.toggle('active', currentApptStatus);
+    };
+  }
+  if (quickNotesInput) {
+    quickNotesInput.value = rec.notes || '';
   }
 
   // Options according to type
@@ -2400,4 +2698,16 @@ document.addEventListener('DOMContentLoaded', () => {
   setupRealtimeSync();
   setupLifecycleSync();
   setupPullToRefresh();
+
+  // Scheduled Compliance Notifications (15-Day Milestone & 7-Day 10 AM Daily)
+  setupNotificationButton();
+  scheduleNext10AmTimer();
+  checkAndDispatchComplianceAlerts();
+
+  // App focus listener to dispatch 10 AM daily alerts when opening the app
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      checkAndDispatchComplianceAlerts();
+    }
+  });
 });
