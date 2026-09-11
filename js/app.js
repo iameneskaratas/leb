@@ -12,7 +12,7 @@ function registerServiceWorker() {
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
       navigator.serviceWorker
-        .register('./sw.js?v=4.9.3')
+        .register('./sw.js?v=4.9.4')
         .catch((err) => {
           console.warn('[Leb] ServiceWorker register note:', err);
         });
@@ -2009,6 +2009,11 @@ function setupModals() {
   if (closeAddBtn) closeAddBtn.addEventListener('click', closeAddModal);
   if (cancelVehicleBtn) cancelVehicleBtn.addEventListener('click', closeAddModal);
   if (cancelDriverBtn) cancelDriverBtn.addEventListener('click', closeAddModal);
+  if (addModal) {
+    addModal.addEventListener('click', (e) => {
+      if (e.target === addModal) closeAddModal();
+    });
+  }
 
   if (switchVehicle) switchVehicle.addEventListener('click', () => activateModalTab('vehicle'));
   if (switchDriver) switchDriver.addEventListener('click', () => activateModalTab('driver'));
@@ -2191,6 +2196,11 @@ function setupModals() {
 
   if (closeQuickBtn) closeQuickBtn.addEventListener('click', closeQuickModal);
   if (cancelQuickBtn) cancelQuickBtn.addEventListener('click', closeQuickModal);
+  if (quickModal) {
+    quickModal.addEventListener('click', (e) => {
+      if (e.target === quickModal) closeQuickModal();
+    });
+  }
 
   function updateQuickPreview() {
     if (quickDatePreview && quickDateInput && quickDateInput.value) {
@@ -2748,11 +2758,58 @@ function setupHeaderScroll() {
   handleScroll();
 }
 
+// --- 13.5 Global ESC Key Dismissal (Modals, Calendars, Dialogs) ---
+function setupGlobalEscapeListener() {
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' || e.key === 'Esc') {
+      // 1. If calendar popover is currently open, close it first
+      const calPopover = document.getElementById('lebCalendarPopover');
+      if (calPopover && calPopover.style.display !== 'none') {
+        if (typeof closeCalendar === 'function') closeCalendar();
+        return;
+      }
+      // 2. If quickModal is active, close it
+      const quickModal = document.getElementById('quickModal');
+      if (quickModal && quickModal.classList.contains('active')) {
+        const closeQuickBtn = document.getElementById('closeQuickModalBtn');
+        if (closeQuickBtn) {
+          closeQuickBtn.click();
+        } else {
+          quickModal.classList.remove('active');
+        }
+        return;
+      }
+      // 3. If addModal is active, close it
+      const addModal = document.getElementById('addModal');
+      if (addModal && addModal.classList.contains('active')) {
+        const closeAddBtn = document.getElementById('closeAddModalBtn');
+        if (closeAddBtn) {
+          closeAddBtn.click();
+        } else {
+          addModal.classList.remove('active');
+        }
+        return;
+      }
+      // 4. If exportModal is active, close it
+      const exportModal = document.getElementById('exportModal');
+      if (exportModal && exportModal.classList.contains('active')) {
+        if (typeof closeExportModal === 'function') {
+          closeExportModal();
+        } else {
+          exportModal.classList.remove('active');
+        }
+        return;
+      }
+    }
+  });
+}
+
 // --- 14. Initialization Lifecycle ---
 document.addEventListener('DOMContentLoaded', () => {
   registerServiceWorker();
   setupNetworkMonitoring();
   setupHeaderScroll();
+  setupGlobalEscapeListener();
   setupSectionTabs();
   renderSubFilterPills();
   setupStatFilters();
