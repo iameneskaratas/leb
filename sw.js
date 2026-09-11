@@ -1,5 +1,5 @@
-// Leb - Service Worker v4.9.6 (PC Header Logo Fix & Brand Spacing)
-const CACHE_VERSION = 'v4.9.6';
+// Leb - Service Worker v4.9.7 (Mobile Hero Brand & Zero-Blur Transparent Top Header)
+const CACHE_VERSION = 'v4.9.7';
 const CACHE_NAME = `leb-app-${CACHE_VERSION}`;
 
 const PRECACHE_ASSETS = [
