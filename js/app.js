@@ -1019,24 +1019,46 @@ function setupNotificationButton() {
   updateNotificationButtonUI();
 
   btn.addEventListener('click', async () => {
+    // 1. Device support check
     if (!('Notification' in window)) {
+      alert('Cihazınız veya tarayıcınız web bildirimlerini desteklemiyor.');
       return;
     }
 
+    // 2. iOS Safari PWA check
+    const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent.toLowerCase());
+    const isStandalone = window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches;
+    if (isIOS && !isStandalone) {
+      alert("iPhone'da bildirim alabilmek için Safari Paylaş (kare içinden yukarı ok çıkan) butonuna basıp 'Ana Ekrana Ekle' yapmalı ve uygulamayı ana ekrandan açmalısınız.");
+      return;
+    }
+
+    // 3. Permission handling & Instant Test Notification
     if (Notification.permission === 'default') {
       try {
         const result = await Notification.requestPermission();
         updateNotificationButtonUI();
         if (result === 'granted') {
+          // Send an immediate confirmation test notification
+          await sendSystemNotification(
+            'Leb Sistem Testi',
+            'Bildirimler başarıyla açıldı! 15 gün kala ve 7 gün kala sabah 10:00 uyarılarını alacaksınız.',
+            'leb-welcome-test'
+          );
           checkAndDispatchComplianceAlerts();
         }
       } catch (e) {
         console.warn('Perm request note:', e);
       }
     } else if (Notification.permission === 'denied') {
-      alert("Bildirimler tarayıcınızda engellenmiş. Adres çubuğundaki kilit simgesine basıp 'Bildirimler'e izin verin.");
-    } else {
-      // Already granted, run check
+      alert("Bildirimler tarayıcınızda engellenmiş. Adres çubuğundaki kilit simgesine (veya telefon ayarları > bildirimler) basıp izin verin.");
+    } else if (Notification.permission === 'granted') {
+      // Already granted -> Send an instant test notification so user can verify anytime
+      await sendSystemNotification(
+        'Leb Test Bildirimi',
+        'Bildirim sistemi sorunsuz çalışıyor! 15 gün kala ve 7 gün kala sabah 10:00 uyarıları aktif.',
+        'leb-manual-test-' + Date.now()
+      );
       checkAndDispatchComplianceAlerts();
     }
   });
