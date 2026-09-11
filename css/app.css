@@ -120,13 +120,15 @@ body {
   -webkit-backdrop-filter: none !important;
 }
 
-/* Blur effect only appears when scrolling down */
-.leb-header.is-scrolled {
-  background: rgba(248, 249, 250, 0.94);
-  backdrop-filter: blur(12px) !important;
-  -webkit-backdrop-filter: blur(12px) !important;
-  border-bottom: 1px solid var(--border-subtle);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+/* Blur effect only appears when scrolling down on Desktop (Mobile is 100% transparent and clear) */
+@media (min-width: 769px) {
+  .leb-header.is-scrolled {
+    background: rgba(248, 249, 250, 0.94);
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+    border-bottom: 1px solid var(--border-subtle);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+  }
 }
 
 .leb-header-inner {
@@ -1628,29 +1630,31 @@ body.theme-wallpaper .hero-title {
     margin: 2px 0 10px 0;
   }
 
-  /* Mobile Top Right System Capsule: Crisp, Zero Blur, Floating Pill */
+  /* Mobile Top Right System Capsule: 100% Crisp, Opaque, High-Contrast, Zero Blur */
   .header-actions-group {
     position: static !important;
   }
 
   .header-system-bar,
-  body.theme-wallpaper .header-system-bar {
-    background: rgba(18, 24, 38, 0.88) !important;
+  body:not(.theme-wallpaper) .header-system-bar {
+    background: #FFFFFF !important;
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
-    border: 1px solid rgba(255, 255, 255, 0.22) !important;
+    filter: none !important;
+    border: 1px solid #CBD5E1 !important;
     border-radius: 9999px !important;
-    padding: 3px 6px !important;
+    padding: 3px 8px !important;
     gap: 4px !important;
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35) !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
   }
 
-  body:not(.theme-wallpaper) .header-system-bar {
-    background: rgba(255, 255, 255, 0.96) !important;
+  body.theme-wallpaper .header-system-bar {
+    background: #0F172A !important;
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
-    border: 1px solid rgba(0, 0, 0, 0.12) !important;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
+    filter: none !important;
+    border: 1px solid #334155 !important;
+    box-shadow: none !important;
   }
 
   .sync-status-label {
@@ -1659,21 +1663,76 @@ body.theme-wallpaper .hero-title {
 
   .sync-bottom-badge {
     padding: 2px 4px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+  }
+
+  .sync-dot {
+    width: 8px !important;
+    height: 8px !important;
+    background: #10B981 !important;
+    border-radius: 50% !important;
+    box-shadow: none !important;
   }
 
   .footer-actions {
-    padding-left: 4px !important;
-    gap: 2px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    padding-left: 5px !important;
+    gap: 3px !important;
+    border-left: 1px solid #CBD5E1 !important;
+  }
+
+  body.theme-wallpaper .footer-actions {
+    border-left: 1px solid #334155 !important;
   }
 
   .leb-btn-icon {
-    width: 26px !important;
-    height: 26px !important;
+    width: 28px !important;
+    height: 28px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    color: #1E293B !important;
+    background: transparent !important;
+    border: none !important;
+    border-radius: 6px !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    filter: none !important;
     transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  }
+
+  body.theme-wallpaper .leb-btn-icon {
+    color: #F8FAFC !important;
+  }
+
+  .leb-btn-icon:hover {
+    background: rgba(0, 0, 0, 0.06) !important;
+  }
+
+  body.theme-wallpaper .leb-btn-icon:hover {
+    background: rgba(255, 255, 255, 0.12) !important;
   }
 
   .leb-btn-icon:active {
     transform: scale(0.9) !important;
+  }
+
+  .theme-toggle-btn.active {
+    color: #0284C7 !important;
+  }
+
+  body.theme-wallpaper .theme-toggle-btn.active {
+    color: #38BDF8 !important;
+  }
+
+  .notif-bell-btn.granted {
+    color: #059669 !important;
+  }
+
+  body.theme-wallpaper .notif-bell-btn.granted {
+    color: #34D399 !important;
   }
 
   /* Main Viewport Spacing (Leaves room for floating bottom dock) */
@@ -2278,13 +2337,14 @@ body.theme-wallpaper .badge-appointment-noted {
   color: #A7F3D0 !important;
 }
 
-/* Header System Capsule in Wallpaper Theme (Crisp, Zero Blur) */
+/* Header System Capsule in Wallpaper Theme (Crisp, Zero Blur, Solid) */
 body.theme-wallpaper .header-system-bar {
-  background: rgba(18, 24, 38, 0.88) !important;
+  background: #0F172A !important;
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
-  border: 1px solid rgba(255, 255, 255, 0.22) !important;
-  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.35) !important;
+  filter: none !important;
+  border: 1px solid #334155 !important;
+  box-shadow: none !important;
 }
 
 body.theme-wallpaper .sync-bottom-badge {
