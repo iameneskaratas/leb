@@ -12,7 +12,7 @@ function registerServiceWorker() {
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
       navigator.serviceWorker
-        .register('./sw.js?v=4.9.1')
+        .register('./sw.js?v=4.9.2')
         .catch((err) => {
           console.warn('[Leb] ServiceWorker register note:', err);
         });
@@ -451,7 +451,7 @@ function applyTheme(themeMode) {
 
   const metaTheme = document.querySelector('meta[name="theme-color"]');
   if (metaTheme) {
-    metaTheme.setAttribute('content', isWallpaper ? '#06080E' : '#F8F9FA');
+    metaTheme.setAttribute('content', isWallpaper ? '#0B0F19' : '#F8F9FA');
   }
 }
 

@@ -698,8 +698,8 @@ body {
 /* --- Quiet Bottom Footer --- */
 .leb-footer {
   margin-top: auto;
-  background: var(--bg-surface);
-  border-top: 1px solid var(--border-subtle);
+  background: transparent;
+  border: none;
   padding-top: 10px;
   padding-bottom: max(10px, env(safe-area-inset-bottom));
   padding-left: max(16px, env(safe-area-inset-left));
@@ -1557,6 +1557,9 @@ body {
   padding: 10px 16px max(14px, env(safe-area-inset-bottom));
   display: flex;
   justify-content: center;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
 }
 
 .leb-footer-inner {
@@ -1764,11 +1767,12 @@ body {
 }
 
 /* ==========================================================================
-   WALLPAPER THEME (DESERT NIGHT & REFINED GLASSMORPHISM)
-   Mobile & Web Responsive, High Legibility, Smooth Persistent State
+/* ==========================================================================
+   WALLPAPER THEME (DESERT NIGHT & REFINED LUMINOUS GLASSMORPHISM)
+   Mobile & Web Responsive, Ambient Dusk Glow, High Legibility
    ========================================================================== */
 html.theme-wallpaper {
-  background-color: #06080E !important;
+  background-color: #0B0F19 !important;
 }
 
 body.theme-wallpaper {
@@ -1785,10 +1789,12 @@ body.theme-wallpaper {
   width: 100vw;
   height: 100vh;
   height: 100dvh;
-  background-color: #06080E;
-  background-image: url('../icons/wallpaper.jpg');
+  background-color: #0B0F19;
+  background-image: 
+    radial-gradient(ellipse at 50% 30%, rgba(168, 85, 247, 0.16) 0%, rgba(236, 72, 153, 0.1) 32%, transparent 70%),
+    url('../icons/wallpaper.jpg');
   background-repeat: no-repeat;
-  background-position: center 58%;
+  background-position: center 40%;
   background-size: cover;
   z-index: 0;
   pointer-events: none;
@@ -1802,15 +1808,15 @@ body.theme-wallpaper .wallpaper-backdrop {
 
 /* Pull to Refresh in Wallpaper Theme */
 body.theme-wallpaper .leb-pull-indicator {
-  background: rgba(15, 23, 42, 0.88);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.45);
+  background: rgba(255, 255, 255, 0.25) !important;
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.35) !important;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35) !important;
 }
 
 body.theme-wallpaper .leb-pull-indicator .ptr-icon {
-  color: #FFFFFF;
+  color: #FFFFFF !important;
 }
 
 /* Ensure all page content stacks cleanly above backdrop */
@@ -1823,15 +1829,15 @@ body.theme-wallpaper .leb-pull-indicator .ptr-icon {
 
 /* Header in Wallpaper Theme */
 body.theme-wallpaper .leb-header {
-  background: rgba(10, 14, 22, 0.68) !important;
+  background: rgba(15, 20, 32, 0.45) !important;
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.14) !important;
 }
 
 body.theme-wallpaper .leb-header.is-scrolled {
-  background: rgba(10, 14, 22, 0.88) !important;
-  border-bottom-color: rgba(255, 255, 255, 0.15) !important;
+  background: rgba(15, 20, 32, 0.8) !important;
+  border-bottom-color: rgba(255, 255, 255, 0.2) !important;
 }
 
 body.theme-wallpaper .brand-main {
@@ -1841,14 +1847,16 @@ body.theme-wallpaper .brand-main {
 
 /* Primary Tabs (Araçlar vs Sürücüler) */
 body.theme-wallpaper .leb-segmented-track {
-  background: rgba(15, 23, 42, 0.68) !important;
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  background: rgba(255, 255, 255, 0.12) !important;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2) !important;
 }
 
 body.theme-wallpaper .leb-seg-btn {
-  color: rgba(255, 255, 255, 0.72) !important;
+  color: rgba(255, 255, 255, 0.85) !important;
+  font-weight: 600 !important;
 }
 
 body.theme-wallpaper .leb-seg-btn:hover {
@@ -1856,14 +1864,14 @@ body.theme-wallpaper .leb-seg-btn:hover {
 }
 
 body.theme-wallpaper .leb-seg-btn.active {
-  background: rgba(255, 255, 255, 0.95) !important;
+  background: #FFFFFF !important;
   color: #0F172A !important;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35) !important;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.25) !important;
 }
 
 body.theme-wallpaper .leb-counter-pill {
-  background: rgba(255, 255, 255, 0.12) !important;
-  color: rgba(255, 255, 255, 0.85) !important;
+  background: rgba(255, 255, 255, 0.2) !important;
+  color: #FFFFFF !important;
 }
 
 body.theme-wallpaper .leb-seg-btn.active .leb-counter-pill {
@@ -1873,69 +1881,70 @@ body.theme-wallpaper .leb-seg-btn.active .leb-counter-pill {
 
 /* Stat Metric Cards */
 body.theme-wallpaper .leb-stat-card {
-  background: rgba(15, 23, 42, 0.58) !important;
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.1) !important;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3) !important;
+  background: rgba(255, 255, 255, 0.11) !important;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.18) !important;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.22) !important;
 }
 
 body.theme-wallpaper .leb-stat-card:hover {
-  background: rgba(20, 30, 50, 0.72) !important;
-  border-color: rgba(255, 255, 255, 0.22) !important;
+  background: rgba(255, 255, 255, 0.18) !important;
+  border-color: rgba(255, 255, 255, 0.3) !important;
 }
 
 body.theme-wallpaper .leb-stat-card.active-stat {
-  border-color: rgba(255, 255, 255, 0.45) !important;
-  background: rgba(30, 41, 59, 0.75) !important;
-  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.45) !important;
+  border-color: rgba(255, 255, 255, 0.5) !important;
+  background: rgba(255, 255, 255, 0.2) !important;
+  box-shadow: 0 4px 22px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.35) !important;
 }
 
 body.theme-wallpaper .stat-num {
   color: #FFFFFF !important;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
 }
 
 body.theme-wallpaper .stat-num-critical {
-  color: #F87171 !important;
+  color: #FCA5A5 !important;
 }
 
 body.theme-wallpaper .stat-num-warning {
-  color: #FBBF24 !important;
+  color: #FDE047 !important;
 }
 
 body.theme-wallpaper .stat-num-safe {
-  color: #34D399 !important;
+  color: #86EFAC !important;
 }
 
 body.theme-wallpaper .stat-title {
-  color: rgba(255, 255, 255, 0.75) !important;
+  color: rgba(255, 255, 255, 0.88) !important;
 }
 
 /* Search Bar Container */
 body.theme-wallpaper .leb-search-container input {
-  background: rgba(15, 23, 42, 0.6) !important;
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  background: rgba(255, 255, 255, 0.12) !important;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
   color: #FFFFFF !important;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25) !important;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15) !important;
 }
 
 body.theme-wallpaper .leb-search-container input:focus {
-  border-color: rgba(255, 255, 255, 0.45) !important;
-  background: rgba(20, 30, 50, 0.8) !important;
+  border-color: rgba(255, 255, 255, 0.5) !important;
+  background: rgba(255, 255, 255, 0.18) !important;
 }
 
 body.theme-wallpaper .leb-search-container input::placeholder {
-  color: rgba(255, 255, 255, 0.45) !important;
+  color: rgba(255, 255, 255, 0.6) !important;
 }
 
 body.theme-wallpaper .leb-search-icon {
-  color: rgba(255, 255, 255, 0.5) !important;
+  color: rgba(255, 255, 255, 0.65) !important;
 }
 
 body.theme-wallpaper .leb-clear-btn {
-  color: rgba(255, 255, 255, 0.5) !important;
+  color: rgba(255, 255, 255, 0.6) !important;
 }
 
 body.theme-wallpaper .leb-clear-btn:hover {
@@ -1944,136 +1953,144 @@ body.theme-wallpaper .leb-clear-btn:hover {
 
 /* Filter Pills */
 body.theme-wallpaper .filter-pill {
-  background: rgba(15, 23, 42, 0.58) !important;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.12) !important;
-  color: rgba(255, 255, 255, 0.8) !important;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important;
+  background: rgba(255, 255, 255, 0.11) !important;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.18) !important;
+  color: rgba(255, 255, 255, 0.9) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
 }
 
 body.theme-wallpaper .filter-pill:hover {
-  background: rgba(255, 255, 255, 0.16) !important;
+  background: rgba(255, 255, 255, 0.2) !important;
   color: #FFFFFF !important;
-  border-color: rgba(255, 255, 255, 0.25) !important;
+  border-color: rgba(255, 255, 255, 0.3) !important;
 }
 
 body.theme-wallpaper .filter-pill.active {
   background: #FFFFFF !important;
   color: #0F172A !important;
   border-color: #FFFFFF !important;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35) !important;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.25) !important;
 }
 
 /* Row Cards */
 body.theme-wallpaper .leb-row-card {
-  background: rgba(15, 23, 42, 0.6) !important;
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.1) !important;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3) !important;
+  background: rgba(255, 255, 255, 0.11) !important;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.18) !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
 }
 
 body.theme-wallpaper .leb-row-card:hover {
-  background: rgba(20, 30, 50, 0.72) !important;
-  border-color: rgba(255, 255, 255, 0.18) !important;
+  background: rgba(255, 255, 255, 0.16) !important;
+  border-color: rgba(255, 255, 255, 0.3) !important;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.25) !important;
 }
 
 body.theme-wallpaper .row-title {
   color: #FFFFFF !important;
-  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
 }
 
 body.theme-wallpaper .row-type-pill {
-  background: rgba(255, 255, 255, 0.1) !important;
-  border: 1px solid rgba(255, 255, 255, 0.12) !important;
-  color: #E2E8F0 !important;
+  background: rgba(255, 255, 255, 0.14) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  color: #FFFFFF !important;
 }
 
 body.theme-wallpaper .date-name {
-  color: rgba(255, 255, 255, 0.6) !important;
+  color: rgba(255, 255, 255, 0.72) !important;
 }
 
 body.theme-wallpaper .date-val {
-  color: #F1F5F9 !important;
+  color: #FFFFFF !important;
+  font-weight: 600 !important;
 }
 
 body.theme-wallpaper .date-bullet {
-  color: rgba(255, 255, 255, 0.3) !important;
+  color: rgba(255, 255, 255, 0.35) !important;
 }
 
 body.theme-wallpaper .row-notes-tag {
-  background: rgba(255, 255, 255, 0.08) !important;
-  border: 1px solid rgba(255, 255, 255, 0.12) !important;
-  color: #CBD5E1 !important;
+  background: rgba(255, 255, 255, 0.12) !important;
+  border: 1px solid rgba(255, 255, 255, 0.18) !important;
+  color: #F1F5F9 !important;
 }
 
 body.theme-wallpaper .action-btn {
-  background: rgba(255, 255, 255, 0.1) !important;
-  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  background: rgba(255, 255, 255, 0.14) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
   color: #FFFFFF !important;
 }
 
 body.theme-wallpaper .action-btn:hover {
-  background: rgba(255, 255, 255, 0.2) !important;
-  border-color: rgba(255, 255, 255, 0.25) !important;
+  background: rgba(255, 255, 255, 0.25) !important;
+  border-color: rgba(255, 255, 255, 0.35) !important;
 }
 
 body.theme-wallpaper .action-btn-del:hover {
-  background: rgba(239, 68, 68, 0.25) !important;
-  color: #FCA5A5 !important;
-  border-color: rgba(239, 68, 68, 0.4) !important;
+  background: rgba(239, 68, 68, 0.3) !important;
+  color: #FECACA !important;
+  border-color: rgba(239, 68, 68, 0.5) !important;
 }
 
 body.theme-wallpaper .urgency-badge.badge-critical {
-  background: rgba(239, 68, 68, 0.22) !important;
-  border: 1px solid rgba(239, 68, 68, 0.4) !important;
-  color: #FCA5A5 !important;
+  background: rgba(239, 68, 68, 0.28) !important;
+  border: 1px solid rgba(239, 68, 68, 0.5) !important;
+  color: #FECACA !important;
 }
 
 body.theme-wallpaper .urgency-badge.badge-warning {
-  background: rgba(245, 158, 11, 0.22) !important;
-  border: 1px solid rgba(245, 158, 11, 0.4) !important;
-  color: #FCD34D !important;
+  background: rgba(245, 158, 11, 0.28) !important;
+  border: 1px solid rgba(245, 158, 11, 0.5) !important;
+  color: #FEF08A !important;
 }
 
 body.theme-wallpaper .urgency-badge.badge-safe {
-  background: rgba(16, 185, 129, 0.2) !important;
-  border: 1px solid rgba(16, 185, 129, 0.35) !important;
-  color: #6EE7B7 !important;
+  background: rgba(16, 185, 129, 0.28) !important;
+  border: 1px solid rgba(16, 185, 129, 0.5) !important;
+  color: #A7F3D0 !important;
 }
 
 body.theme-wallpaper .badge-appointment-noted {
-  background: rgba(16, 185, 129, 0.2) !important;
-  border: 1px solid rgba(16, 185, 129, 0.35) !important;
-  color: #6EE7B7 !important;
+  background: rgba(16, 185, 129, 0.25) !important;
+  border: 1px solid rgba(16, 185, 129, 0.45) !important;
+  color: #A7F3D0 !important;
 }
 
 /* Footer Status Bar */
+body.theme-wallpaper .leb-footer {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
 body.theme-wallpaper .leb-footer-inner {
-  background: rgba(15, 23, 42, 0.75) !important;
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.12) !important;
-  color: #E2E8F0 !important;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35) !important;
+  background: rgba(20, 26, 38, 0.65) !important;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  color: #FFFFFF !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35) !important;
 }
 
 body.theme-wallpaper .sync-bottom-badge {
-  color: #E2E8F0 !important;
+  color: #F1F5F9 !important;
 }
 
 body.theme-wallpaper .footer-actions {
-  border-left-color: rgba(255, 255, 255, 0.12) !important;
+  border-left-color: rgba(255, 255, 255, 0.2) !important;
 }
 
 body.theme-wallpaper .leb-btn-icon {
-  color: rgba(255, 255, 255, 0.72) !important;
+  color: rgba(255, 255, 255, 0.8) !important;
 }
 
 body.theme-wallpaper .leb-btn-icon:hover {
   color: #FFFFFF !important;
-  background: rgba(255, 255, 255, 0.12) !important;
+  background: rgba(255, 255, 255, 0.16) !important;
 }
 
 body.theme-wallpaper .theme-toggle-btn.active {
@@ -2082,9 +2099,9 @@ body.theme-wallpaper .theme-toggle-btn.active {
 
 /* Empty State */
 body.theme-wallpaper .leb-empty-card {
-  background: rgba(15, 23, 42, 0.58) !important;
-  backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  background: rgba(255, 255, 255, 0.11) !important;
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.18) !important;
 }
 
 body.theme-wallpaper .leb-empty-title {
@@ -2092,18 +2109,18 @@ body.theme-wallpaper .leb-empty-title {
 }
 
 body.theme-wallpaper .leb-empty-desc {
-  color: rgba(255, 255, 255, 0.6) !important;
+  color: rgba(255, 255, 255, 0.7) !important;
 }
 
 /* Desktop Admin Bar Buttons */
 body.theme-wallpaper .export-btn {
-  background: rgba(255, 255, 255, 0.1) !important;
-  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  background: rgba(255, 255, 255, 0.12) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
   color: #FFFFFF !important;
 }
 
 body.theme-wallpaper .export-btn:hover {
-  background: rgba(255, 255, 255, 0.18) !important;
+  background: rgba(255, 255, 255, 0.22) !important;
 }
 
 body.theme-wallpaper .add-btn {
@@ -2117,17 +2134,17 @@ body.theme-wallpaper .add-btn:hover {
 
 /* Modals & Forms & Calendar Popover */
 body.theme-wallpaper .leb-modal-overlay {
-  background: rgba(0, 0, 0, 0.7) !important;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  background: rgba(0, 0, 0, 0.65) !important;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   z-index: 9999;
 }
 
 body.theme-wallpaper .leb-modal-box {
-  background: rgba(15, 23, 42, 0.92) !important;
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  border: 1px solid rgba(255, 255, 255, 0.16) !important;
+  background: rgba(22, 28, 44, 0.94) !important;
+  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px);
+  border: 1px solid rgba(255, 255, 255, 0.22) !important;
   color: #FFFFFF !important;
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7) !important;
 }
@@ -2137,7 +2154,7 @@ body.theme-wallpaper .leb-modal-title {
 }
 
 body.theme-wallpaper .leb-close-btn {
-  color: rgba(255, 255, 255, 0.6) !important;
+  color: rgba(255, 255, 255, 0.7) !important;
 }
 
 body.theme-wallpaper .leb-close-btn:hover {
@@ -2145,12 +2162,12 @@ body.theme-wallpaper .leb-close-btn:hover {
 }
 
 body.theme-wallpaper .modal-tab-track {
-  background: rgba(30, 41, 59, 0.7) !important;
-  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  background: rgba(255, 255, 255, 0.1) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
 }
 
 body.theme-wallpaper .modal-tab-btn {
-  color: rgba(255, 255, 255, 0.7) !important;
+  color: rgba(255, 255, 255, 0.8) !important;
 }
 
 body.theme-wallpaper .modal-tab-btn.active {
@@ -2159,14 +2176,14 @@ body.theme-wallpaper .modal-tab-btn.active {
 }
 
 body.theme-wallpaper .form-group label {
-  color: rgba(255, 255, 255, 0.8) !important;
+  color: rgba(255, 255, 255, 0.88) !important;
 }
 
 body.theme-wallpaper .form-group input,
 body.theme-wallpaper .form-group textarea,
 body.theme-wallpaper .leb-custom-date-trigger {
-  background: rgba(30, 41, 59, 0.6) !important;
-  border-color: rgba(255, 255, 255, 0.15) !important;
+  background: rgba(255, 255, 255, 0.1) !important;
+  border-color: rgba(255, 255, 255, 0.2) !important;
   color: #FFFFFF !important;
 }
 
@@ -2174,15 +2191,16 @@ body.theme-wallpaper .form-group input:focus,
 body.theme-wallpaper .form-group textarea:focus,
 body.theme-wallpaper .leb-custom-date-trigger:focus {
   border-color: #38BDF8 !important;
+  background: rgba(255, 255, 255, 0.16) !important;
 }
 
 body.theme-wallpaper .type-segment-track {
-  background: rgba(30, 41, 59, 0.7) !important;
-  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  background: rgba(255, 255, 255, 0.1) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
 }
 
 body.theme-wallpaper .type-segment-btn {
-  color: rgba(255, 255, 255, 0.7) !important;
+  color: rgba(255, 255, 255, 0.8) !important;
 }
 
 body.theme-wallpaper .type-segment-btn.active {
@@ -2191,22 +2209,22 @@ body.theme-wallpaper .type-segment-btn.active {
 }
 
 body.theme-wallpaper .btn-quick-appointment {
-  background: rgba(30, 41, 59, 0.6) !important;
-  border-color: rgba(255, 255, 255, 0.15) !important;
-  color: rgba(255, 255, 255, 0.8) !important;
+  background: rgba(255, 255, 255, 0.1) !important;
+  border-color: rgba(255, 255, 255, 0.18) !important;
+  color: rgba(255, 255, 255, 0.88) !important;
 }
 
 body.theme-wallpaper .btn-quick-appointment.active {
-  background: rgba(16, 185, 129, 0.25) !important;
+  background: rgba(16, 185, 129, 0.3) !important;
   border-color: #10B981 !important;
-  color: #6EE7B7 !important;
+  color: #A7F3D0 !important;
 }
 
 body.theme-wallpaper .leb-calendar-popover {
-  background: #0F172A !important;
-  border-color: rgba(255, 255, 255, 0.18) !important;
+  background: #141A28 !important;
+  border-color: rgba(255, 255, 255, 0.22) !important;
   color: #F8FAFC !important;
-  box-shadow: 0 24px 48px -6px rgba(0, 0, 0, 0.6) !important;
+  box-shadow: 0 24px 48px -6px rgba(0, 0, 0, 0.7) !important;
 }
 
 body.theme-wallpaper .cal-title-btn {
@@ -2214,7 +2232,7 @@ body.theme-wallpaper .cal-title-btn {
 }
 
 body.theme-wallpaper .cal-title-btn:hover {
-  background: rgba(255, 255, 255, 0.1) !important;
+  background: rgba(255, 255, 255, 0.12) !important;
 }
 
 body.theme-wallpaper .cal-nav-btn {
@@ -2222,17 +2240,17 @@ body.theme-wallpaper .cal-nav-btn {
 }
 
 body.theme-wallpaper .cal-nav-btn:hover {
-  background: rgba(255, 255, 255, 0.1) !important;
+  background: rgba(255, 255, 255, 0.12) !important;
   color: #FFFFFF !important;
 }
 
 body.theme-wallpaper .cal-preset-btn {
-  background: rgba(255, 255, 255, 0.08) !important;
+  background: rgba(255, 255, 255, 0.1) !important;
   color: #E2E8F0 !important;
 }
 
 body.theme-wallpaper .cal-preset-btn:hover {
-  background: rgba(255, 255, 255, 0.16) !important;
+  background: rgba(255, 255, 255, 0.2) !important;
 }
 
 body.theme-wallpaper .cal-day-cell {
@@ -2240,7 +2258,7 @@ body.theme-wallpaper .cal-day-cell {
 }
 
 body.theme-wallpaper .cal-day-cell:hover:not(.is-disabled):not(.is-selected) {
-  background: rgba(255, 255, 255, 0.12) !important;
+  background: rgba(255, 255, 255, 0.15) !important;
 }
 
 body.theme-wallpaper .cal-day-cell.is-selected {
@@ -2249,7 +2267,7 @@ body.theme-wallpaper .cal-day-cell.is-selected {
 }
 
 body.theme-wallpaper .cal-day-cell.is-other-month {
-  color: #475569 !important;
+  color: #64748B !important;
 }
 
 

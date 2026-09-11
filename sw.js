@@ -1,5 +1,5 @@
-// Leb - Service Worker v4.9.1 (Refined Wallpaper Theme & Stationary Pull-to-Refresh)
-const CACHE_VERSION = 'v4.9.1';
+// Leb - Service Worker v4.9.2 (Luminous Glassmorphism Theme & Transparent Footer Fix)
+const CACHE_VERSION = 'v4.9.2';
 const CACHE_NAME = `leb-app-${CACHE_VERSION}`;
 
 const PRECACHE_ASSETS = [
