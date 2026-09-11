@@ -1,5 +1,5 @@
-// Leb - Service Worker v4.8.0 (Scheduled Compliance Alerts: 15-Day Milestone & 7-Day 10 AM Daily)
-const CACHE_VERSION = 'v4.8.0';
+// Leb - Service Worker v4.8.1 (Scheduled Compliance Alerts: 15-Day Milestone & 7-Day 10 AM Daily)
+const CACHE_VERSION = 'v4.8.1';
 const CACHE_NAME = `leb-app-${CACHE_VERSION}`;
 
 const PRECACHE_ASSETS = [
