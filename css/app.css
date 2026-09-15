@@ -385,7 +385,7 @@ body.theme-wallpaper .hero-title {
   text-shadow: 0 2px 10px rgba(0, 0, 0, 0.6);
 }
 
-/* --- Primary Segmented Control --- */
+/* ─── Primary Segmented Control ─────────────────────────────────────── */
 .leb-segmented-wrapper {
   display: flex;
   justify-content: center;
@@ -393,6 +393,7 @@ body.theme-wallpaper .hero-title {
 }
 
 .leb-segmented-track {
+  position: relative;         /* slider absolute içinde konum alır */
   background-color: #EAECEF;
   border-radius: var(--radius-md);
   padding: 3px;
@@ -401,7 +402,14 @@ body.theme-wallpaper .hero-title {
   max-width: 420px;
 }
 
+/* Kayan baloncuk — desktop'ta display:none, mobilde gösterilir */
+.seg-slider {
+  display: none;
+}
+
 .leb-seg-btn {
+  position: relative;
+  z-index: 1;                 /* slider'ın üstünde kalır */
   flex: 1;
   display: flex;
   align-items: center;
@@ -415,31 +423,26 @@ body.theme-wallpaper .hero-title {
   border: none;
   border-radius: var(--radius-sm);
   cursor: pointer;
-  transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: color 0.25s ease;
   font-family: inherit;
   user-select: none;
+  -webkit-user-select: none;
 }
 
-.leb-seg-btn:active {
-  transform: scale(0.94);
-}
-
-.leb-seg-btn .seg-icon {
-  display: inline-block;
-  opacity: 0.75;
-  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.leb-seg-btn.active .seg-icon {
-  opacity: 1;
-  transform: scale(1.06);
-}
-
+/* Desktop: aktif buton beyaz pill alır */
 .leb-seg-btn.active {
   background-color: var(--bg-surface);
   color: var(--text-primary);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-  animation: segBtnPop 0.26s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.leb-seg-btn .seg-icon {
+  opacity: 0.7;
+  transition: opacity 0.25s ease;
+}
+
+.leb-seg-btn.active .seg-icon {
+  opacity: 1;
 }
 
 .leb-counter-pill {
@@ -449,13 +452,14 @@ body.theme-wallpaper .hero-title {
   font-weight: 700;
   padding: 1px 6px;
   border-radius: var(--radius-full);
-  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: background 0.25s ease, color 0.25s ease;
 }
 
 .leb-seg-btn.active .leb-counter-pill {
   background: var(--text-primary);
   color: var(--text-inverse);
 }
+
 
 /* --- Stat Metric Strip (Modern, Clean) --- */
 .leb-stats-strip {
@@ -1631,48 +1635,128 @@ body.theme-wallpaper .hero-title {
     display: none !important;
   }
 
-  /* Mobile Header: Fixed positioning to prevent iOS status bar overlap & blur artifacts */
-  .leb-header,
-  .leb-header.is-scrolled,
-  body.theme-wallpaper .leb-header,
-  body.theme-wallpaper .leb-header.is-scrolled {
-    position: fixed !important;
-    top: 0 !important;
-    left: 0 !important;
-    right: 0 !important;
-    background: transparent !important;
-    border: none !important;
-    border-bottom: none !important;
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
-    -webkit-transform: translateZ(0) !important;
-    transform: translateZ(0) !important;
-    box-shadow: none !important;
-    /* env(safe-area-inset-top) = Dynamic Island / notch yüksekliği */
-    padding-top: env(safe-area-inset-top, 44px) !important;
-    padding-bottom: 4px !important;
-    padding-left: 14px !important;
-    padding-right: 14px !important;
-    pointer-events: none !important;
-    /* Yalnızca buton bölgesi tıklanabilir (header-actions-group) */
-  }
 
-  /* Header içindeki buton grubu tıklanabilir olmalı */
-  .leb-header .header-actions-group {
-    pointer-events: auto !important;
-  }
+  /* ════════════════════════════════════════════════════════
+     MOBİL HEADER — SIFIRDAN
+     Header tamamen gizlenir. Sağ üst köşede sadece kapsül görünür.
+     HİÇBİR backdrop-filter / blur / is-scrolled efekti yok.
+     ════════════════════════════════════════════════════════ */
 
-  .leb-header-inner {
-    justify-content: flex-end !important;
-  }
-
-  /* Hide tiny header logo on mobile; replaced by Hero Brand in page body */
-  .leb-header .brand-centered {
+  /* Tüm header'ı mobilde gizle */
+  .leb-header {
     display: none !important;
   }
 
-  /* Mobile Hero Brand Display */
+  /* Sağ üst kapsül — tamamen bağımsız, fixed, opak, blur yok */
+  #headerSystemBar {
+    position: fixed !important;
+    top: env(safe-area-inset-top, 44px) !important;
+    right: 14px !important;
+    z-index: 200 !important;
+    /* Tam opak beyaz — hiçbir saydamlık/blur yok */
+    background: #FFFFFF !important;
+    border: 1.5px solid #CBD5E1 !important;
+    border-radius: 9999px !important;
+    height: 40px !important;
+    padding: 0 10px 0 12px !important;
+    gap: 6px !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.10) !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    pointer-events: auto !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    filter: none !important;
+    -webkit-filter: none !important;
+    /* GPU katmanı — iOS render artifact yok */
+    transform: translate3d(0,0,0) !important;
+    -webkit-transform: translate3d(0,0,0) !important;
+    isolation: isolate !important;
+  }
 
+  body.theme-wallpaper #headerSystemBar {
+    background: #0F172A !important;
+    border: 1.5px solid rgba(255,255,255,0.25) !important;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.40) !important;
+  }
+
+  /* Kapsül içindeki ikonlar — kesinlikle bulanık değil */
+  #headerSystemBar .leb-btn-icon {
+    width: 30px !important;
+    height: 30px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    background: transparent !important;
+    border: none !important;
+    border-radius: 50% !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    filter: none !important;
+    -webkit-filter: none !important;
+    color: #0F172A !important;
+  }
+
+  #headerSystemBar .leb-btn-icon svg {
+    width: 17px !important;
+    height: 17px !important;
+    stroke: #0F172A !important;
+    stroke-width: 2.3 !important;
+    display: block !important;
+    filter: none !important;
+    -webkit-filter: none !important;
+    opacity: 1 !important;
+  }
+
+  body.theme-wallpaper #headerSystemBar .leb-btn-icon { color: #fff !important; }
+  body.theme-wallpaper #headerSystemBar .leb-btn-icon svg { stroke: #fff !important; }
+
+  #headerSystemBar .notif-bell-btn.granted svg { stroke: #059669 !important; }
+  #headerSystemBar .notif-bell-btn.denied svg  { stroke: #EF4444 !important; }
+  #headerSystemBar .theme-toggle-btn.active svg { stroke: #0284C7 !important; }
+
+  .sync-status-label { display: none !important; }
+
+  .sync-bottom-badge {
+    padding: 0 !important;
+    margin: 0 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+  }
+
+  .sync-dot {
+    width: 9px !important; height: 9px !important;
+    min-width: 9px !important; min-height: 9px !important;
+    background: #10B981 !important;
+    border-radius: 50% !important;
+    box-shadow: 0 0 0 2px rgba(16,185,129,0.25) !important;
+    display: inline-block !important;
+  }
+
+  .sync-dot.error {
+    background: #EF4444 !important;
+    box-shadow: 0 0 0 2px rgba(239,68,68,0.25) !important;
+  }
+
+  .footer-actions {
+    display: inline-flex !important;
+    align-items: center !important;
+    padding-left: 6px !important;
+    gap: 3px !important;
+    border-left: 1.5px solid #E2E8F0 !important;
+    margin-left: 2px !important;
+  }
+
+  body.theme-wallpaper .footer-actions {
+    border-left-color: rgba(255,255,255,0.22) !important;
+  }
+
+  /* Geri kalan header HTML parçaları gizli */
+  .brand-centered,
+  .desktop-admin-bar,
+  .header-actions-group > .desktop-admin-bar { display: none !important; }
+
+  /* ── Hero Marka (sayfa içi logo) ── */
   .leb-hero-brand {
     display: flex !important;
     justify-content: center !important;
@@ -1680,249 +1764,145 @@ body.theme-wallpaper .hero-title {
     margin: 2px 0 10px 0;
   }
 
-  /* Mobile Top Right System Capsule: 100% Crisp, Opaque, High-Contrast, Zero Blur */
-  .header-actions-group {
-    position: static !important;
-    isolation: isolate !important;
-  }
-
-  .header-system-bar,
-  body:not(.theme-wallpaper) .header-system-bar {
-    pointer-events: auto !important;
-    background: #FFFFFF !important;
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
-    filter: none !important;
-    -webkit-filter: none !important;
-    opacity: 1 !important;
-    isolation: isolate !important;
-    will-change: transform !important;
-    border: 1.5px solid #CBD5E1 !important;
-    border-radius: 9999px !important;
-    height: 38px !important;
-    padding: 0 8px 0 10px !important;
-    gap: 6px !important;
-    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08) !important;
-    display: inline-flex !important;
-    align-items: center !important;
-    box-sizing: border-box !important;
-  }
-
-  /* İkonların kendisi de asla bulanık olmamalı */
-  .header-system-bar svg,
-  .header-system-bar .leb-btn-icon svg {
-    filter: none !important;
-    -webkit-filter: none !important;
-    opacity: 1 !important;
-    backface-visibility: hidden !important;
-    -webkit-backface-visibility: hidden !important;
-  }
-
-
-  body.theme-wallpaper .header-system-bar {
-    pointer-events: auto !important;
-    background: #0F172A !important;
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
-    filter: none !important;
-    border: 1.5px solid rgba(255, 255, 255, 0.25) !important;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35) !important;
-    height: 38px !important;
-    padding: 0 8px 0 10px !important;
-    gap: 6px !important;
-    display: inline-flex !important;
-    align-items: center !important;
-    box-sizing: border-box !important;
-  }
-
-  .sync-status-label {
-    display: none !important;
-  }
-
-  .sync-bottom-badge {
-    padding: 0 !important;
-    margin: 0 !important;
-    display: inline-flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-  }
-
-  .sync-dot {
-    width: 9px !important;
-    height: 9px !important;
-    min-width: 9px !important;
-    min-height: 9px !important;
-    background: #10B981 !important;
-    border-radius: 50% !important;
-    box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.25) !important;
-    display: inline-block !important;
-  }
-
-  .sync-dot.error {
-    background: #EF4444 !important;
-    box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.25) !important;
-  }
-
-  .footer-actions {
-    display: inline-flex !important;
-    align-items: center !important;
-    padding-left: 6px !important;
-    gap: 4px !important;
-    border-left: 1.5px solid #E2E8F0 !important;
-    margin-left: 2px !important;
-  }
-
-  body.theme-wallpaper .footer-actions {
-    border-left: 1.5px solid rgba(255, 255, 255, 0.22) !important;
-  }
-
-  .header-system-bar .leb-btn-icon {
-    width: 32px !important;
-    height: 32px !important;
-    min-width: 32px !important;
-    min-height: 32px !important;
-    display: inline-flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    color: #0F172A !important;
-    background: transparent !important;
-    border: none !important;
-    border-radius: 50% !important;
-    padding: 0 !important;
-    box-shadow: none !important;
-    filter: none !important;
-    transition: transform 0.15s ease, background 0.15s ease !important;
-  }
-
-  .header-system-bar .leb-btn-icon svg {
-    width: 18px !important;
-    height: 18px !important;
-    stroke: #0F172A !important;
-    stroke-width: 2.3 !important;
-    display: block !important;
-    transition: stroke 0.15s ease, transform 0.15s ease !important;
-  }
-
-  /* Bell button in Light Mode: Crisp Slate #0F172A (NEVER washed out or faded) */
-  .header-system-bar .notif-bell-btn.needs-perm,
-  .header-system-bar .notif-bell-btn.needs-perm svg {
-    color: #0F172A !important;
-    stroke: #0F172A !important;
-    opacity: 1 !important;
-  }
-
-  .header-system-bar .theme-toggle-btn.active,
-  .header-system-bar .theme-toggle-btn.active svg {
-    color: #0284C7 !important;
-    stroke: #0284C7 !important;
-  }
-
-  .header-system-bar .notif-bell-btn.granted,
-  .header-system-bar .notif-bell-btn.granted svg {
-    color: #059669 !important;
-    stroke: #059669 !important;
-  }
-
-  .header-system-bar .notif-bell-btn.denied,
-  .header-system-bar .notif-bell-btn.denied svg {
-    color: #EF4444 !important;
-    stroke: #EF4444 !important;
-  }
-
-  .header-system-bar .leb-btn-icon:hover {
-    background: rgba(15, 23, 42, 0.08) !important;
-  }
-
-  .header-system-bar .leb-btn-icon:active {
-    transform: scale(0.86) !important;
-  }
-
-  /* Wallpaper Theme: Ultra-Crisp Pure White SVGs */
-  body.theme-wallpaper .header-system-bar .leb-btn-icon {
-    color: #FFFFFF !important;
-  }
-
-  body.theme-wallpaper .header-system-bar .leb-btn-icon svg {
-    stroke: #FFFFFF !important;
-    stroke-width: 2.3 !important;
-  }
-
-  body.theme-wallpaper .header-system-bar .notif-bell-btn.needs-perm,
-  body.theme-wallpaper .header-system-bar .notif-bell-btn.needs-perm svg {
-    color: #FFFFFF !important;
-    stroke: #FFFFFF !important;
-    opacity: 1 !important;
-  }
-
-  body.theme-wallpaper .header-system-bar .leb-btn-icon:hover {
-    background: rgba(255, 255, 255, 0.16) !important;
-  }
-
-  body.theme-wallpaper .header-system-bar .theme-toggle-btn.active,
-  body.theme-wallpaper .header-system-bar .theme-toggle-btn.active svg {
-    color: #38BDF8 !important;
-    stroke: #38BDF8 !important;
-  }
-
-  body.theme-wallpaper .header-system-bar .notif-bell-btn.granted,
-  body.theme-wallpaper .header-system-bar .notif-bell-btn.granted svg {
-    color: #34D399 !important;
-    stroke: #34D399 !important;
-  }
-
-  /* Main Viewport Spacing (Leaves room for floating bottom dock) */
+  /* ────────────────────────────────────────────────────────
+     ANA İÇERİK ALANI
+     Kapsül yüksekliği kadar boşluk bırak
+     ──────────────────────────────────────────────────────── */
   .leb-main {
-    padding-top: max(calc(env(safe-area-inset-top, 44px) + 56px), 100px) !important;
-    padding-bottom: max(96px, calc(76px + env(safe-area-inset-bottom))) !important;
+    padding-top: max(calc(env(safe-area-inset-top, 44px) + 58px), 102px) !important;
+    padding-bottom: max(100px, calc(80px + env(safe-area-inset-bottom))) !important;
     gap: 10px;
   }
 
-  /* FLOATING APPLE LIQUID GLASS BOTTOM DOCK (Araçlar vs Sürücüler) */
+  /* ════════════════════════════════════════════════════════
+     FLOATING BOTTOM DOCK — iOS LİQUID GLASS SLIDER
+     Bar hiç hareket etmez.
+     Sadece .seg-slider baloncuğu iki buton arasında kayar.
+     ════════════════════════════════════════════════════════ */
+
   .leb-segmented-wrapper {
     position: fixed !important;
-    bottom: max(14px, env(safe-area-inset-bottom)) !important;
+    bottom: max(18px, calc(env(safe-area-inset-bottom) + 10px)) !important;
     left: 0 !important;
     right: 0 !important;
     display: flex !important;
     justify-content: center !important;
     z-index: 95 !important;
     pointer-events: none !important;
-    padding: 0 16px !important;
+    padding: 0 20px !important;
     width: 100% !important;
-    margin: 0 !important;
   }
 
   .leb-segmented-track {
+    position: relative !important;
     pointer-events: auto !important;
     width: 100% !important;
-    max-width: 360px !important;
-    background: rgba(255, 255, 255, 0.88) !important;
-    backdrop-filter: blur(28px) saturate(190%) !important;
-    -webkit-backdrop-filter: blur(28px) saturate(190%) !important;
-    border: 1px solid rgba(0, 0, 0, 0.08) !important;
-    border-radius: 28px !important;
+    max-width: 340px !important;
+    /* Cam efekti SADECE dış track'e — ikonlara dokunmuyor */
+    background: rgba(240, 242, 245, 0.82) !important;
+    backdrop-filter: blur(24px) saturate(160%) !important;
+    -webkit-backdrop-filter: blur(24px) saturate(160%) !important;
+    border: 1px solid rgba(0,0,0,0.07) !important;
+    border-radius: 999px !important;
     padding: 5px !important;
-    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.16) !important;
+    box-shadow:
+      0 8px 32px rgba(0,0,0,0.12),
+      0 2px 8px rgba(0,0,0,0.06),
+      inset 0 1px 0 rgba(255,255,255,0.8) !important;
+    /* Touch olaylarını engelleme */
+    -webkit-user-select: none !important;
+    user-select: none !important;
+    touch-action: pan-y !important;
   }
 
-  body.theme-wallpaper .leb-segmented-track {
-    background: rgba(255, 255, 255, 0.18) !important;
-    backdrop-filter: blur(32px) saturate(190%) !important;
-    -webkit-backdrop-filter: blur(32px) saturate(190%) !important;
-    border: 1px solid rgba(255, 255, 255, 0.32) !important;
-    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45), inset 0 1px 1px rgba(255, 255, 255, 0.45) !important;
+  /* Kayan aktif baloncuk */
+  .seg-slider {
+    display: block !important;
+    position: absolute !important;
+    top: 5px !important;
+    left: 5px !important;
+    /* Genişlik JS tarafından hesaplanır */
+    width: calc(50% - 5px) !important;
+    bottom: 5px !important;
+    border-radius: 999px !important;
+    background: #FFFFFF !important;
+    box-shadow:
+      0 2px 12px rgba(0,0,0,0.12),
+      0 1px 4px rgba(0,0,0,0.08),
+      inset 0 1px 0 rgba(255,255,255,1) !important;
+    /* Animasyon: spring yay etkisi */
+    transition: transform 0.38s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+    will-change: transform !important;
+    pointer-events: none !important;
+    z-index: 0 !important;
   }
 
+  /* Sürücüler sekmesi aktifken baloncuk sağa kayar */
+  .leb-segmented-track.drivers-active .seg-slider {
+    transform: translateX(100%) !important;
+  }
+
+  /* Buton metinleri slider'ın üstünde */
   .leb-seg-btn {
-    border-radius: 22px !important;
+    position: relative !important;
+    z-index: 2 !important;
+    flex: 1 !important;
+    border-radius: 999px !important;
     padding: 10px 14px !important;
     font-size: 0.875rem !important;
     font-weight: 600 !important;
+    background: transparent !important;
+    color: rgba(0,0,0,0.45) !important;
+    transition: color 0.22s ease !important;
+    /* Buton kendi arka planını göstermiyor */
+    box-shadow: none !important;
+  }
+
+  .leb-seg-btn.active {
+    color: #111827 !important;
+    background: transparent !important;
+    box-shadow: none !important;
   }
 
   .leb-seg-btn .seg-icon {
-    display: inline-block;
+    opacity: 0.55 !important;
+    transition: opacity 0.22s ease !important;
   }
+
+  .leb-seg-btn.active .seg-icon {
+    opacity: 1 !important;
+  }
+
+  .leb-counter-pill {
+    background: rgba(0,0,0,0.10) !important;
+    color: rgba(0,0,0,0.55) !important;
+  }
+
+  .leb-seg-btn.active .leb-counter-pill {
+    background: #111827 !important;
+    color: #fff !important;
+  }
+
+  /* Wallpaper teması */
+  body.theme-wallpaper .leb-segmented-track {
+    background: rgba(15,23,42,0.55) !important;
+    border: 1px solid rgba(255,255,255,0.18) !important;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.50), inset 0 1px 0 rgba(255,255,255,0.2) !important;
+  }
+
+  body.theme-wallpaper .seg-slider {
+    background: rgba(255,255,255,0.22) !important;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.35) !important;
+  }
+
+  body.theme-wallpaper .leb-seg-btn { color: rgba(255,255,255,0.5) !important; }
+  body.theme-wallpaper .leb-seg-btn.active { color: #fff !important; }
+  body.theme-wallpaper .leb-seg-btn .seg-icon { opacity: 0.5 !important; }
+  body.theme-wallpaper .leb-seg-btn.active .seg-icon { opacity: 1 !important; }
+  body.theme-wallpaper .leb-counter-pill { background: rgba(255,255,255,0.15) !important; color: rgba(255,255,255,0.6) !important; }
+  body.theme-wallpaper .leb-seg-btn.active .leb-counter-pill { background: rgba(255,255,255,0.9) !important; color: #111 !important; }
+
+
 
   /* Compact Stats */
   .leb-stats-strip {

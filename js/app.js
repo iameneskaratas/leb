@@ -1222,158 +1222,138 @@ function setupSectionTabs() {
 }
 
 /**
- * Touch Swipe Gesture Navigation (Liquid Glass Mobile Experience)
- * Swiping Left (finger dragged right -> left) switches to 'Sürücüler'
- * Swiping Right (finger dragged left -> right) switches to 'Araçlar'
- * Perfectly smooth, respects vertical scrolling
+ * Ana ekran swipe (sol/sağ hızlı kaydırma ile sekme geçişi)
  */
 function setupSwipeNavigation(switchSection) {
-  let touchStartX = 0;
-  let touchStartY = 0;
-  let touchStartTime = 0;
-  let isSwiping = false;
+  let startX = 0, startY = 0, startTime = 0, active = false;
+  const area = document.querySelector('.leb-main') || document.body;
 
-  const targetArea = document.querySelector('.leb-main') || document.body;
-
-  targetArea.addEventListener('touchstart', (e) => {
-    // Single touch only
+  area.addEventListener('touchstart', (e) => {
     if (e.touches.length !== 1) return;
-
-    // Do not trigger swipe if modal or calendar popover is open
-    const openOverlay = document.querySelector('.leb-modal-overlay.active, .leb-calendar-popover.active');
-    if (openOverlay) return;
-
-    const touch = e.touches[0];
-    touchStartX = touch.clientX;
-    touchStartY = touch.clientY;
-    touchStartTime = Date.now();
-    isSwiping = true;
+    if (document.querySelector('.leb-modal-overlay.active, .leb-calendar-popover.active')) return;
+    const t = e.touches[0];
+    startX = t.clientX; startY = t.clientY; startTime = Date.now(); active = true;
   }, { passive: true });
 
-  targetArea.addEventListener('touchmove', (e) => {
-    if (!isSwiping) return;
-    const touch = e.touches[0];
-    const deltaX = touch.clientX - touchStartX;
-    const deltaY = touch.clientY - touchStartY;
+  area.addEventListener('touchmove', (e) => {
+    if (!active) return;
+    const t = e.touches[0];
+    if (Math.abs(t.clientY - startY) > Math.abs(t.clientX - startX) * 1.3) active = false;
+  }, { passive: true });
 
-    // If vertical movement is dominant, user is scrolling down/up -> cancel horizontal swipe
-    if (Math.abs(deltaY) > Math.abs(deltaX) * 1.3 && Math.abs(deltaY) > 15) {
-      isSwiping = false;
+  area.addEventListener('touchend', (e) => {
+    if (!active) return; active = false;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - startX, dy = t.clientY - startY;
+    const dur = Date.now() - startTime;
+    if (Math.abs(dx) > 42 && Math.abs(dx) > Math.abs(dy) * 1.3 && dur < 600) {
+      if (dx < 0 && currentSection === 'vehicles') switchSection('drivers', 'from-right');
+      else if (dx > 0 && currentSection === 'drivers') switchSection('vehicles', 'from-left');
     }
   }, { passive: true });
 
-  targetArea.addEventListener('touchend', (e) => {
-    if (!isSwiping) return;
-    isSwiping = false;
-
-    const touch = e.changedTouches[0];
-    const deltaX = touch.clientX - touchStartX;
-    const deltaY = touch.clientY - touchStartY;
-    const duration = Date.now() - touchStartTime;
-
-    // Deliberate horizontal gesture (>40px, under 650ms, dominant horizontal)
-    if (Math.abs(deltaX) > 40 && Math.abs(deltaX) > Math.abs(deltaY) * 1.25 && duration < 650) {
-      if (deltaX < 0) {
-        // Swiped Left -> Switch to Drivers
-        if (currentSection === 'vehicles') {
-          switchSection('drivers', 'from-right');
-        }
-      } else {
-        // Swiped Right -> Switch to Vehicles
-        if (currentSection === 'drivers') {
-          switchSection('vehicles', 'from-left');
-        }
-      }
-    }
-  }, { passive: true });
-
-  // ── Bottom Dock Swipe (iPhone Liquid Glass bar üzerinde kaydırma) ──
-  setupDockSwipe(switchSection);
+  // Slider baloncuğu kurulumu (bar üzerinde sürükleme)
+  setupSliderDock(switchSection);
 }
 
 /**
- * Alt bar (bottom dock) üzerinde parmak kaydırarak sekmeler arası geçiş.
- * iOS Liquid Glass tarzı DRAG-TO-SELECT:
- * - Bar üzerinde parmağı basıp tutunca "tutuldu" hissi verir
- * - Sola sürükle → Sürücüler aktif olur (anlık)
- * - Sağa sürükle → Araçlar aktif olur (anlık)
- * - Bırakınca seçim sabitlenir
+ * ══════════════════════════════════════════════════════════
+ * iOS Liquid Glass Slider Dock — SIFIRDAN
+ * ──────────────────────────────────────────────────────────
+ * Bar hiç hareket etmez.
+ * Sadece beyaz baloncuk (.seg-slider) iki buton arasında kayar.
+ * Parmak hareketiyle gerçek zamanlı kayma → bırakınca spring snap.
+ * ══════════════════════════════════════════════════════════
  */
-function setupDockSwipe(switchSection) {
-  const dock = document.querySelector('.leb-segmented-track');
-  if (!dock) return;
+function setupSliderDock(switchSection) {
+  const track  = document.querySelector('.leb-segmented-track');
+  const slider = document.getElementById('segSlider');
+  const btnV   = document.getElementById('tabVehicles');
+  const btnD   = document.getElementById('tabDrivers');
+  if (!track || !slider || !btnV || !btnD) return;
 
-  let startX = 0;
-  let startY = 0;
-  let dragging = false;
-  let cancelled = false;
-  let switched = false; // Bu drag seansında geçiş yapıldı mı?
-
-  function resetDock(animate = true) {
-    dock.style.transition = animate
-      ? 'transform 0.28s cubic-bezier(0.16, 1, 0.3, 1)'
+  // CSS class ile baloncuk konumunu güncelle
+  function updateSliderPos(section, animate) {
+    slider.style.transition = animate
+      ? 'transform 0.38s cubic-bezier(0.34, 1.56, 0.64, 1)'
       : 'none';
-    dock.style.transform = 'translateX(0) scale(1)';
+    slider.style.transform = section === 'drivers' ? 'translateX(100%)' : 'translateX(0%)';
   }
 
-  dock.addEventListener('touchstart', (e) => {
+  // Başlangıç konumu
+  updateSliderPos(currentSection, false);
+
+  // Tab butonları class değişimini gözlemle → slider güncelle
+  const observer = new MutationObserver(() => {
+    const sec = btnD.classList.contains('active') ? 'drivers' : 'vehicles';
+    updateSliderPos(sec, true);
+  });
+  observer.observe(btnV, { attributes: true, attributeFilter: ['class'] });
+  observer.observe(btnD, { attributes: true, attributeFilter: ['class'] });
+
+  // ── Sürükleme (drag) ──
+  let dragStartX = null;
+  let dragBaseSection = null; // drag başında hangi sekme aktifti
+  let isDragging = false;
+
+  track.addEventListener('touchstart', (e) => {
     if (e.touches.length !== 1) return;
-    const openOverlay = document.querySelector('.leb-modal-overlay.active, .leb-calendar-popover.active');
-    if (openOverlay) return;
-
+    if (document.querySelector('.leb-modal-overlay.active')) return;
     const t = e.touches[0];
-    startX = t.clientX;
-    startY = t.clientY;
-    dragging = true;
-    cancelled = false;
-    switched = false;
-
-    // Parmak basıldığında hafif sıkışma hissi
-    dock.style.transition = 'transform 0.1s ease';
-    dock.style.transform = 'scale(0.96)';
+    dragStartX = t.clientX;
+    dragBaseSection = currentSection;
+    isDragging = true;
+    // Drag sırasında spring'i kapat
+    slider.style.transition = 'none';
   }, { passive: true });
 
-  dock.addEventListener('touchmove', (e) => {
-    if (!dragging || cancelled) return;
+  track.addEventListener('touchmove', (e) => {
+    if (!isDragging || dragStartX === null) return;
     const t = e.touches[0];
-    const dx = t.clientX - startX;
-    const dy = t.clientY - startY;
+    const dx = t.clientX - dragStartX;
+    const dy = t.clientY - dragStartX; // unused vertical check below
+    const dyAbs = Math.abs(t.clientY - (e.touches[0].clientY || 0));
 
-    // Dikey hareket baskınsa iptal et (scroll yapıyor)
-    if (Math.abs(dy) > Math.abs(dx) * 1.5 && Math.abs(dy) > 10) {
-      cancelled = true;
-      resetDock(true);
-      return;
-    }
+    // 0 = araçlar (%0 translateX), 1 = sürücüler (%100 translateX)
+    const baseVal = dragBaseSection === 'vehicles' ? 0 : 1;
+    const half = track.getBoundingClientRect().width / 2;
+    const progress = Math.max(0, Math.min(1, baseVal + dx / half));
+    slider.style.transform = `translateX(${progress * 100}%)`;
+  }, { passive: true });
 
-    // Yatay sürükleme: dock parmakla birlikte kayar (max ±40px)
-    const clamped = Math.max(-40, Math.min(40, dx * 0.55));
-    dock.style.transition = 'none';
-    dock.style.transform = `translateX(${clamped}px) scale(0.96)`;
+  function onEnd(e) {
+    if (!isDragging || dragStartX === null) return;
+    isDragging = false;
 
-    // ANLIK sekme geçişi: eşiği geçer geçmez sekme değişir
-    if (!switched) {
-      if (dx < -38 && currentSection === 'vehicles') {
-        switched = true;
+    const t = e.changedTouches ? e.changedTouches[0] : null;
+    slider.style.transition = 'transform 0.38s cubic-bezier(0.34, 1.56, 0.64, 1)';
+
+    if (t) {
+      const dx = t.clientX - dragStartX;
+      const half = track.getBoundingClientRect().width / 2;
+      const baseVal = dragBaseSection === 'vehicles' ? 0 : 1;
+      const progress = Math.max(0, Math.min(1, baseVal + dx / half));
+
+      if (progress > 0.5 && currentSection === 'vehicles') {
         switchSection('drivers', 'from-right');
-        if (navigator.vibrate) try { navigator.vibrate(10); } catch(e) {}
-      } else if (dx > 38 && currentSection === 'drivers') {
-        switched = true;
+      } else if (progress < 0.5 && currentSection === 'drivers') {
         switchSection('vehicles', 'from-left');
-        if (navigator.vibrate) try { navigator.vibrate(10); } catch(e) {}
+      } else {
+        // Geri snap
+        slider.style.transform = currentSection === 'drivers' ? 'translateX(100%)' : 'translateX(0%)';
       }
+    } else {
+      slider.style.transform = currentSection === 'drivers' ? 'translateX(100%)' : 'translateX(0%)';
     }
-  }, { passive: true });
+    dragStartX = null;
+  }
 
-  dock.addEventListener('touchend', () => {
-    if (!dragging) return;
-    dragging = false;
-    resetDock(true);
-  }, { passive: true });
-
-  dock.addEventListener('touchcancel', () => {
-    dragging = false;
-    resetDock(true);
+  track.addEventListener('touchend',    onEnd, { passive: true });
+  track.addEventListener('touchcancel', () => {
+    isDragging = false;
+    slider.style.transition = 'transform 0.38s cubic-bezier(0.34, 1.56, 0.64, 1)';
+    slider.style.transform = currentSection === 'drivers' ? 'translateX(100%)' : 'translateX(0%)';
+    dragStartX = null;
   }, { passive: true });
 }
 

@@ -1,5 +1,5 @@
-// Leb - Service Worker v5.2.0 (No mobile blur + drag-to-select dock)
-const CACHE_VERSION = 'v5.2.0';
+// Leb - Service Worker v5.3.0 (No mobile blur + drag-to-select dock)
+const CACHE_VERSION = 'v5.3.0';
 const CACHE_NAME = `leb-app-${CACHE_VERSION}`;
 
 const PRECACHE_ASSETS = [
@@ -149,3 +149,4 @@ self.addEventListener('push', (event) => {
     })
   );
 });
+
