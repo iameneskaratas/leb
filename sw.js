@@ -1,5 +1,5 @@
-// Leb - Service Worker v5.4.0 (No mobile blur + drag-to-select dock)
-const CACHE_VERSION = 'v5.4.0';
+// Leb - Service Worker v5.5.0 (iOS Liquid Glass Bar Component + Mobile Capsule Fix)
+const CACHE_VERSION = 'v5.5.0';
 const CACHE_NAME = `leb-app-${CACHE_VERSION}`;
 
 const PRECACHE_ASSETS = [

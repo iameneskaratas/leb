@@ -1272,20 +1272,20 @@ function setupSliderDock(switchSection) {
   const btnD   = document.getElementById('tabDrivers');
   if (!track || !slider || !btnV || !btnD) return;
 
-  // Baloncuk konumunu güncelle
+  // Liquid Glass spring animasyonu
   function updateSliderPos(section, animate) {
     slider.style.transition = animate
-      ? 'transform 0.42s cubic-bezier(0.34, 1.56, 0.64, 1)'
+      ? 'transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
       : 'none';
-    slider.style.transform = section === 'drivers' ? 'translateX(100%)' : 'translateX(0%)';
+    slider.style.transform = section === 'drivers' ? 'translateX(100%) scale(1)' : 'translateX(0%) scale(1)';
   }
 
-  // Başlangıç konumu (animasyonsuz)
+  // Başlangıç konumu
   updateSliderPos(currentSection, false);
 
   // Tab butonları class değişimini gözlemle → slider güncelle
   const observer = new MutationObserver(() => {
-    if (!isDragging) { // sadece drag yokken otomatik güncelle
+    if (!isDragging) {
       const sec = btnD.classList.contains('active') ? 'drivers' : 'vehicles';
       updateSliderPos(sec, true);
     }
@@ -1293,13 +1293,13 @@ function setupSliderDock(switchSection) {
   observer.observe(btnV, { attributes: true, attributeFilter: ['class'] });
   observer.observe(btnD, { attributes: true, attributeFilter: ['class'] });
 
-  // ── Drag state ──
+  // ── Drag & Motion Follows Intent ──
   let dragStartX   = null;
   let dragStartY   = null;
   let dragBaseSection = null;
   let isDragging   = false;
-  let isScrolling  = false; // dikey scroll mu?
-  let dirLocked    = false; // yön kilitlendikten sonra değişmez
+  let isScrolling  = false;
+  let dirLocked    = false;
 
   track.addEventListener('touchstart', (e) => {
     if (e.touches.length !== 1) return;
@@ -1320,46 +1320,58 @@ function setupSliderDock(switchSection) {
     const dx = t.clientX - dragStartX;
     const dy = t.clientY - dragStartY;
 
-    // Yön henüz kilitlenmemişse tespit et
-    if (!dirLocked && (Math.abs(dx) > 6 || Math.abs(dy) > 6)) {
+    if (!dirLocked && (Math.abs(dx) > 5 || Math.abs(dy) > 5)) {
       dirLocked = true;
-      isScrolling = Math.abs(dy) > Math.abs(dx); // dikey baskın
+      isScrolling = Math.abs(dy) > Math.abs(dx);
     }
 
-    // Dikey scroll yapıyorsa slider'ı bırak
     if (isScrolling) {
       isDragging = false;
       updateSliderPos(dragBaseSection, true);
       return;
     }
 
-    // Yatay drag — slider parmakla kayar
+    // Yatay drag: Organik liquid glass esnemesi (stretch / squash)
     const baseVal  = dragBaseSection === 'vehicles' ? 0 : 1;
     const half     = track.getBoundingClientRect().width / 2;
-    const progress = Math.max(0, Math.min(1, baseVal + dx / half));
-    slider.style.transform = `translateX(${progress * 100}%)`;
+    const rawProgress = baseVal + (dx / half);
+    // Sınır aşımında elastik direnç
+    let clamped;
+    if (rawProgress < 0) {
+      clamped = rawProgress * 0.25;
+    } else if (rawProgress > 1) {
+      clamped = 1 + (rawProgress - 1) * 0.25;
+    } else {
+      clamped = rawProgress;
+    }
+
+    // Hareket yönüne doğru hafif akışkan esneme (motion follows intent)
+    const stretch = 1 + Math.min(0.06, Math.abs(dx) / (half * 4));
+    slider.style.transform = `translateX(${clamped * 100}%) scaleX(${stretch})`;
   }, { passive: true });
 
   function onEnd(e) {
-    if (!isDragging || dragStartX === null) { isDragging = false; return; }
+    if (!isDragging || dragStartX === null) {
+      isDragging = false;
+      return;
+    }
     isDragging = false;
 
     const t = e.changedTouches ? e.changedTouches[0] : null;
-    slider.style.transition = 'transform 0.42s cubic-bezier(0.34, 1.56, 0.64, 1)';
+    slider.style.transition = 'transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
 
     if (t && !isScrolling) {
       const dx       = t.clientX - dragStartX;
       const half     = track.getBoundingClientRect().width / 2;
       const baseVal  = dragBaseSection === 'vehicles' ? 0 : 1;
-      const progress = Math.max(0, Math.min(1, baseVal + dx / half));
+      const progress = baseVal + (dx / half);
 
-      // Eşik: %35 — daha kolay geçiş (önceki %50 çok zordu)
-      if (progress > 0.35 && dragBaseSection === 'vehicles') {
+      // Eşik: %25 veya 25px üzerinde kaydırma intent için yeterli
+      if ((progress > 0.25 || dx > 25) && dragBaseSection === 'vehicles') {
         switchSection('drivers', 'from-right');
-      } else if (progress < 0.65 && dragBaseSection === 'drivers') {
+      } else if ((progress < 0.75 || dx < -25) && dragBaseSection === 'drivers') {
         switchSection('vehicles', 'from-left');
       } else {
-        // Snap geri
         updateSliderPos(dragBaseSection, true);
       }
     } else {
