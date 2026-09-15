@@ -1,5 +1,5 @@
-// Leb - Service Worker v5.1.0 (Fixed Header iOS Safe Area + Bottom Dock Swipe)
-const CACHE_VERSION = 'v5.1.0';
+// Leb - Service Worker v5.2.0 (No mobile blur + drag-to-select dock)
+const CACHE_VERSION = 'v5.2.0';
 const CACHE_NAME = `leb-app-${CACHE_VERSION}`;
 
 const PRECACHE_ASSETS = [

@@ -1683,6 +1683,7 @@ body.theme-wallpaper .hero-title {
   /* Mobile Top Right System Capsule: 100% Crisp, Opaque, High-Contrast, Zero Blur */
   .header-actions-group {
     position: static !important;
+    isolation: isolate !important;
   }
 
   .header-system-bar,
@@ -1692,6 +1693,10 @@ body.theme-wallpaper .hero-title {
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
     filter: none !important;
+    -webkit-filter: none !important;
+    opacity: 1 !important;
+    isolation: isolate !important;
+    will-change: transform !important;
     border: 1.5px solid #CBD5E1 !important;
     border-radius: 9999px !important;
     height: 38px !important;
@@ -1702,6 +1707,17 @@ body.theme-wallpaper .hero-title {
     align-items: center !important;
     box-sizing: border-box !important;
   }
+
+  /* İkonların kendisi de asla bulanık olmamalı */
+  .header-system-bar svg,
+  .header-system-bar .leb-btn-icon svg {
+    filter: none !important;
+    -webkit-filter: none !important;
+    opacity: 1 !important;
+    backface-visibility: hidden !important;
+    -webkit-backface-visibility: hidden !important;
+  }
+
 
   body.theme-wallpaper .header-system-bar {
     pointer-events: auto !important;

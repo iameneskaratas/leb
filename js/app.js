@@ -1293,8 +1293,11 @@ function setupSwipeNavigation(switchSection) {
 
 /**
  * Alt bar (bottom dock) üzerinde parmak kaydırarak sekmeler arası geçiş.
- * iPhone Liquid Glass deneyimi: bar'ı sola/sağa kaydır → sekme değişir.
- * Drag sırasında görsel geri bildirim (hafif translate) uygulanır.
+ * iOS Liquid Glass tarzı DRAG-TO-SELECT:
+ * - Bar üzerinde parmağı basıp tutunca "tutuldu" hissi verir
+ * - Sola sürükle → Sürücüler aktif olur (anlık)
+ * - Sağa sürükle → Araçlar aktif olur (anlık)
+ * - Bırakınca seçim sabitlenir
  */
 function setupDockSwipe(switchSection) {
   const dock = document.querySelector('.leb-segmented-track');
@@ -1302,9 +1305,16 @@ function setupDockSwipe(switchSection) {
 
   let startX = 0;
   let startY = 0;
-  let startTime = 0;
   let dragging = false;
   let cancelled = false;
+  let switched = false; // Bu drag seansında geçiş yapıldı mı?
+
+  function resetDock(animate = true) {
+    dock.style.transition = animate
+      ? 'transform 0.28s cubic-bezier(0.16, 1, 0.3, 1)'
+      : 'none';
+    dock.style.transform = 'translateX(0) scale(1)';
+  }
 
   dock.addEventListener('touchstart', (e) => {
     if (e.touches.length !== 1) return;
@@ -1314,13 +1324,13 @@ function setupDockSwipe(switchSection) {
     const t = e.touches[0];
     startX = t.clientX;
     startY = t.clientY;
-    startTime = Date.now();
     dragging = true;
     cancelled = false;
+    switched = false;
 
-    // Hafif scale-down geri bildirimi (dock'un "tutulduğunu" hissettir)
-    dock.style.transition = 'transform 0.08s ease';
-    dock.style.transform = 'scale(0.97)';
+    // Parmak basıldığında hafif sıkışma hissi
+    dock.style.transition = 'transform 0.1s ease';
+    dock.style.transform = 'scale(0.96)';
   }, { passive: true });
 
   dock.addEventListener('touchmove', (e) => {
@@ -1329,51 +1339,44 @@ function setupDockSwipe(switchSection) {
     const dx = t.clientX - startX;
     const dy = t.clientY - startY;
 
-    // Dikey baskınsa iptal et
-    if (Math.abs(dy) > Math.abs(dx) * 1.4 && Math.abs(dy) > 12) {
+    // Dikey hareket baskınsa iptal et (scroll yapıyor)
+    if (Math.abs(dy) > Math.abs(dx) * 1.5 && Math.abs(dy) > 10) {
       cancelled = true;
-      dock.style.transform = 'scale(1)';
-      dock.style.transition = 'transform 0.25s cubic-bezier(0.16, 1, 0.3, 1)';
+      resetDock(true);
       return;
     }
 
-    // Yatay sürükleme sırasında hafif görsel kayma (max ±28px)
-    const clampedDx = Math.max(-28, Math.min(28, dx * 0.35));
+    // Yatay sürükleme: dock parmakla birlikte kayar (max ±40px)
+    const clamped = Math.max(-40, Math.min(40, dx * 0.55));
     dock.style.transition = 'none';
-    dock.style.transform = `translateX(${clampedDx}px) scale(0.97)`;
-  }, { passive: true });
+    dock.style.transform = `translateX(${clamped}px) scale(0.96)`;
 
-  dock.addEventListener('touchend', (e) => {
-    if (!dragging) return;
-    dragging = false;
-
-    // Bar'ı animasyonlu şekilde sıfırla
-    dock.style.transition = 'transform 0.32s cubic-bezier(0.16, 1, 0.3, 1)';
-    dock.style.transform = 'translateX(0) scale(1)';
-
-    if (cancelled) return;
-
-    const t = e.changedTouches[0];
-    const dx = t.clientX - startX;
-    const dy = t.clientY - startY;
-    const dur = Date.now() - startTime;
-
-    // Bar üzerinde geçerli swipe: >30px, <500ms, yatay baskın
-    if (Math.abs(dx) > 30 && Math.abs(dx) > Math.abs(dy) * 1.2 && dur < 500) {
-      if (dx < 0 && currentSection === 'vehicles') {
+    // ANLIK sekme geçişi: eşiği geçer geçmez sekme değişir
+    if (!switched) {
+      if (dx < -38 && currentSection === 'vehicles') {
+        switched = true;
         switchSection('drivers', 'from-right');
-      } else if (dx > 0 && currentSection === 'drivers') {
+        if (navigator.vibrate) try { navigator.vibrate(10); } catch(e) {}
+      } else if (dx > 38 && currentSection === 'drivers') {
+        switched = true;
         switchSection('vehicles', 'from-left');
+        if (navigator.vibrate) try { navigator.vibrate(10); } catch(e) {}
       }
     }
   }, { passive: true });
 
+  dock.addEventListener('touchend', () => {
+    if (!dragging) return;
+    dragging = false;
+    resetDock(true);
+  }, { passive: true });
+
   dock.addEventListener('touchcancel', () => {
     dragging = false;
-    dock.style.transition = 'transform 0.32s cubic-bezier(0.16, 1, 0.3, 1)';
-    dock.style.transform = 'translateX(0) scale(1)';
+    resetDock(true);
   }, { passive: true });
 }
+
 
 
 function renderSubFilterPills() {
@@ -2921,12 +2924,21 @@ function setupExportModal() {
   }
 }
 
-// Dynamic Header Scroll Blur (Only blurs when scrolled, completely clear at top)
+// Dynamic Header Scroll Blur (Desktop only - NEVER blur on mobile)
 function setupHeaderScroll() {
   const header = document.querySelector('.leb-header');
   if (!header) return;
 
+  // Mobilde (max-width: 768px) is-scrolled class'ı HİÇ ekleme
+  // Sadece desktop'ta blur aktif
+  const isMobile = () => window.innerWidth <= 768;
+
   const handleScroll = () => {
+    if (isMobile()) {
+      // Mobilde her zaman temiz — is-scrolled sınıfını asla ekleme
+      header.classList.remove('is-scrolled');
+      return;
+    }
     if (window.scrollY > 8) {
       header.classList.add('is-scrolled');
     } else {
@@ -2935,6 +2947,7 @@ function setupHeaderScroll() {
   };
 
   window.addEventListener('scroll', handleScroll, { passive: true });
+  window.addEventListener('resize', handleScroll, { passive: true });
   handleScroll();
 }
 
