@@ -1272,90 +1272,110 @@ function setupSliderDock(switchSection) {
   const btnD   = document.getElementById('tabDrivers');
   if (!track || !slider || !btnV || !btnD) return;
 
-  // CSS class ile baloncuk konumunu güncelle
+  // Baloncuk konumunu güncelle
   function updateSliderPos(section, animate) {
     slider.style.transition = animate
-      ? 'transform 0.38s cubic-bezier(0.34, 1.56, 0.64, 1)'
+      ? 'transform 0.42s cubic-bezier(0.34, 1.56, 0.64, 1)'
       : 'none';
     slider.style.transform = section === 'drivers' ? 'translateX(100%)' : 'translateX(0%)';
   }
 
-  // Başlangıç konumu
+  // Başlangıç konumu (animasyonsuz)
   updateSliderPos(currentSection, false);
 
   // Tab butonları class değişimini gözlemle → slider güncelle
   const observer = new MutationObserver(() => {
-    const sec = btnD.classList.contains('active') ? 'drivers' : 'vehicles';
-    updateSliderPos(sec, true);
+    if (!isDragging) { // sadece drag yokken otomatik güncelle
+      const sec = btnD.classList.contains('active') ? 'drivers' : 'vehicles';
+      updateSliderPos(sec, true);
+    }
   });
   observer.observe(btnV, { attributes: true, attributeFilter: ['class'] });
   observer.observe(btnD, { attributes: true, attributeFilter: ['class'] });
 
-  // ── Sürükleme (drag) ──
-  let dragStartX = null;
-  let dragBaseSection = null; // drag başında hangi sekme aktifti
-  let isDragging = false;
+  // ── Drag state ──
+  let dragStartX   = null;
+  let dragStartY   = null;
+  let dragBaseSection = null;
+  let isDragging   = false;
+  let isScrolling  = false; // dikey scroll mu?
+  let dirLocked    = false; // yön kilitlendikten sonra değişmez
 
   track.addEventListener('touchstart', (e) => {
     if (e.touches.length !== 1) return;
     if (document.querySelector('.leb-modal-overlay.active')) return;
     const t = e.touches[0];
-    dragStartX = t.clientX;
+    dragStartX      = t.clientX;
+    dragStartY      = t.clientY;
     dragBaseSection = currentSection;
-    isDragging = true;
-    // Drag sırasında spring'i kapat
+    isDragging      = true;
+    isScrolling     = false;
+    dirLocked       = false;
     slider.style.transition = 'none';
   }, { passive: true });
 
   track.addEventListener('touchmove', (e) => {
     if (!isDragging || dragStartX === null) return;
-    const t = e.touches[0];
+    const t  = e.touches[0];
     const dx = t.clientX - dragStartX;
-    const dy = t.clientY - dragStartX; // unused vertical check below
-    const dyAbs = Math.abs(t.clientY - (e.touches[0].clientY || 0));
+    const dy = t.clientY - dragStartY;
 
-    // 0 = araçlar (%0 translateX), 1 = sürücüler (%100 translateX)
-    const baseVal = dragBaseSection === 'vehicles' ? 0 : 1;
-    const half = track.getBoundingClientRect().width / 2;
+    // Yön henüz kilitlenmemişse tespit et
+    if (!dirLocked && (Math.abs(dx) > 6 || Math.abs(dy) > 6)) {
+      dirLocked = true;
+      isScrolling = Math.abs(dy) > Math.abs(dx); // dikey baskın
+    }
+
+    // Dikey scroll yapıyorsa slider'ı bırak
+    if (isScrolling) {
+      isDragging = false;
+      updateSliderPos(dragBaseSection, true);
+      return;
+    }
+
+    // Yatay drag — slider parmakla kayar
+    const baseVal  = dragBaseSection === 'vehicles' ? 0 : 1;
+    const half     = track.getBoundingClientRect().width / 2;
     const progress = Math.max(0, Math.min(1, baseVal + dx / half));
     slider.style.transform = `translateX(${progress * 100}%)`;
   }, { passive: true });
 
   function onEnd(e) {
-    if (!isDragging || dragStartX === null) return;
+    if (!isDragging || dragStartX === null) { isDragging = false; return; }
     isDragging = false;
 
     const t = e.changedTouches ? e.changedTouches[0] : null;
-    slider.style.transition = 'transform 0.38s cubic-bezier(0.34, 1.56, 0.64, 1)';
+    slider.style.transition = 'transform 0.42s cubic-bezier(0.34, 1.56, 0.64, 1)';
 
-    if (t) {
-      const dx = t.clientX - dragStartX;
-      const half = track.getBoundingClientRect().width / 2;
-      const baseVal = dragBaseSection === 'vehicles' ? 0 : 1;
+    if (t && !isScrolling) {
+      const dx       = t.clientX - dragStartX;
+      const half     = track.getBoundingClientRect().width / 2;
+      const baseVal  = dragBaseSection === 'vehicles' ? 0 : 1;
       const progress = Math.max(0, Math.min(1, baseVal + dx / half));
 
-      if (progress > 0.5 && currentSection === 'vehicles') {
+      // Eşik: %35 — daha kolay geçiş (önceki %50 çok zordu)
+      if (progress > 0.35 && dragBaseSection === 'vehicles') {
         switchSection('drivers', 'from-right');
-      } else if (progress < 0.5 && currentSection === 'drivers') {
+      } else if (progress < 0.65 && dragBaseSection === 'drivers') {
         switchSection('vehicles', 'from-left');
       } else {
-        // Geri snap
-        slider.style.transform = currentSection === 'drivers' ? 'translateX(100%)' : 'translateX(0%)';
+        // Snap geri
+        updateSliderPos(dragBaseSection, true);
       }
     } else {
-      slider.style.transform = currentSection === 'drivers' ? 'translateX(100%)' : 'translateX(0%)';
+      updateSliderPos(currentSection, true);
     }
-    dragStartX = null;
+    dragStartX = dragStartY = null;
   }
 
   track.addEventListener('touchend',    onEnd, { passive: true });
   track.addEventListener('touchcancel', () => {
     isDragging = false;
-    slider.style.transition = 'transform 0.38s cubic-bezier(0.34, 1.56, 0.64, 1)';
-    slider.style.transform = currentSection === 'drivers' ? 'translateX(100%)' : 'translateX(0%)';
-    dragStartX = null;
+    updateSliderPos(currentSection, true);
+    dragStartX = dragStartY = null;
   }, { passive: true });
 }
+
 
 
 
