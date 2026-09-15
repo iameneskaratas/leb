@@ -1226,6 +1226,7 @@ function setupSectionTabs() {
  * Swiping Left (finger dragged right -> left) switches to 'Sürücüler'
  * Swiping Right (finger dragged left -> right) switches to 'Araçlar'
  * Perfectly smooth, respects vertical scrolling
+ */
 function setupSwipeNavigation(switchSection) {
   let touchStartX = 0;
   let touchStartY = 0;
