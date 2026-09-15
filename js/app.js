@@ -1226,7 +1226,6 @@ function setupSectionTabs() {
  * Swiping Left (finger dragged right -> left) switches to 'Sürücüler'
  * Swiping Right (finger dragged left -> right) switches to 'Araçlar'
  * Perfectly smooth, respects vertical scrolling
- */
 function setupSwipeNavigation(switchSection) {
   let touchStartX = 0;
   let touchStartY = 0;
@@ -1286,7 +1285,95 @@ function setupSwipeNavigation(switchSection) {
       }
     }
   }, { passive: true });
+
+  // ── Bottom Dock Swipe (iPhone Liquid Glass bar üzerinde kaydırma) ──
+  setupDockSwipe(switchSection);
 }
+
+/**
+ * Alt bar (bottom dock) üzerinde parmak kaydırarak sekmeler arası geçiş.
+ * iPhone Liquid Glass deneyimi: bar'ı sola/sağa kaydır → sekme değişir.
+ * Drag sırasında görsel geri bildirim (hafif translate) uygulanır.
+ */
+function setupDockSwipe(switchSection) {
+  const dock = document.querySelector('.leb-segmented-track');
+  if (!dock) return;
+
+  let startX = 0;
+  let startY = 0;
+  let startTime = 0;
+  let dragging = false;
+  let cancelled = false;
+
+  dock.addEventListener('touchstart', (e) => {
+    if (e.touches.length !== 1) return;
+    const openOverlay = document.querySelector('.leb-modal-overlay.active, .leb-calendar-popover.active');
+    if (openOverlay) return;
+
+    const t = e.touches[0];
+    startX = t.clientX;
+    startY = t.clientY;
+    startTime = Date.now();
+    dragging = true;
+    cancelled = false;
+
+    // Hafif scale-down geri bildirimi (dock'un "tutulduğunu" hissettir)
+    dock.style.transition = 'transform 0.08s ease';
+    dock.style.transform = 'scale(0.97)';
+  }, { passive: true });
+
+  dock.addEventListener('touchmove', (e) => {
+    if (!dragging || cancelled) return;
+    const t = e.touches[0];
+    const dx = t.clientX - startX;
+    const dy = t.clientY - startY;
+
+    // Dikey baskınsa iptal et
+    if (Math.abs(dy) > Math.abs(dx) * 1.4 && Math.abs(dy) > 12) {
+      cancelled = true;
+      dock.style.transform = 'scale(1)';
+      dock.style.transition = 'transform 0.25s cubic-bezier(0.16, 1, 0.3, 1)';
+      return;
+    }
+
+    // Yatay sürükleme sırasında hafif görsel kayma (max ±28px)
+    const clampedDx = Math.max(-28, Math.min(28, dx * 0.35));
+    dock.style.transition = 'none';
+    dock.style.transform = `translateX(${clampedDx}px) scale(0.97)`;
+  }, { passive: true });
+
+  dock.addEventListener('touchend', (e) => {
+    if (!dragging) return;
+    dragging = false;
+
+    // Bar'ı animasyonlu şekilde sıfırla
+    dock.style.transition = 'transform 0.32s cubic-bezier(0.16, 1, 0.3, 1)';
+    dock.style.transform = 'translateX(0) scale(1)';
+
+    if (cancelled) return;
+
+    const t = e.changedTouches[0];
+    const dx = t.clientX - startX;
+    const dy = t.clientY - startY;
+    const dur = Date.now() - startTime;
+
+    // Bar üzerinde geçerli swipe: >30px, <500ms, yatay baskın
+    if (Math.abs(dx) > 30 && Math.abs(dx) > Math.abs(dy) * 1.2 && dur < 500) {
+      if (dx < 0 && currentSection === 'vehicles') {
+        switchSection('drivers', 'from-right');
+      } else if (dx > 0 && currentSection === 'drivers') {
+        switchSection('vehicles', 'from-left');
+      }
+    }
+  }, { passive: true });
+
+  dock.addEventListener('touchcancel', () => {
+    dragging = false;
+    dock.style.transition = 'transform 0.32s cubic-bezier(0.16, 1, 0.3, 1)';
+    dock.style.transform = 'translateX(0) scale(1)';
+  }, { passive: true });
+}
+
 
 function renderSubFilterPills() {
   const container = document.getElementById('subFiltersTrack');
